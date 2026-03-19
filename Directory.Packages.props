@@ -36,7 +36,7 @@
     <PackageVersion Include="NSubstitute.Analyzers.CSharp" Version="1.0.17"/>
     <PackageVersion Include="OpenTelemetry.Exporter.InMemory" Version="1.14.0"/>
     <PackageVersion Include="PolySharp" Version="1.15.0"/>
-    <PackageVersion Include="Scriban" Version="6.5.2"/>
+    <PackageVersion Include="Scriban" Version="6.6.0"/>
     <!-- OTEL Libraries -->
     <PackageVersion Include="NSubstitute" Version="5.3.0"/>
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.14.0"/>
