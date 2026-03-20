@@ -27,6 +27,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all"/>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all"/>
     <PackageReference Include="Scriban" IncludeAssets="Build"/>
+    <PackageReference Include="System.Text.Json"/>
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Templates\*.scriban"/>
