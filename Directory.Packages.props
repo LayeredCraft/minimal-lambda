@@ -8,7 +8,7 @@
     <PackageVersion Include="Amazon.Lambda.CloudWatchLogsEvents" Version="2.2.1"/>
     <PackageVersion Include="Amazon.Lambda.Core" Version="2.8.1"/>
     <PackageVersion Include="Amazon.Lambda.KafkaEvents" Version="2.1.1"/>
-    <PackageVersion Include="Amazon.Lambda.KinesisEvents" Version="3.0.1"/>
+    <PackageVersion Include="Amazon.Lambda.KinesisEvents" Version="3.0.2"/>
     <PackageVersion Include="Amazon.Lambda.KinesisFirehoseEvents" Version="2.3.1"/>
     <PackageVersion Include="Amazon.Lambda.RuntimeSupport" Version="1.14.2"/>
     <PackageVersion Include="Amazon.Lambda.Serialization.SystemTextJson" Version="2.4.5"/>
@@ -65,7 +65,7 @@
   </ItemGroup>
   <!-- Conditional versions based on target framework -->
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageVersion Include="System.Text.Json" Version="[8.0.5, 9.0.0)"/>
+    <PackageVersion Include="System.Text.Json" Version="8.0.6"/>
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="[8.0.1, 9.0.0)"/>
