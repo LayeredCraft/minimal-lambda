@@ -17,10 +17,17 @@ jobs:
       pull-requests: write
 
     steps:
+      - name: Generate GitHub App token
+        uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ secrets.CHANGELOG_UPDATE_ID }}
+          private-key: ${{ secrets.CHANGELOG_UPDATE_PRIVATE_KEY }}
+
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           ref: ${{ github.event.release.target_commitish }}
 
       - name: Update Changelog
@@ -28,14 +35,15 @@ jobs:
         with:
           latest-version: ${{ github.event.release.tag_name }}
           release-notes: ${{ github.event.release.body }}
-          
+
       - name: Remove header and summary from CHANGELOG
         run: perl -i -pe 'BEGIN{undef $/} s/(## (?:\[)?v[\d.]+(?:\](?:\([^)]+\))?)? - \d{4}-\d{2}-\d{2}\n)[\s\S]*?### Changes\n+/$1\n/g' CHANGELOG.md
 
       - name: Create Pull Request
-        id: cpr 
+        id: cpr
         uses: peter-evans/create-pull-request@v8
         with:
+          token: ${{ steps.app-token.outputs.token }}
           branch: changelog/${{ github.event.release.tag_name }}
           base: ${{ github.event.release.target_commitish }}
           title: "chore: update changelog for ${{ github.event.release.tag_name }}"
