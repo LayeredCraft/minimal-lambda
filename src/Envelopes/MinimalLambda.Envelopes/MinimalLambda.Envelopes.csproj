@@ -29,6 +29,7 @@
     <ProjectReference Include="..\..\MinimalLambda.Abstractions\MinimalLambda.Abstractions.csproj"/>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Amazon.Lambda.Core" VersionOverride="2.8.1" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions"/>
   </ItemGroup>
 </Project>
