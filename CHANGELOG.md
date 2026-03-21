@@ -3,7 +3,36 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-## [Unreleased](https://github.com/j-d-ha/minimal-lambda/compare/v2.2.0...HEAD)
+## [Unreleased](https://github.com/j-d-ha/minimal-lambda/compare/v2.3.0...HEAD)
+
+## [v2.3.0](https://github.com/j-d-ha/minimal-lambda/compare/v2.2.0...v2.3.0) - 2026-03-20
+
+## 🚀 Features
+
+* feat(testing): migrate test infrastructure to Microsoft Testing Platform (#288) @j-d-ha
+
+## 🐛 Bug Fixes
+
+* fix(deps): switch xunit to mtp-v2 and fix Scriban build error (#309) @j-d-ha
+
+## 🔄 Refactoring
+
+* refactor: consolidate code style and improve readability (#291) @j-d-ha
+
+## ✅ Tests
+
+* github: rewrite PR guide for clarity and detail (#294) @j-d-ha
+
+## 🔧 Maintenance
+
+* chore: Bump the minor-and-patch group with 20 updates (#307) @dependabot
+* chore: Bump jetbrains.resharper.globaltools from 2025.3.1 to 2025.3.3 (#310) @dependabot
+* chore(deps-dev): bump the minor-and-patch group with 2 updates (#299) @dependabot
+* chore(deps): bump dotnet-sdk from 10.0.101 to 10.0.201 (#306) @dependabot
+* chore(deps-dev): bump the minor-and-patch group with 2 updates (#296) @dependabot
+* chore: bump urllib3 from 2.5.0 to 2.6.3 in the uv group across 1 directory (#286) @dependabot
+* chore: Bump the minor-and-patch group with 16 updates (#287) @dependabot
+* chore(deps): bump dotnet-sdk from 10.0.101 to 10.0.102 (#285) @dependabot
 
 ## [v2.2.0](https://github.com/j-d-ha/minimal-lambda/compare/v2.1.1...v2.2.0) - 2026-01-12
 
@@ -15,7 +44,8 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### 🔄 Refactoring
 
-* refactor(source-generators): modularize code generation and improve generated file organization (#280) @j-d-ha
+* refactor(source-generators): modularize code generation and improve generated file organization (
+  #280) @j-d-ha
 * refactor(source-generators): simplify and restructure code generation logic (#279) @j-d-ha
 
 ### 🔧 Maintenance
@@ -100,7 +130,8 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ## 🚀 Features
 
-* feat(source-generators): support multiple MapHandler invocations with custom feature providers (#214) @j-d-ha
+* feat(source-generators): support multiple MapHandler invocations with custom feature providers (
+  #214) @j-d-ha
 * docs: update MkDocs palette toggle configuration (#211) @j-d-ha
 
 ## 🐛 Bug Fixes
@@ -215,22 +246,33 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ## 🔧 Maintenance
 
-* chore(deps): Bump the minor-and-patch group with 1 update (#165) @[dependabot[bot]](https://github.com/apps/dependabot)
+* chore(deps): Bump the minor-and-patch group with 1 update (
+  #165) @[dependabot[bot]](https://github.com/apps/dependabot)
 * chore(github): configure Dependabot to use conventional commits (#164) @j-d-ha
-* chore(deps): bump actions/checkout from 5 to 6 (#158) @[dependabot[bot]](https://github.com/apps/dependabot)
-* chore(deps-dev): bump husky from 8.0.3 to 9.1.7 (#149) @[dependabot[bot]](https://github.com/apps/dependabot)
-* chore(deps-dev): bump @commitlint/cli from 18.6.1 to 20.1.0 (#150) @[dependabot[bot]](https://github.com/apps/dependabot)
-* chore(deps-dev): bump @commitlint/config-conventional from 18.6.3 to 20.0.0 (#151) @[dependabot[bot]](https://github.com/apps/dependabot)
+* chore(deps): bump actions/checkout from 5 to 6 (
+  #158) @[dependabot[bot]](https://github.com/apps/dependabot)
+* chore(deps-dev): bump husky from 8.0.3 to 9.1.7 (
+  #149) @[dependabot[bot]](https://github.com/apps/dependabot)
+* chore(deps-dev): bump @commitlint/cli from 18.6.1 to 20.1.0 (
+  #150) @[dependabot[bot]](https://github.com/apps/dependabot)
+* chore(deps-dev): bump @commitlint/config-conventional from 18.6.3 to 20.0.0 (
+  #151) @[dependabot[bot]](https://github.com/apps/dependabot)
 * feat(opentelemetry): add OpenTelemetry unit tests and update dependencies (#148) @j-d-ha
-* chore(deps-dev): bump js-yaml from 4.1.0 to 4.1.1 in the npm_and_yarn group across 1 directory (#132) @[dependabot[bot]](https://github.com/apps/dependabot)
+* chore(deps-dev): bump js-yaml from 4.1.0 to 4.1.1 in the npm_and_yarn group across 1 directory (
+  #132) @[dependabot[bot]](https://github.com/apps/dependabot)
 * ci: skip workflows for draft pull requests (#127) @j-d-ha
 * ci: skip pr build for draft pull requests (#126) @j-d-ha
 * ci(github): replace softprops action with gh release upload command (#123) @j-d-ha
-* chore(deps): bump amannn/action-semantic-pull-request from 5.4.0 to 6.1.1 (#121) @[dependabot[bot]](https://github.com/apps/dependabot)
-* chore(deps): bump peter-evans/create-pull-request from 5 to 7 (#119) @[dependabot[bot]](https://github.com/apps/dependabot)
-* chore(deps): bump actions/checkout from 4 to 5 (#118) @[dependabot[bot]](https://github.com/apps/dependabot)
-* chore(deps): bump stefanzweifel/git-auto-commit-action from 5 to 7 (#117) @[dependabot[bot]](https://github.com/apps/dependabot)
-* chore(deps): bump release-drafter/release-drafter from 6.0.0 to 6.1.0 in the minor-and-patch group (#116) @[dependabot[bot]](https://github.com/apps/dependabot)
+* chore(deps): bump amannn/action-semantic-pull-request from 5.4.0 to 6.1.1 (
+  #121) @[dependabot[bot]](https://github.com/apps/dependabot)
+* chore(deps): bump peter-evans/create-pull-request from 5 to 7 (
+  #119) @[dependabot[bot]](https://github.com/apps/dependabot)
+* chore(deps): bump actions/checkout from 4 to 5 (
+  #118) @[dependabot[bot]](https://github.com/apps/dependabot)
+* chore(deps): bump stefanzweifel/git-auto-commit-action from 5 to 7 (
+  #117) @[dependabot[bot]](https://github.com/apps/dependabot)
+* chore(deps): bump release-drafter/release-drafter from 6.0.0 to 6.1.0 in the minor-and-patch
+  group (#116) @[dependabot[bot]](https://github.com/apps/dependabot)
 
 ## ⚠️ Breaking Changes
 
