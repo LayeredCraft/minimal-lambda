@@ -3,7 +3,36 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-## [Unreleased](https://github.com/j-d-ha/minimal-lambda/compare/v2.2.0...HEAD)
+## [Unreleased](https://github.com/j-d-ha/minimal-lambda/compare/v2.3.0...HEAD)
+
+## [v2.3.0](https://github.com/j-d-ha/minimal-lambda/compare/v2.2.0...v2.3.0) - 2026-03-21
+
+### 🚀 Features
+
+* feat(testing): migrate test infrastructure to Microsoft Testing Platform (#288) @j-d-ha
+
+### 🐛 Bug Fixes
+
+* fix(deps): switch xunit to mtp-v2 and fix Scriban build error (#309) @j-d-ha
+
+### 🔄 Refactoring
+
+* refactor: consolidate code style and improve readability (#291) @j-d-ha
+
+### ✅ Tests
+
+* github: rewrite PR guide for clarity and detail (#294) @j-d-ha
+
+### 🔧 Maintenance
+
+* chore: Bump the minor-and-patch group with 20 updates (#307) @dependabot
+* chore: Bump jetbrains.resharper.globaltools from 2025.3.1 to 2025.3.3 (#310) @dependabot
+* chore(deps-dev): bump the minor-and-patch group with 2 updates (#299) @dependabot
+* chore(deps): bump dotnet-sdk from 10.0.101 to 10.0.201 (#306) @dependabot
+* chore(deps-dev): bump the minor-and-patch group with 2 updates (#296) @dependabot
+* chore: bump urllib3 from 2.5.0 to 2.6.3 in the uv group across 1 directory (#286) @dependabot
+* chore: Bump the minor-and-patch group with 16 updates (#287) @dependabot
+* chore(deps): bump dotnet-sdk from 10.0.101 to 10.0.102 (#285) @dependabot
 
 ## [v2.2.0](https://github.com/j-d-ha/minimal-lambda/compare/v2.1.1...v2.2.0) - 2026-01-12
 
