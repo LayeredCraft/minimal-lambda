@@ -14,9 +14,25 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      - dependency-name: "System.Text.Json"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "Microsoft.Extensions.Hosting"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "Microsoft.Extensions.Hosting.Abstractions"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "Microsoft.CodeAnalysis"
+        versions:
+          - "5.3.0"
+      - dependency-name: "Microsoft.CodeAnalysis.CSharp"
+        versions:
+          - "5.3.0"
 
   - package-ecosystem: "github-actions"
-    directory: "/"
+    directoSystem.Text.Jsonry: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
