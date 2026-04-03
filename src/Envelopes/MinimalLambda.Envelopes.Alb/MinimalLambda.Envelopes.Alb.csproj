@@ -15,7 +15,6 @@
 
   <ItemGroup>
     <PackageReference Include="Amazon.Lambda.ApplicationLoadBalancerEvents"/>
-    <PackageReference Include="Amazon.Lambda.Core"/>
   </ItemGroup>
 
   <ItemGroup>

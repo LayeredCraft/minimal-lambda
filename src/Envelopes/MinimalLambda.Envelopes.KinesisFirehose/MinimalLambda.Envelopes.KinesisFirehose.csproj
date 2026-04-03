@@ -14,7 +14,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Amazon.Lambda.Core"/>
     <PackageReference Include="Amazon.Lambda.KinesisFirehoseEvents"/>
   </ItemGroup>
 
