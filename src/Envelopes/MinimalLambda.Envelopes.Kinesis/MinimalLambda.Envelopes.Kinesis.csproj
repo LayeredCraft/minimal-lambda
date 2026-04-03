@@ -22,7 +22,6 @@
     <ProjectReference Include="..\..\MinimalLambda.Abstractions\MinimalLambda.Abstractions.csproj"/>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="AWSSDK.Core"/>
     <None Include="README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 </Project>
