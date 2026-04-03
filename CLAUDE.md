@@ -213,10 +213,23 @@ When Claude makes commits, ALWAYS follow conventional commits format:
 
 **Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci`
 
-**Scope (optional but recommended):** See `./.claude/commands/pr.md` for the complete list of valid
-scopes.
+**Scope (optional):** If used, it must be one of these exact values:
 
-- Omit scope for general changes
+- `host`
+- `envelopes`
+- `abstractions`
+- `opentelemetry`
+- `source-generators`
+- `deps`
+- `build`
+- `ci`
+- `github`
+- `core`
+- `docs`
+- `testing`
+- `tests`
+
+- Omit scope for general or mixed changes when no single valid scope fits
 
 **Examples:**
 
@@ -239,7 +252,8 @@ When creating PRs, the title MUST follow conventional commits format (same rules
 messages):
 
 - Strict validation is enforced by CI
-- Format: `<type>(scope): <description>`
+- Format: `<type>(scope): <description>` or `<type>: <description>`
+- If a scope is present, it must be one of the valid scopes listed above
 - Dependabot PRs are exempt from this requirement
 
 **Examples:**

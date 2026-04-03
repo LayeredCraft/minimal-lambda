@@ -46,6 +46,7 @@
     <ExcludeByFile>**/Scriban/**/*.cs</ExcludeByFile>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest"/>
   </ItemGroup>
 </Project>

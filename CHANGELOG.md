@@ -3,7 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-## [Unreleased](https://github.com/j-d-ha/minimal-lambda/compare/v2.3.0...HEAD)
+## [Unreleased](https://github.com/j-d-ha/minimal-lambda/compare/v2.3.1...HEAD)
+
+## [v2.3.1](https://github.com/j-d-ha/minimal-lambda/compare/v2.3.0...v2.3.1) - 2026-03-23
+
+### 🐛 Bug Fixes
+
+* fix(deps): downgrade Microsoft.CodeAnalysis packages to 5.0.0 (#316) @j-d-ha
+* fix(ci): use GitHub App token in changelog update workflow (#312) @j-d-ha
+
+### 🔧 Maintenance
+
+* chore(deps): Bump go-task/setup-task from 1 to 2 (#313) @dependabot
+* chore(deps): Bump actions/create-github-app-token from 2 to 3 (#314) @dependabot
 
 ## [v2.3.0](https://github.com/j-d-ha/minimal-lambda/compare/v2.2.0...v2.3.0) - 2026-03-20
 

@@ -15,7 +15,6 @@
 
   <ItemGroup>
     <PackageReference Include="Amazon.Lambda.APIGatewayEvents"/>
-    <PackageReference Include="Amazon.Lambda.Core"/>
   </ItemGroup>
 
   <ItemGroup>
