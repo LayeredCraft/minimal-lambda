@@ -102,7 +102,9 @@ internal static class GeneratorTestHelpers
 
         List<MetadataReference> references =
         [
-#if NET10_0_OR_GREATER
+#if NET11_0_OR_GREATER
+            .. Net110.References.All.ToList(),
+#elif NET10_0
             .. Net100.References.All.ToList(),
 #elif NET9_0
             .. Net90.References.All.ToList(),
