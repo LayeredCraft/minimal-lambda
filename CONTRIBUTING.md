@@ -57,6 +57,9 @@ We are committed to providing a welcoming and inclusive environment for all cont
 # Install Node dependencies (commitlint & husky for commit validation)
 npm install
 
+# Set up git commit hooks (commit-msg validation)
+task local:setup-git-hooks
+
 # Restore dependencies
 dotnet restore
 
