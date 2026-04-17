@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "git-workflow": {
+      "source": "LayeredCraft/skills",
+      "sourceType": "github",
+      "computedHash": "fbd78cda46da7d8753beca0d68ce6532589daa4da0a457aa709fe1e11da468fe"
+    }
+  }
+}
