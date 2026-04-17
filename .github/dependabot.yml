@@ -26,6 +26,9 @@ updates:
       - dependency-name: "Microsoft.Extensions.Hosting.Abstractions"
         update-types:
           - "version-update:semver-major"
+      - dependency-name: "Microsoft.Extensions.Http"
+        update-types:
+          - "version-update:semver-major"
       - dependency-name: "Microsoft.CodeAnalysis"
         versions:
           - "5.3.0"
