@@ -23,9 +23,12 @@ autolabeler:
   - label: 'type: ci'
     title:
       - '/^ci(\([^)]*\))?:/i'
+  - label: 'type: revert'
+    title:
+      - '/^revert(\([^)]*\))?:/i'
   - label: 'breaking-change'
     title:
-      - '/^(feat|fix|docs|refactor|test|chore|ci)(\([^)]*\))?!:/i'
+      - '/^(feat|fix|docs|refactor|test|chore|ci|revert)(\([^)]*\))?!:/i'
 
 categories:
   - title: '🚀 Features'
@@ -47,6 +50,7 @@ categories:
     labels:
       - 'type: chore'
       - 'type: ci'
+      - 'type: revert'
   - title: '⚠️ Breaking Changes'
     labels:
       - 'breaking-change'
@@ -66,6 +70,7 @@ version-resolver:
       - 'type: test'
       - 'type: chore'
       - 'type: ci'
+      - 'type: revert'
   default: patch
 
 template: |
@@ -85,6 +90,7 @@ include-labels:
   - 'type: test'
   - 'type: chore'
   - 'type: ci'
+  - 'type: revert'
   - 'breaking-change'
 
 exclude-labels:

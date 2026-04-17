@@ -33,6 +33,9 @@ jobs:
             test
             chore
             ci
+            revert
           requireScope: false
-          subjectPattern: ^(?![A-Z]).+$
+          subjectPattern: ^[a-z].*$
           subjectPatternError: Subject must start with lowercase letter
+          scopePattern: ^[a-z0-9-]+$
+          scopePatternError: Scope must be lowercase (letters, numbers, hyphens)
