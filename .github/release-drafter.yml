@@ -26,9 +26,6 @@ autolabeler:
   - label: 'breaking-change'
     title:
       - '/^(feat|fix|docs|refactor|test|chore|ci)(\([^)]*\))?!:/i'
-  - label: 'breaking-change'
-    body:
-      - '/BREAKING CHANGE/i'
 
 categories:
   - title: '🚀 Features'
