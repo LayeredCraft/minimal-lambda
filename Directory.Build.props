@@ -32,5 +32,7 @@
 
   <PropertyGroup>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+      <!-- NU5104: preview TFM (net11.0) intentionally pulls preview dependencies -->
+      <NoWarn>$(NoWarn);NU5104</NoWarn>
   </PropertyGroup>
 </Project>
