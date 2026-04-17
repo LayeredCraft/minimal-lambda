@@ -2,7 +2,7 @@ name: Validate PR Title
 
 on:
   pull_request:
-    types: [opened, edited, synchronize]
+    types: [ opened, edited, synchronize ]
     branches:
       - main
 
@@ -33,20 +33,9 @@ jobs:
             test
             chore
             ci
-          scopes: |
-            host
-            envelopes
-            abstractions
-            opentelemetry
-            source-generators
-            deps
-            build
-            ci
-            github
-            core
-            docs
-            testing
-            tests
+            revert
           requireScope: false
-          subjectPattern: ^[a-z].*
+          subjectPattern: ^[a-z].*$
           subjectPatternError: Subject must start with lowercase letter
+          scopePattern: ^[a-z0-9-]+$
+          scopePatternError: Scope must be lowercase (letters, numbers, hyphens)

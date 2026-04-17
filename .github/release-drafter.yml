@@ -4,82 +4,73 @@ tag-template: 'v$RESOLVED_VERSION'
 autolabeler:
   - label: 'type: feat'
     title:
-      - '/feat(\([^)]*\))?:/i'
+      - '/^feat(\([^)]*\))?:/i'
   - label: 'type: fix'
     title:
-      - '/fix(\([^)]*\))?:/i'
+      - '/^fix(\([^)]*\))?:/i'
   - label: 'type: docs'
     title:
-      - '/docs(\([^)]*\))?:/i'
+      - '/^docs(\([^)]*\))?:/i'
   - label: 'type: refactor'
     title:
-      - '/refactor(\([^)]*\))?:/i'
+      - '/^refactor(\([^)]*\))?:/i'
   - label: 'type: test'
     title:
-      - '/test(\([^)]*\))?:/i'
+      - '/^test(\([^)]*\))?:/i'
   - label: 'type: chore'
     title:
-      - '/chore(\([^)]*\))?:/i'
+      - '/^chore(\([^)]*\))?:/i'
   - label: 'type: ci'
     title:
-      - '/ci(\([^)]*\))?:/i'
+      - '/^ci(\([^)]*\))?:/i'
+  - label: 'type: revert'
+    title:
+      - '/^revert(\([^)]*\))?:/i'
   - label: 'breaking-change'
-    body:
-      - '/BREAKING CHANGE/i'
+    title:
+      - '/^(feat|fix|docs|refactor|test|chore|ci|revert)(\([^)]*\))?!:/i'
 
 categories:
   - title: '🚀 Features'
     labels:
       - 'type: feat'
-      - 'feature'
   - title: '🐛 Bug Fixes'
     labels:
       - 'type: fix'
-      - 'bug'
-      - 'bugfix'
   - title: '📚 Documentation'
     labels:
       - 'type: docs'
-      - 'documentation'
-  - title: '⚡ Performance'
-    labels:
-      - 'type: perf'
-      - 'performance'
   - title: '🔄 Refactoring'
     labels:
       - 'type: refactor'
-      - 'refactor'
   - title: '✅ Tests'
     labels:
       - 'type: test'
-      - 'test'
   - title: '🔧 Maintenance'
     labels:
       - 'type: chore'
       - 'type: ci'
-      - 'chore'
-      - 'ci'
+      - 'type: revert'
   - title: '⚠️ Breaking Changes'
     labels:
-      - 'breaking'
       - 'breaking-change'
 
 version-resolver:
   major:
     labels:
-      - 'breaking'
       - 'breaking-change'
   minor:
     labels:
       - 'type: feat'
-      - 'feature'
   patch:
     labels:
       - 'type: fix'
       - 'type: docs'
+      - 'type: refactor'
+      - 'type: test'
       - 'type: chore'
       - 'type: ci'
-      - 'bug'
+      - 'type: revert'
   default: patch
 
 template: |
@@ -99,9 +90,7 @@ include-labels:
   - 'type: test'
   - 'type: chore'
   - 'type: ci'
-  - 'feature'
-  - 'bug'
-  - 'breaking'
+  - 'type: revert'
   - 'breaking-change'
 
 exclude-labels:

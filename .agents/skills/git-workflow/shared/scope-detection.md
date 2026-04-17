@@ -3,7 +3,7 @@
 Infer scope from the folder containing the majority of the changes.
 
 | Folder                        | Scope               |
-| ----------------------------- | ------------------- |
+|-------------------------------|---------------------|
 | `.github/workflows`           | `github`            |
 | `src/Core`                    | `core`              |
 | `src/Abstractions`            | `abstractions`      |

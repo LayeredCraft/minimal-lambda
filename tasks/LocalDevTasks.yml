@@ -26,6 +26,15 @@ tasks:
       - dotnet tool restore
       - echo "✅ Tools restored"
 
+  setup-git-hooks:
+    desc: Install git commit hooks with Husky
+    silent: true
+    cmds:
+      - echo "🪝 Setting up git commit hooks"
+      - npm install
+      - npm run prepare
+      - echo "✅ Git commit hooks are ready"
+
   clean-all:
     desc: Clean all build artifacts and packages
     silent: true
