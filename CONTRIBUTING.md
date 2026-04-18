@@ -1,10 +1,12 @@
 # Contributing to MinimalLambda
 
-Thank you for your interest in contributing to the MinimalLambda project! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to the MinimalLambda project! This document provides
+guidelines and instructions for contributing.
 
 ## Table of Contents
 
 <!-- TOC -->
+
 * [Contributing to MinimalLambda](#contributing-to-minimal-lambda)
   * [Table of Contents](#table-of-contents)
   * [Code of Conduct](#code-of-conduct)
@@ -22,11 +24,13 @@ Thank you for your interest in contributing to the MinimalLambda project! This d
   * [CI/CD Integration](#cicd-integration)
   * [Questions or Need Help?](#questions-or-need-help)
   * [License](#license)
+
 <!-- TOC -->
 
 ## Code of Conduct
 
-We are committed to providing a welcoming and inclusive environment for all contributors. Please be respectful and constructive in all interactions.
+We are committed to providing a welcoming and inclusive environment for all contributors. Please be
+respectful and constructive in all interactions.
 
 ## Getting Started
 
@@ -75,22 +79,26 @@ dotnet clean
 
 ## Code Formatting
 
-Code formatting is automated using **CleanupCode** and **CSharpier**, ensuring consistent style across the project. All PRs are checked for formatting compliance in CI/CD.
+Code formatting is automated using **CleanupCode** and **CSharpier**, ensuring consistent style
+across the project. All PRs are checked for formatting compliance in CI/CD.
 
 ### Formatting Tools
 
 The project uses two complementary tools:
 
 1. **CleanupCode**: JetBrains code cleanup tool
-   - Applies code organization and style rules
-   - Uses the "Built-in: Full Cleanup" profile configured in `MinimalLambda.sln.DotSettings`
-   - Handles code structure and consistency
+
+- Applies code organization and style rules
+- Uses the "Built-in: Full Cleanup" profile configured in `MinimalLambda.sln.DotSettings`
+- Handles code structure and consistency
 
 2. **CSharpier**: Opinionated C# code formatter
-   - Enforces consistent formatting (similar to Prettier for C#)
-   - Handles spacing, line breaks, and code layout
+
+- Enforces consistent formatting (similar to Prettier for C#)
+- Handles spacing, line breaks, and code layout
 
 Tools can be installed using **NuGet**:
+
 ```bash
 dotnet tool restore
 ```
@@ -111,7 +119,7 @@ task format:csharpier
 ```
 
 Always run `task format` before committing changes. Failing to format code may cause CI/CD checks to
-fail, as the GitHub Actions workflow (`pr-build.yaml`) includes a code quality check that runs 
+fail, as the GitHub Actions workflow (`pr-build.yaml`) includes a code quality check that runs
 `task format` and validates no files were modified.
 
 ### IDE Integration
@@ -136,6 +144,7 @@ docs/description                        # Documentation updates
 ```
 
 **Example**:
+
 ```bash
 git checkout -b feature/#42-add-custom-serializer
 git checkout -b bug/on-shutdown-generator-trying-to-return-void
@@ -158,7 +167,8 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/) format:
 - **feat**: A new feature (e.g., `feat(source-generators): add OnShutdown support`)
 - **fix**: A bug fix (e.g., `fix(#73): update MapHandler source generation`)
 - **docs**: Documentation updates (e.g., `docs(openTelemetry): add XML documentation`)
-- **refactor**: Code refactoring without feature changes (e.g., `refactor(source-generators): simplify logic`)
+- **refactor**: Code refactoring without feature changes (e.g.,
+  `refactor(source-generators): simplify logic`)
 - **test**: Adding or updating tests (e.g., `test: add coverage for edge cases`)
 - **chore**: Build, CI/CD, tooling, dependencies (e.g., `chore: update build targets`)
 - **style**: Code style changes without logic changes (e.g., `style: simplify formatting`)
@@ -193,22 +203,25 @@ when using extension method syntax.
    ```
 
 3. **Create a Pull Request** using the [PR template](/.github/pull_request_template.md):
-   - **Title must follow Conventional Commits format** (validated by CI)
-   - Format: `<type>(scope): <description>`
-   - Valid types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci`, `style`
-   - Reference related issues (e.g., `Closes #42`)
-   - Complete the PR template checklist
-   - Request review from maintainers
+
+- **Title must follow Conventional Commits format** (validated by CI)
+- Format: `<type>(scope): <description>`
+- Valid types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci`, `style`
+- Reference related issues (e.g., `Closes #42`)
+- Complete the PR template checklist
+- Request review from maintainers
 
 4. **Respond to feedback**:
-   - Address review comments promptly
-   - Push additional commits to the same branch
-   - Avoid force-pushing after review has started
+
+- Address review comments promptly
+- Push additional commits to the same branch
+- Avoid force-pushing after review has started
 
 5. **Merge**:
-   - Ensure all checks pass (CI/CD, tests, code review)
-   - Maintainer will merge the PR
-   - Your branch will be deleted after merge
+
+- Ensure all checks pass (CI/CD, tests, code review)
+- Maintainer will merge the PR
+- Your branch will be deleted after merge
 
 ## Code Style
 
@@ -223,7 +236,8 @@ when using extension method syntax.
 ### XML Documentation
 
 - **Document all public APIs** with XML documentation tags
-- **Use only standard C# XML tags**: `<summary>`, `<param>`, `<returns>`, `<exception>`, `<remarks>`, `<example>`
+- **Use only standard C# XML tags**: `<summary>`, `<param>`, `<returns>`, `<exception>`,
+  `<remarks>`, `<example>`
 - **Do NOT use unsupported tags** like `<strong>`, `<em>`, etc. (Use `<c>` for code/emphasis)
 - **Example**:
   ```csharp
@@ -359,7 +373,6 @@ All pull requests run through automated checks:
 
 - **Build**: `dotnet build`
 - **Tests**: `dotnet test`
-- **Code analysis**: SonarCloud analysis
 
 Ensure your changes pass all checks before requesting review.
 
@@ -371,7 +384,8 @@ Ensure your changes pass all checks before requesting review.
 
 ## License
 
-By contributing to this project, you agree that your contributions will be licensed under the same MIT License as the project.
+By contributing to this project, you agree that your contributions will be licensed under the same
+MIT License as the project.
 
 ---
 
