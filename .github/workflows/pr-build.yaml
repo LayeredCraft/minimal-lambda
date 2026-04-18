@@ -50,55 +50,12 @@ jobs:
       - name: Install Task
         uses: go-task/setup-task@v2
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v5
-        with:
-          java-version: 17
-          distribution: 'zulu'
-
-      - name: Cache SonarQube packages
-        uses: actions/cache@v5
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-
-      - name: Cache SonarQube scanner
-        id: cache-sonar-scanner
-        uses: actions/cache@v5
-        with:
-          path: ~/.sonar/scanner
-          key: ${{ runner.os }}-sonar-scanner
-          restore-keys: ${{ runner.os }}-sonar-scanner
-
-      - name: Install SonarQube scanner
-        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p ~/.sonar/scanner
-          dotnet tool update dotnet-sonarscanner --tool-path ~/.sonar/scanner
-
-      - name: Start SonarQube
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          ~/.sonar/scanner/dotnet-sonarscanner begin \
-            /k:"j-d-ha_minimal-lambda" \
-            /o:"j-d-ha" \
-            /d:sonar.exclusions="**/bin/**,**/obj/**,tests/MinimalLambda.SourceGenerators.UnitTests/Snapshots/**,**/coverage/**,**/.nuget/**,**/packages/**,src/MinimalLambda.Testing/HostFactoryResolver.cs" \
-            /d:sonar.coverage.exclusions="**/*" \
-            /d:sonar.token="$SONAR_TOKEN"
-
       - name: Build
         run: dotnet build --no-restore --configuration Release /p:TreatWarningsAsErrors=true
 
       - name: Run tests
         timeout-minutes: 3
         run: task test:ci
-
-      - name: Stop SonarQube
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ~/.sonar/scanner/dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
 
       - name: Validate AOT Compatability
         run: task build:aot-check
