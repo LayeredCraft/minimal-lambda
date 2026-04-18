@@ -82,4 +82,4 @@ nunit-*.xml
 /.cache/
 /.sonarqube/
 /codecov*
-
+**/.venv
