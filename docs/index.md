@@ -241,7 +241,6 @@ soon) for end-to-end Lambda samples that wire up middleware, envelopes, and DI.
 
 - **[GitHub Repository](https://github.com/j-d-ha/minimal-lambda)** – Source code, issues, and
   discussions.
-- **[Changelog](changelog.md)** – Version history and release notes.
 - **[License](https://github.com/j-d-ha/minimal-lambda/blob/main/LICENSE)** – MIT License.
 
 ### Documentation

@@ -3,7 +3,8 @@ name = "minimal-lambda-docs"
 version = "0.1.0"
 description = "mkdocs for minimal-lambda"
 requires-python = ">=3.13"
-dependencies = [
-    "mkdocs>=1.6.1",
-    "mkdocs-material>=9.7.0",
+
+[dependency-groups]
+dev = [
+  "zensical>=0.0.33",
 ]

@@ -5,6 +5,11 @@
       "source": "LayeredCraft/skills",
       "sourceType": "github",
       "computedHash": "fbd78cda46da7d8753beca0d68ce6532589daa4da0a457aa709fe1e11da468fe"
+    },
+    "zensical-site": {
+      "source": "LayeredCraft/skills",
+      "sourceType": "github",
+      "computedHash": "f66b47704234c8242d45a52e3d92d5307f49254e189819165ee37845da64e9c8"
     }
   }
 }
