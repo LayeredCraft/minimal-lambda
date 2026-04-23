@@ -33,6 +33,7 @@
     />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="OpenTelemetry.Api" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AWSLambda"/>
   </ItemGroup>
   <ItemGroup>
