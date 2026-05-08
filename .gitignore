@@ -83,3 +83,4 @@ nunit-*.xml
 /.sonarqube/
 /codecov*
 **/.venv
+/AGENTS.local.md
