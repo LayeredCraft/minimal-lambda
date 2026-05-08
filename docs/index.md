@@ -1,5 +1,5 @@
 ---
-title: ""
+title: ''
 ---
 
 # MinimalLambda: ASP.NET Core Patterns for AWS Lambda
@@ -21,7 +21,7 @@ smoother developer experience when iterating locally or in CI.
 [Guides](guides/index.md){ .md-button }
 [Examples (Coming Soon)](examples/index.md){ .md-button }
 
----
+______________________________________________________________________
 
 ## Why MinimalLambda?
 
@@ -107,7 +107,7 @@ already know, while still embracing Lambda’s execution model.
     await lambda.RunAsync();
     ```
 
----
+______________________________________________________________________
 
 ## Key Features
 
@@ -155,7 +155,7 @@ Small abstraction surface area keeps CPU and memory usage predictable inside Lam
 
 [Advanced topics (Coming Soon)](advanced/index.md){ .md-button }
 
----
+______________________________________________________________________
 
 ## Quick Start
 
@@ -179,10 +179,11 @@ await lambda.RunAsync();
 ```
 
 !!! tip "Next Steps"
-Ready to dive deeper? Check out the [Getting Started Guide](getting-started/index.md) for a complete
-tutorial, or explore the [Examples](examples/index.md) to see real-world applications.
 
----
+    Ready to dive deeper? Check out the [Getting Started Guide](getting-started/index.md) for a complete
+    tutorial, or explore the [Examples](examples/index.md) to see real-world applications.
+
+______________________________________________________________________
 
 ## Packages
 
@@ -192,7 +193,7 @@ The core packages provide the fundamental hosting framework, abstractions, and o
 for building AWS Lambda functions.
 
 | Package                                                                                                             | Description                                   | NuGet                                                                                                                                  | Downloads                                                                                                                                    |
-|---------------------------------------------------------------------------------------------------------------------|-----------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | [**MinimalLambda**](https://github.com/j-d-ha/minimal-lambda/tree/main/src/MinimalLambda)                           | Core hosting framework with middleware and DI | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.svg)](https://www.nuget.org/packages/MinimalLambda)                             | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.svg)](https://www.nuget.org/packages/MinimalLambda/)                             |
 | [**MinimalLambda.Abstractions**](https://github.com/j-d-ha/minimal-lambda/tree/main/src/MinimalLambda.Abstractions) | Core interfaces and contracts                 | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.Abstractions.svg)](https://www.nuget.org/packages/MinimalLambda.Abstractions)   | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.Abstractions.svg)](https://www.nuget.org/packages/MinimalLambda.Abstractions/)   |
 | [**MinimalLambda.OpenTelemetry**](features/open_telemetry.md)                                                       | Distributed tracing and observability         | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.OpenTelemetry.svg)](https://www.nuget.org/packages/MinimalLambda.OpenTelemetry) | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.OpenTelemetry.svg)](https://www.nuget.org/packages/MinimalLambda.OpenTelemetry/) |
@@ -203,14 +204,15 @@ Envelope packages provide type-safe handling of AWS Lambda event sources with au
 deserialization.
 
 !!! info "What are Envelopes?"
-Envelopes wrap AWS Lambda events with strongly-typed payload handling, giving you compile-time type
-safety and automatic deserialization of message bodies from SQS, SNS, Kinesis, and other event
-sources.
+
+    Envelopes wrap AWS Lambda events with strongly-typed payload handling, giving you compile-time type
+    safety and automatic deserialization of message bodies from SQS, SNS, Kinesis, and other event
+    sources.
 
     [Learn more about envelopes](features/envelopes.md){ .md-button }
 
 | Package                                     | Description                                           | NuGet                                                                                                                                                          | Downloads                                                                                                                                                            |
-|---------------------------------------------|-------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **MinimalLambda.Envelopes**                 | Infrastructure package for HTTP response builders     | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.Envelopes.svg)](https://www.nuget.org/packages/MinimalLambda.Envelopes)                                 | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.Envelopes.svg)](https://www.nuget.org/packages/MinimalLambda.Envelopes/)                                 |
 | **MinimalLambda.Envelopes.Sqs**             | Simple Queue Service events with typed message bodies | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.Envelopes.Sqs.svg)](https://www.nuget.org/packages/MinimalLambda.Envelopes.Sqs)                         | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.Envelopes.Sqs.svg)](https://www.nuget.org/packages/MinimalLambda.Envelopes.Sqs/)                         |
 | **MinimalLambda.Envelopes.Sns**             | Simple Notification Service messages                  | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.Envelopes.Sns.svg)](https://www.nuget.org/packages/MinimalLambda.Envelopes.Sns)                         | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.Envelopes.Sns.svg)](https://www.nuget.org/packages/MinimalLambda.Envelopes.Sns/)                         |
@@ -223,7 +225,7 @@ sources.
 
 [Browse all envelope packages](features/envelopes.md){ .md-button }
 
----
+______________________________________________________________________
 
 ## Examples & Use Cases
 
@@ -233,32 +235,32 @@ soon) for end-to-end Lambda samples that wire up middleware, envelopes, and DI.
 
 [Examples (Coming Soon)](examples/index.md){ .md-button }
 
----
+______________________________________________________________________
 
 ## Community & Resources
 
 ### Get Involved
 
 - **[GitHub Repository](https://github.com/j-d-ha/minimal-lambda)** – Source code, issues, and
-  discussions.
+    discussions.
 - **[License](https://github.com/j-d-ha/minimal-lambda/blob/main/LICENSE)** – MIT License.
 
 ### Documentation
 
 - **[Getting Started](getting-started/index.md)** – Installation and first Lambda tutorial.
 - **[Guides](guides/index.md)** – In-depth docs on DI, middleware, lifecycle, configuration, and
-  more.
+    more.
 - **[Features](features/index.md)** – Envelopes, OpenTelemetry integration, and other add-ons.
 - **[Advanced Topics](advanced/index.md)** – Coming soon: AOT, source generators, performance
-  tuning.
+    tuning.
 
 ### Support
 
 - Ask or search in [GitHub Discussions](https://github.com/j-d-ha/minimal-lambda/discussions).
 - File bugs or feature requests
-  via [GitHub Issues](https://github.com/j-d-ha/minimal-lambda/issues).
+    via [GitHub Issues](https://github.com/j-d-ha/minimal-lambda/issues).
 
----
+______________________________________________________________________
 
 **Ready to modernize your Lambda development?** [Get started now](getting-started/index.md){
 .md-button .md-button--primary }

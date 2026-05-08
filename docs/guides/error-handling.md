@@ -7,12 +7,12 @@ hooks so you can add the right amount of protection without fighting the framewo
 ## Invocation Errors: What Happens by Default
 
 - Handlers run inside the middleware pipeline. If a handler throws and nothing catches the exception,
-  `MinimalLambda` lets it bubble back through the pipeline.
+    `MinimalLambda` lets it bubble back through the pipeline.
 - Once the exception leaves the outermost middleware, the AWS .NET Lambda runtime records the error,
-  writes it to CloudWatch Logs, and returns a failed invocation (with retries governed by the event
-  source).
+    writes it to CloudWatch Logs, and returns a failed invocation (with retries governed by the event
+    source).
 - Because the runtime already reports unhandled errors, you only need to add custom handling when you
-  want different logging, metrics, or response shaping.
+    want different logging, metrics, or response shaping.
 
 ```csharp title="Program.cs" linenums="1"
 lambda.MapHandler(([FromEvent] OrderRequest request, IOrderService service) =>
@@ -53,8 +53,8 @@ lambda.UseMiddleware(async (context, next) =>
 
 - Register error-handling middleware first so it wraps every other component.
 - Use the helper extensions (`context.GetResponse<T>()`, `context.GetEvent<T>()`, etc.) from
-  `FeatureLambdaInvocationContextExtensions` (they wrap `ILambdaInvocationContext.Features`) when you need to read
-  or replace the outgoing payload instead of throwing.
+    `FeatureLambdaInvocationContextExtensions` (they wrap `ILambdaInvocationContext.Features`) when you need to read
+    or replace the outgoing payload instead of throwing.
 - Still rethrow fatal errors so the runtime produces accurate CloudWatch metrics and DLQ/SQS retries.
 
 ## Handler-Level Try/Catch
@@ -82,12 +82,12 @@ lambda.MapHandler(async ([FromEvent] CheckoutRequest request, ICheckoutService s
 handler executes in its own DI scope and errors are aggregated:
 
 - **OnInit** – All handlers run concurrently with a token derived from
-  `LambdaHostOptions.InitTimeout`. Each handler can optionally return `bool`. `MinimalLambda` collects
-  every exception and throws an `AggregateException("Encountered errors while running OnInit handlers", …)`
-  if any fail. If a handler returns `false`, initialization aborts even when no exception occurred.
+    `LambdaHostOptions.InitTimeout`. Each handler can optionally return `bool`. `MinimalLambda` collects
+    every exception and throws an `AggregateException("Encountered errors while running OnInit handlers", …)`
+    if any fail. If a handler returns `false`, initialization aborts even when no exception occurred.
 - **OnShutdown** – Handlers also run concurrently. Any exception is captured and rethrown as an
-  `AggregateException("Encountered errors while running OnShutdown handlers", …)` after every handler
-  finishes (or faults). Use the provided `CancellationToken` to respect the remaining shutdown window.
+    `AggregateException("Encountered errors while running OnShutdown handlers", …)` after every handler
+    finishes (or faults). Use the provided `CancellationToken` to respect the remaining shutdown window.
 
 ```csharp title="Program.cs" linenums="1"
 lambda.OnInit(async (ICache cache, CancellationToken ct) =>

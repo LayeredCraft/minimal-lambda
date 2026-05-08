@@ -19,6 +19,7 @@ Before you begin, ensure you have:
 - **AWS Account** – For deploying and testing (optional for local development)
 
 !!! tip "IDE Recommendations"
+
     - Visual Studio 2022 (17.8+)
     - JetBrains Rider 2023.3+
     - Visual Studio Code with C# Dev Kit
@@ -29,7 +30,7 @@ Before you begin, ensure you have:
 - **[Your First Lambda](first-lambda.md)** – Walk through a handler, DI setup, and local testing.
 - **[Core Concepts](core-concepts.md)** – Learn about the host lifecycle, middleware, and source generation.
 - **Testing** – For in-memory, `WebApplicationFactory`-style integration tests, see
-  [MinimalLambda.Testing](../guides/testing.md).
+    [MinimalLambda.Testing](../guides/testing.md).
 
 Prefer to explore? Head directly to **[Guides](../guides/index.md)** or **[Examples](../examples/index.md)** for deeper dives.
 

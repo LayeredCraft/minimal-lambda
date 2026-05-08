@@ -21,14 +21,14 @@ var lambda = builder.Build();
 - `builder.Services` is the same `IServiceCollection` you use everywhere else in .NET.
 - All registrations must happen **before** `builder.Build()`.
 - Keep supporting types (records, services, options classes) at the bottom of `Program.cs`; keep the
-  pipeline (DI, middleware, handlers, run) at the top so cold-start work stays easy to read.
+    pipeline (DI, middleware, handlers, run) at the top so cold-start work stays easy to read.
 
 ## Service Lifetimes in Lambda
 
 Lambda containers live across multiple invocations. Map the standard lifetimes to Lambda's lifecycle:
 
 | Lifetime  | When it's created                | When it's disposed                        | Use for                                    |
-|-----------|----------------------------------|-------------------------------------------|--------------------------------------------|
+| --------- | -------------------------------- | ----------------------------------------- | ------------------------------------------ |
 | Singleton | During OnInit (first cold start) | When the execution environment shuts down | HttpClient, caches, telemetry, config      |
 | Scoped    | Once per invocation              | After the invocation completes            | DbContext, repositories, per-request state |
 | Transient | Every time it's requested        | After the requesting scope is disposed    | Lightweight helpers, pure functions        |
@@ -37,7 +37,7 @@ Lambda containers live across multiple invocations. Map the standard lifetimes t
 
 - Scoped services are the default choice for anything that shouldn't leak state between invocations.
 - Transients work the same as in ASP.NET Core, but prefer Scoped unless you truly need a new instance
-  every time a constructor runs.
+    every time a constructor runs.
 
 ## Invocation Scope and `ILambdaInvocationContext`
 
@@ -68,19 +68,20 @@ lambda.MapHandler(async (
 If your handler doesn't need the Lambda payload, omit the `[FromEvent]` parameter entirely and inject only services.
 
 !!! tip "Cancellation buffers"
+
     The cancellation token fires slightly **before** AWS kills the process:
 
     - The runtime subtracts `LambdaHostOptions.InvocationCancellationBuffer` (default 500ms) from the
-      remaining time when creating the token.
+        remaining time when creating the token.
     - Always pass it down to outbound SDK calls and database queries so you can stop work cleanly.
 
 ## Middleware and Lifecycle Hooks: Source-Generated DI
 
 - Middleware receives the invocation scope via the `ILambdaInvocationContext` argument. Resolve services with
-  `context.ServiceProvider` or create reusable middleware classes with constructor injection.
+    `context.ServiceProvider` or create reusable middleware classes with constructor injection.
 - `OnInit` and `OnShutdown` handlers now use the same source-generated dependency injection as your main
-  handlers. Each executes inside its own scoped service provider so you can warm caches, seed connections,
-  or flush telemetry without leaking per-invocation services.
+    handlers. Each executes inside its own scoped service provider so you can warm caches, seed connections,
+    or flush telemetry without leaking per-invocation services.
 
 OnInit and OnShutdown handlers support multiple dependency injection patterns:
 
@@ -146,11 +147,11 @@ variants work but rarely matter in Lambda because configuration usually ships wi
 ## Patterns That Work Well
 
 - **Constructor injection everywhere** – middleware, handlers, lifecycle hooks can all resolve services
-  directly. Avoid service locator patterns unless you truly need dynamic lookups.
+    directly. Avoid service locator patterns unless you truly need dynamic lookups.
 - **Decorator pattern** – use `builder.Services.Decorate<TService, TDecorator>()` (from Scrutor) to add
-  caching, logging, or retry behavior without touching core services.
+    caching, logging, or retry behavior without touching core services.
 - **Keyed services** – register multiple implementations with `AddKeyed{Lifetime}` and inject the
-  one you need via `[FromKeyedServices]`.
+    one you need via `[FromKeyedServices]`.
 
 ### Keyed Services in Practice
 
@@ -167,12 +168,12 @@ lambda.MapHandler((
 - Keys can be strings, enums, numeric types, or even `Type` instances.
 - Optional services are supported by making the parameter nullable.
 - The generated code throws a descriptive exception if the service provider doesn't support keyed
-  services (e.g., if you run on an older DI container).
+    services (e.g., if you run on an older DI container).
 
 ## Host-Specific Pitfalls
 
 | Pitfall                               | Impact                                              | Fix                                                                                     |
-|---------------------------------------|-----------------------------------------------------|-----------------------------------------------------------------------------------------|
+| ------------------------------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | Singleton depends on a scoped service | Scoped instance from first invocation leaks forever | Inject `IServiceProvider`, create a scope, resolve the scoped service inside the method |
 | Storing scoped services in singletons | `ObjectDisposedException` on later invocations      | Keep scoped dependencies scoped; pass data instead of services                          |
 | Over-injecting handlers               | Hard-to-test functions with 8+ services             | Move orchestration into services; keep handlers thin                                    |

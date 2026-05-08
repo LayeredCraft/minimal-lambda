@@ -13,19 +13,19 @@ serialization for both built-in envelopes and your own custom envelope types.
 ## Why Envelopes?
 
 - **Strong typing** – `SqsEnvelope<Foo>` ensures handlers only run when payloads deserialize into
-  `Foo`.
+    `Foo`.
 - **Zero boilerplate** – No more `JsonSerializer.Deserialize` calls sprinkled through handlers.
 - **Consistent serialization** – `EnvelopeOptions` applies globally, including Native AOT
-  `JsonSerializerContext` support.
+    `JsonSerializerContext` support.
 - **Extensible** – Implement `IRequestEnvelope`/`IResponseEnvelope` for proprietary event shapes or
-  alternative serialization formats (XML, Protobuf, etc.).
+    alternative serialization formats (XML, Protobuf, etc.).
 
 ## Provided Envelopes
 
 Install only the envelopes you need; each one lives in its own NuGet package.
 
-| Event Source                    | Package                                                                                                                                                | NuGet                                                                                                                                                            |
-|---------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Event Source                    | Package                                                                                                                                             | NuGet                                                                                                                                                          |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Infrastructure / Base           | [MinimalLambda.Envelopes](https://github.com/j-d-ha/minimal-lambda/tree/main/src/Envelopes/MinimalLambda.Envelopes)                                 | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.Envelopes.svg)](https://www.nuget.org/packages/MinimalLambda.Envelopes)                                 |
 | SQS                             | [MinimalLambda.Envelopes.Sqs](https://github.com/j-d-ha/minimal-lambda/tree/main/src/Envelopes/MinimalLambda.Envelopes.Sqs)                         | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.Envelopes.Sqs.svg)](https://www.nuget.org/packages/MinimalLambda.Envelopes.Sqs)                         |
 | SNS                             | [MinimalLambda.Envelopes.Sns](https://github.com/j-d-ha/minimal-lambda/tree/main/src/Envelopes/MinimalLambda.Envelopes.Sns)                         | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.Envelopes.Sns.svg)](https://www.nuget.org/packages/MinimalLambda.Envelopes.Sns)                         |
@@ -37,6 +37,7 @@ Install only the envelopes you need; each one lives in its own NuGet package.
 | Application Load Balancer (ALB) | [MinimalLambda.Envelopes.Alb](https://github.com/j-d-ha/minimal-lambda/tree/main/src/Envelopes/MinimalLambda.Envelopes.Alb)                         | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.Envelopes.Alb.svg)](https://www.nuget.org/packages/MinimalLambda.Envelopes.Alb)                         |
 
 !!! note "Infrastructure Package"
+
     `MinimalLambda.Envelopes` is automatically referenced by ALB and API Gateway packages. It provides
     `IHttpResult<TSelf>` and extension methods for the response builder API. You don't need to install
     it directly.
@@ -110,15 +111,14 @@ internal record LoginSuccess(string Token, DateTime ExpiresAt);
 
 ### Available Result Classes
 
-| Class                  | Package                              | Use Case                                    |
-|------------------------|--------------------------------------|---------------------------------------------|
-| `AlbResult`            | MinimalLambda.Envelopes.Alb          | Application Load Balancer responses         |
-| `ApiGatewayResult`     | MinimalLambda.Envelopes.ApiGateway   | REST API / HTTP API v1 / WebSocket          |
-| `ApiGatewayV2Result`   | MinimalLambda.Envelopes.ApiGateway   | HTTP API v2 responses                       |
+| Class                | Package                            | Use Case                            |
+| -------------------- | ---------------------------------- | ----------------------------------- |
+| `AlbResult`          | MinimalLambda.Envelopes.Alb        | Application Load Balancer responses |
+| `ApiGatewayResult`   | MinimalLambda.Envelopes.ApiGateway | REST API / HTTP API v1 / WebSocket  |
+| `ApiGatewayV2Result` | MinimalLambda.Envelopes.ApiGateway | HTTP API v2 responses               |
 
 Common methods: `Ok()`, `Created()`, `NoContent()`, `BadRequest()`, `Unauthorized()`, `NotFound()`,
-`Conflict()`, `UnprocessableEntity()`, `InternalServerError()`, `StatusCode(int)`, `Text(int,
-string)`, `Json<T>(int, T)`. All methods have overloads with and without body content.
+`Conflict()`, `UnprocessableEntity()`, `InternalServerError()`, `StatusCode(int)`, `Text(int, string)`, `Json<T>(int, T)`. All methods have overloads with and without body content.
 
 ### When to Use Results vs. Envelopes
 
@@ -129,6 +129,7 @@ Provides convenient methods for common HTTP status codes.
 envelope base classes for custom behavior.
 
 !!! tip "Complete API Reference"
+
     For detailed method documentation, AOT configuration, and advanced usage, see the package README
     files:
 
@@ -136,6 +137,7 @@ envelope base classes for custom behavior.
     - [API Gateway Package README](https://github.com/j-d-ha/minimal-lambda/tree/main/src/Envelopes/MinimalLambda.Envelopes.ApiGateway)
 
 !!! note
+
     Result classes use their respective envelope classes internally (`AlbResponseEnvelope<T>`,
     `ApiGatewayResponseEnvelope<T>`, etc.). They're a convenience layer over the envelope
     infrastructure.
@@ -145,6 +147,7 @@ envelope base classes for custom behavior.
 When using .NET Native AOT, register all envelope and payload types in your `JsonSerializerContext`.
 
 !!! tip "Register Both Envelope and Payload Types"
+
     You must register **both** the envelope type (e.g., `ApiGatewayRequestEnvelope<LoginRequest>`)
     **and** the inner payload type (e.g., `LoginRequest`). The envelope wraps the AWS event
     structure, while the payload is your business type inside the envelope.
@@ -194,6 +197,7 @@ builder.Services.ConfigureEnvelopeOptions(options =>
 ```
 
 !!! important "Why Register in Two Places?"
+
     The context must be registered as the type resolver for **both** the envelope options and the
     Lambda serializer because deserialization happens at different steps:
 
@@ -228,9 +232,10 @@ envelope using `System.Xml`. See the SQS README in the repo for a complete XML s
 ### Advanced Configuration
 
 - **`LambdaDefaultJsonOptions`** – minimal-lambda maintains a second `JsonSerializerOptions`
-  instance for Lambda-specific envelopes (e.g., SNS→SQS fan-out). Most apps shouldn’t touch it; the
-  host copies your `JsonOptions.TypeInfoResolver` automatically. Only override it when you need
-  different converters for those hybrid envelopes.
+    instance for Lambda-specific envelopes (e.g., SNS→SQS fan-out). Most apps shouldn’t touch it; the
+    host copies your `JsonOptions.TypeInfoResolver` automatically. Only override it when you need
+    different converters for those hybrid envelopes.
+
 - **`Items` dictionary** – Store arbitrary context for custom envelopes:
 
     ```csharp title="Program.cs" linenums="1"
@@ -294,15 +299,15 @@ typed object.
 ## Best Practices
 
 - **Check for null** – Always guard against `BodyContent`/`PayloadContent` being `null`. Set it to
-  `null` if deserialization fails instead of throwing.
+    `null` if deserialization fails instead of throwing.
 - **Use `[JsonIgnore]`** – Keep serialized strings (`Body`, `Payload`, etc.) separate from the
-  deserialized object to avoid recursive serialization.
+    deserialized object to avoid recursive serialization.
 - **Return `SQSBatchResponse` when required** – For SQS/SNS to SQS fan-out scenarios, populate
-  `BatchItemFailures` to signal per-message errors.
+    `BatchItemFailures` to signal per-message errors.
 - **Centralize configuration** – Prefer `ConfigureEnvelopeOptions` or configuration binding over
-  ad-hoc serializer tweaks.
+    ad-hoc serializer tweaks.
 - **Log deserialization issues** – Logging helps diagnose malformed payloads without crashing the
-  Lambda.
+    Lambda.
 
 ## When to Use Envelopes
 

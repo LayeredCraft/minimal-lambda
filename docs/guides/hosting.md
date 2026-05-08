@@ -10,9 +10,9 @@ Calling `LambdaApplication.CreateBuilder()` assembles a standard .NET host with 
 - **Environment & content root** – Sets `IHostEnvironment.ApplicationName` from `AWS_LAMBDA_FUNCTION_NAME` (when available) and resolves the content root by honoring `DOTNET_CONTENTROOT`, `AWS_LAMBDA_TASK_ROOT`, or falling back to `Directory.GetCurrentDirectory()`.
 - **Logging** – Registers console logging with activity tracking enabled. In Development, scope validation is turned on so singleton/scoped misuse throws during build.
 - **Dependency injection** – Every call to `builder.Services` hits the standard `IServiceCollection`. On `builder.Build()`, minimal-lambda registers:
-  - `ILambdaInvocationBuilderFactory`, `ILambdaOnInitBuilderFactory`, and `ILambdaOnShutdownBuilderFactory` so lambda-specific pipelines can be composed later.
-  - `LambdaHostedService`, `ILambdaHandlerFactory`, feature collections, and `ILambdaBootstrapOrchestrator`.
-  - Default implementations of `ILambdaSerializer` (System.Text.Json) and `ILambdaCancellationFactory` unless you already registered your own via `TryAddLambdaHostDefaultServices()`.
+    - `ILambdaInvocationBuilderFactory`, `ILambdaOnInitBuilderFactory`, and `ILambdaOnShutdownBuilderFactory` so lambda-specific pipelines can be composed later.
+    - `LambdaHostedService`, `ILambdaHandlerFactory`, feature collections, and `ILambdaBootstrapOrchestrator`.
+    - Default implementations of `ILambdaSerializer` (System.Text.Json) and `ILambdaCancellationFactory` unless you already registered your own via `TryAddLambdaHostDefaultServices()`.
 
 Most applications can rely entirely on `CreateBuilder()` + `builder.Build()`—just add services, middleware, handlers, and call `await lambda.RunAsync();`.
 
@@ -101,12 +101,12 @@ handlers.
 
 ## Troubleshooting
 
-| Issue | Cause | Fix |
-|-------|-------|-----|
-| `InvalidOperationException: Lambda Handler is not set.` | `builder.Build()` succeeded but `lambda.MapHandler(...)` was never called. | Register a handler before calling `lambda.RunAsync()`.
-| `AggregateException: Encountered errors while running OnInit handlers` | An OnInit delegate threw or returned `false`. | Inspect inner exceptions; ensure handlers honor cancellation and only return `false` for fatal conditions.
-| `Graceful shutdown ... did not complete within the allocated timeout` | OnShutdown handlers exceeded `LambdaHostOptions.ShutdownDuration - ShutdownDurationBuffer`. | Reduce work, increase shutdown duration, or skip optional cleanup.
-| Environment variables not loaded | You disabled defaults without re-adding `builder.Configuration.AddEnvironmentVariables()`. | Re-add configuration sources or keep defaults.
+| Issue                                                                  | Cause                                                                                       | Fix                                                                                                        |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `InvalidOperationException: Lambda Handler is not set.`                | `builder.Build()` succeeded but `lambda.MapHandler(...)` was never called.                  | Register a handler before calling `lambda.RunAsync()`.                                                     |
+| `AggregateException: Encountered errors while running OnInit handlers` | An OnInit delegate threw or returned `false`.                                               | Inspect inner exceptions; ensure handlers honor cancellation and only return `false` for fatal conditions. |
+| `Graceful shutdown ... did not complete within the allocated timeout`  | OnShutdown handlers exceeded `LambdaHostOptions.ShutdownDuration - ShutdownDurationBuffer`. | Reduce work, increase shutdown duration, or skip optional cleanup.                                         |
+| Environment variables not loaded                                       | You disabled defaults without re-adding `builder.Configuration.AddEnvironmentVariables()`.  | Re-add configuration sources or keep defaults.                                                             |
 
 ## Related Guides
 

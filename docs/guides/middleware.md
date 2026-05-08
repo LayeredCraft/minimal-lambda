@@ -9,7 +9,8 @@ access, and composition tips that keep middleware and handlers decoupled without
 
 ## Pipeline Basics
 
-Register middleware before calling `MapHandler`. Components execute in registration order and unwind in
+Register middleware before calling `MapHandler`. Components execute in registration order and unwind
+in
 reverse order:
 
 ```csharp title="Program.cs"
@@ -73,11 +74,11 @@ Key members:
 
 - `ServiceProvider` – resolve scoped services for the invocation.
 - `CancellationToken` – fires before Lambda termination (buffer controlled by
-  `LambdaHostOptions.InvocationCancellationBuffer`). Pass it to downstream async work.
+    `LambdaHostOptions.InvocationCancellationBuffer`). Pass it to downstream async work.
 - `Items` – per-invocation storage shared by middleware/handler.
 - `Properties` – cross-invocation storage.
 - `Features` – typed capabilities such as `IEventFeature<T>` and `IResponseFeature<T>` that let
-  middleware collaborate without injecting each other.
+    middleware collaborate without injecting each other.
 
 ## Middleware Approaches
 
@@ -136,9 +137,9 @@ lambda.UseMiddleware(async (context, next) =>
 
 - **Dependency Injection** - `context.ServiceProvider.GetRequiredService<T>()`
 - **Event/Response Data** - `GetEvent<T>()`, `GetResponse<T>()`, `TryGetEvent<T>()` (
-  see [Type-Safe Feature Access](#type-safe-feature-access))
+    see [Type-Safe Feature Access](#type-safe-feature-access))
 - **Features** - `context.Features.Get<IEventFeature<T>>()` (
-  see [Working with Features](#working-with-features))
+    see [Working with Features](#working-with-features))
 - **Per-Invocation State** - `context.Items` for temporary data within the request
 - **Cross-Invocation State** - `context.Properties` for data shared across Lambda invocations
 - **Cancellation** - `context.CancellationToken` for cooperative cancellation
@@ -202,9 +203,10 @@ that instantiates your middleware and resolves constructor parameters automatica
 no runtime overhead.
 
 !!! tip "Reusable packages"
-Class-based middleware is a good fit for shared packages: ship the middleware type and attributes,
-and the consuming app's build generates the wiring code. The generated code lives in the
-application's build output, not in your package.
+
+    Class-based middleware is a good fit for shared packages: ship the middleware type and attributes,
+    and the consuming app's build generates the wiring code. The generated code lives in the
+    application's build output, not in your package.
 
 #### Dependency Injection
 
@@ -255,10 +257,10 @@ internal sealed class ValidationMiddleware : ILambdaMiddleware
 **Default resolution behavior:**
 
 - Parameters without attributes first check args passed to `UseMiddleware<T>()`, then fall back to
-  DI
+    DI
 - Services must be registered in `builder.Services` before calling `builder.Build()`
 - Use `[FromServices]` to skip args and resolve directly from DI (
-  see [Parameter Sources](#parameter-sources))
+    see [Parameter Sources](#parameter-sources))
 
 For more on service lifetimes and DI patterns, see [Dependency Injection](dependency-injection.md).
 
@@ -296,7 +298,7 @@ await lambda.RunAsync();
 Control how constructor parameters are resolved using attributes:
 
 | Attribute             | Source        | Behavior                                                |
-|-----------------------|---------------|---------------------------------------------------------|
+| --------------------- | ------------- | ------------------------------------------------------- |
 | (none)                | Args, then DI | Try args first, fall back to DI if no match             |
 | `[FromServices]`      | DI only       | Resolve from DI container, skip args                    |
 | `[FromKeyedServices]` | Keyed DI      | Resolve keyed service from DI (e.g., `"primary"` cache) |
@@ -368,10 +370,11 @@ lambda.MapHandler(([FromEvent] OrderRequest req) => ProcessOrder(req));
 await lambda.RunAsync();
 ```
 
-!!! tip "When to use [FromArguments]"
-Use `[FromArguments]` for configuration values that vary per middleware registration (like
-cache keys, API endpoints, or feature flags). This makes the middleware reusable with
-different configurations.
+!!! tip "When to use `[FromArguments]`"
+
+    Use `[FromArguments]` for configuration values that vary per middleware registration (like
+    cache keys, API endpoints, or feature flags). This makes the middleware reusable with
+    different configurations.
 
 #### Multiple Constructors
 
@@ -429,8 +432,9 @@ internal sealed class AuthMiddleware : ILambdaMiddleware
 ```
 
 !!! warning
-Only one constructor can have `[MiddlewareConstructor]`. Applying it to multiple constructors
-triggers compile-time diagnostic **LH0005**.
+
+    Only one constructor can have `[MiddlewareConstructor]`. Applying it to multiple constructors
+    triggers compile-time diagnostic **LH0005**.
 
 #### Lifecycle and Disposal
 
@@ -488,9 +492,10 @@ internal sealed class TracingMiddleware : ILambdaMiddleware, IAsyncDisposable
 - The generated code prefers `IAsyncDisposable` over `IDisposable` if both are implemented
 
 !!! info "Singleton vs. Per-Invocation"
-Unlike services registered in DI (which can be singleton, scoped, or transient), middleware
-instances are **always per-invocation**. For shared state, inject singleton services into the
-middleware constructor.
+
+    Unlike services registered in DI (which can be singleton, scoped, or transient), middleware
+    instances are **always per-invocation**. For shared state, inject singleton services into the
+    middleware constructor.
 
 For more on lifecycle hooks, see [Lifecycle Management](lifecycle-management.md).
 
@@ -571,8 +576,9 @@ internal async Task InvokeAsync_ReturnsCachedResult_WhenCacheHit()
 ```
 
 !!! tip "Testing Strategy"
-Test middleware in isolation by mocking `ILambdaInvocationContext` and the `next` delegate.
-This keeps tests fast and focused on middleware behavior without spinning up the entire pipeline.
+
+    Test middleware in isolation by mocking `ILambdaInvocationContext` and the `next` delegate.
+    This keeps tests fast and focused on middleware behavior without spinning up the entire pipeline.
 
 For more testing patterns, see [Testing](testing.md).
 
@@ -835,7 +841,7 @@ internal sealed class MaintenanceModeMiddleware : ILambdaMiddleware
 The source generator validates middleware at compile-time:
 
 | Diagnostic | Severity | Description                                                             |
-|------------|----------|-------------------------------------------------------------------------|
+| ---------- | -------- | ----------------------------------------------------------------------- |
 | **LH0005** | Error    | Multiple constructors have `[MiddlewareConstructor]` (only one allowed) |
 | **LH0006** | Error    | Middleware type must be a concrete class (not interface/abstract)       |
 
@@ -853,13 +859,15 @@ lambda.UseMiddleware<ConcreteMiddleware>(); // Concrete class
 ```
 
 !!! info "Compile-Time Safety"
-These diagnostics catch configuration errors during build, not at runtime. This prevents
-deployment of misconfigured middleware.
+
+    These diagnostics catch configuration errors during build, not at runtime. This prevents
+    deployment of misconfigured middleware.
 
 ## Working with Features
 
 Features are type-keyed adapters stored inside `ILambdaInvocationContext.Features` (an
-`IFeatureCollection`). They decouple middleware from handlers: a handler (or the framework) populates a
+`IFeatureCollection`). They decouple middleware from handlers: a handler (or the framework)
+populates a
 feature, middleware reads or mutates it, and nobody needs to inject each other through DI. The
 collection lazily creates features by asking every registered `IFeatureProvider` to build them when
 first requested.
@@ -884,7 +892,7 @@ lambda.UseMiddleware(async (context, next) =>
 Common features:
 
 | Feature                       | Purpose                                                      |
-|-------------------------------|--------------------------------------------------------------|
+| ----------------------------- | ------------------------------------------------------------ |
 | `IEventFeature<TEvent>`       | Access the deserialized event payload                        |
 | `IResponseFeature<TResponse>` | Inspect or replace the handler response before serialization |
 | `IInvocationDataFeature`      | Access raw event/response streams for envelopes              |
@@ -892,12 +900,15 @@ Common features:
 **Why features matter:**
 
 - Middleware can extract values set by handlers (or other middleware) without DI fan-out.
-- Handlers remain free of middleware-specific dependencies; they just work with the event/response types.
-- Custom features are easy to add—register an implementation of `IFeatureProvider` and it becomes available to all middleware.
+- Handlers remain free of middleware-specific dependencies; they just work with the event/response
+    types.
+- Custom features are easy to add—register an implementation of `IFeatureProvider` and it becomes
+    available to all middleware.
 
 ### Type-Safe Feature Access
 
-The framework provides convenient extension methods on `ILambdaInvocationContext` for type-safe event and response access, simplifying the feature access pattern shown above:
+The framework provides convenient extension methods on `ILambdaInvocationContext` for type-safe
+event and response access, simplifying the feature access pattern shown above:
 
 ```csharp title="Program.cs"
 lambda.UseMiddleware(async (context, next) =>
@@ -925,7 +936,7 @@ lambda.UseMiddleware(async (context, next) =>
 **Available Methods:**
 
 | Method                     | Description                             | Returns                                  |
-|----------------------------|-----------------------------------------|------------------------------------------|
+| -------------------------- | --------------------------------------- | ---------------------------------------- |
 | `GetEvent<T>()`            | Returns event or `null` if not found    | `T?`                                     |
 | `GetResponse<T>()`         | Returns response or `null` if not found | `T?`                                     |
 | `TryGetEvent<T>(out T)`    | Try-pattern for safe event access       | `bool`                                   |
@@ -935,15 +946,20 @@ lambda.UseMiddleware(async (context, next) =>
 
 **When to use each:**
 
-- **Nullable methods** (`GetEvent<T>()`) – When the event/response might not exist and you'll handle null gracefully
-- **Try pattern** (`TryGetEvent<T>()`) – When you want explicit null checking without additional conditionals
-- **Required methods** (`GetRequiredEvent<T>()`) – When the event/response must exist and missing it is an error condition
+- **Nullable methods** (`GetEvent<T>()`) – When the event/response might not exist and you'll handle
+    null gracefully
+- **Try pattern** (`TryGetEvent<T>()`) – When you want explicit null checking without additional
+    conditionals
+- **Required methods** (`GetRequiredEvent<T>()`) – When the event/response must exist and missing it
+    is an error condition
 
-These methods are equivalent to calling `context.Features.Get<IEventFeature<T>>()` and accessing the event/response, but provide cleaner syntax and better null-safety annotations.
+These methods are equivalent to calling `context.Features.Get<IEventFeature<T>>()` and accessing the
+event/response, but provide cleaner syntax and better null-safety annotations.
 
 ### Feature Providers in Practice
 
-When `context.Features.Get<T>()` runs, `MinimalLambda` walks through every registered `IFeatureProvider`
+When `context.Features.Get<T>()` runs, `MinimalLambda` walks through every registered
+`IFeatureProvider`
 until one returns the requested feature. Built-in providers handle common cases such as response
 serialization. Use the same pattern for your features.
 
@@ -1090,14 +1106,17 @@ Both approaches access the same options registered in `builder.Services.Configur
 **General:**
 
 - **Keep middleware focused.** One responsibility per component (logging, metrics, caching, etc.).
-- **Always call `await next(context)`** unless you intentionally short-circuit; forgetting it prevents the
-  handler from running.
+- **Always call `await next(context)`** unless you intentionally short-circuit; forgetting it
+    prevents the
+    handler from running.
 - **Never swallow exceptions silently.** If you handle an error, set a response or log it so Lambda
-  doesn't
-  report success unintentionally.
-- **Use per-invocation state wisely.** `Items` is cleared after each request; `Properties` live for the life
-  of the container and must be thread-safe.
-- **Make cancellation cooperative.** Honor `context.CancellationToken` in middleware and pass it to downstream I/O.
+    doesn't
+    report success unintentionally.
+- **Use per-invocation state wisely.** `Items` is cleared after each request; `Properties` live for
+    the life
+    of the container and must be thread-safe.
+- **Make cancellation cooperative.** Honor `context.CancellationToken` in middleware and pass it to
+    downstream I/O.
 
 **Inline Middleware:**
 
@@ -1116,12 +1135,13 @@ Both approaches access the same options registered in `builder.Services.Configur
 **Choosing Between Inline and Class-Based:**
 
 | Use Inline When...                         | Use Class-Based When...                           |
-|--------------------------------------------|---------------------------------------------------|
+| ------------------------------------------ | ------------------------------------------------- |
 | Middleware is application-specific         | Middleware will be reused across projects         |
 | Logic is simple orchestration              | Logic is complex or has multiple responsibilities |
 | No disposal or lifecycle management needed | Need `IDisposable` or `IAsyncDisposable` support  |
 | Quickly prototyping or experimenting       | Ready to formalize and test thoroughly            |
 | Tight coupling to app logic is acceptable  | Clean separation of concerns is important         |
 
-With these patterns, you can build rich, testable pipelines around your Lambda handlers while keeping
+With these patterns, you can build rich, testable pipelines around your Lambda handlers while
+keeping
 business logic small and focused.
