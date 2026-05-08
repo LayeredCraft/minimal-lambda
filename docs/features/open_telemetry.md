@@ -6,7 +6,7 @@ The `MinimalLambda.OpenTelemetry` package provides seamless integration with the
 
 At compile time, it wraps your handler invocation in a root trace span, providing reflection-free, high-performance distributed tracing.
 
----
+______________________________________________________________________
 
 ## Key Benefits
 
@@ -17,7 +17,7 @@ At compile time, it wraps your handler invocation in a root trace span, providin
 - **Standard APIs**: Leverages the standard OpenTelemetry .NET SDK, so you can use familiar configuration and custom instrumentation APIs.
 - **Custom Instrumentation**: Easily create custom spans (`Activity`) and metrics (`Meter`) to capture application-specific logic.
 
----
+______________________________________________________________________
 
 ## Quick Start
 
@@ -104,11 +104,12 @@ internal record Response(string Message);
 9. Write your Lambda handler like normal.
 
 !!! tip
-    OpenTelemetry tracing can be configured in multiple ways, including manually creating a trace provider using the [OpenTelemetry](https://www.nuget.org/packages/OpenTelemetry), or through registering OpenTelemetry services in your DI container using [OpenTelemetry.Extensions.Hosting](https://www.nuget.org/packages/OpenTelemetry.Extensions.Hosting). 
 
-     When working with  `MinimalLambda`, its recommended to the latter approach and as such, this documentation focuses on it.
+    OpenTelemetry tracing can be configured in multiple ways, including manually creating a trace provider using the [OpenTelemetry](https://www.nuget.org/packages/OpenTelemetry), or through registering OpenTelemetry services in your DI container using [OpenTelemetry.Extensions.Hosting](https://www.nuget.org/packages/OpenTelemetry.Extensions.Hosting).
 
----
+    When working with `MinimalLambda`, its recommended to the latter approach and as such, this documentation focuses on it.
+
+______________________________________________________________________
 
 ## How It Works: Feature-Based Middleware
 
@@ -119,14 +120,14 @@ Here's the step-by-step process:
 1. The `UseOpenTelemetryTracing()` middleware is registered in the invocation pipeline when you call the method on your Lambda application.
 2. During each Lambda invocation, the middleware executes before your handler runs.
 3. The middleware dynamically detects the event and response types by reading from the feature collection:
-   - It checks for an `IEventFeature` to get the incoming event object
-   - It checks for an `IResponseFeature` to get the outgoing response object
+    - It checks for an `IEventFeature` to get the incoming event object
+    - It checks for an `IResponseFeature` to get the outgoing response object
 4. These event and response objects are passed to the official `OpenTelemetry.Instrumentation.AWSLambda` package, which wraps the handler execution in a root trace span.
 5. The OpenTelemetry instrumentation automatically extracts trace context from supported event types (like API Gateway requests), ensuring proper distributed trace propagation across services.
 
 The shutdown helpers (`OnShutdownFlushOpenTelemetry`, `OnShutdownFlushTracer`, and `OnShutdownFlushMeter`) are regular extension methods that execute at runtime and use the registered `TracerProvider`/`MeterProvider` instances to force-flush telemetry before Lambda freezes the environment.
 
----
+______________________________________________________________________
 
 ## Working With `MinimalLambda.OpenTelemetry`
 
@@ -157,7 +158,6 @@ This method registers middleware in the invocation pipeline that wraps each hand
 
 Because the middleware reads event and response types dynamically from the feature collection, it works seamlessly with any Lambda event source type. The OpenTelemetry instrumentation can correctly extract context and attributes from strongly-typed event objects (such as trace parent headers from an API Gateway request), ensuring proper distributed trace propagation across your services.
 
-
 ### Gracefully Shutdown & Cleaning Up
 
 The OpenTelemetry `TracerProvider` and `MeterProvider` services both implement `IDisposable`. When the dependency injection container is disposed of during a normal application shutdown, it should trigger these providers to automatically flush any buffered telemetry. However, in a serverless environment where the lifecycle can be abrupt, this disposal is not always guaranteed to complete before the execution environment is frozen.
@@ -167,7 +167,7 @@ For situations where you notice data being dropped, or if you want to guarantee 
 The following methods are available to be called on the `LambdaApplication` instance:
 
 | Method                           | Description                                                                                                                                                                                                      |
-|----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `OnShutdownFlushOpenTelemetry()` | A convenience method that registers shutdown hooks to flush both traces and metrics. It calls both `OnShutdownFlushTracer` and `OnShutdownFlushMeter` internally. This is the recommended method for most users. |
 | `OnShutdownFlushTracer()`        | Registers a shutdown hook to force-flush only the `TracerProvider`. Use this if you are only tracing and not collecting metrics, or if you need separate control over flushing traces.                           |
 | `OnShutdownFlushMeter()`         | Registers a shutdown hook to force-flush only the `MeterProvider`. Use this if you are only collecting metrics and not tracing.                                                                                  |
@@ -175,20 +175,23 @@ The following methods are available to be called on the `LambdaApplication` inst
 For most applications, calling `lambda.OnShutdownFlushOpenTelemetry()` is sufficient to ensure all telemetry is flushed. If your application only uses tracing or metrics, but not both, you can use the more specific methods for clarity.
 
 !!! note
+
     These methods call `GetRequiredService<TracerProvider>()` and `GetRequiredService<MeterProvider>()`. Make sure those providers are registered (via `.AddOpenTelemetry().WithTracing(...)` / `.WithMetrics(...)`) before invoking the shutdown helpers, otherwise the application will throw during startup.
 
 All three methods also accept an optional `timeoutMilliseconds` parameter. This allows you to specify a maximum duration for the flush operation. Importantly, these flush operations are non-blocking and respect the provided `CancellationToken`, ensuring they can gracefully exit if the Lambda execution environment signals a shutdown before the timeout elapses. This combined approach offers robust control over the flush duration within the limited time available during a Lambda shutdown.
 
 !!! Warning
+
     When shutting down, Lambda only allocates up to 500ms of time for the execution environment to shut down. As such, it is important to make sure that shutdown logic such as flushing traces is executed as quickly as possible. More information about the Lambda execution environment lifecycle can be found [here](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtime-environment.html).
 
----
+______________________________________________________________________
 
 ## Manual Instrumentation
 
 `MinimalLambda.OpenTelemetry` helps you instrement your Lambda handlers with [OpenTelemetry.Instrumentation.AWSLambda](https://www.nuget.org/packages/OpenTelemetry.Instrumentation.AWSLambda), but to get the most out of observability, you should add custom instrumentation to your application code. In this section we cover how this can be done easily with the Dependancy Injection support provided by `MinimalLambda`.
 
 !!! note
+
     This code is not specific to `MinimalLambda.OpenTelemetry` and follows the guidlines provided by Microsoft's [.NET distributed tracing documetation](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/distributed-tracing).
 
 A full working example of an instrumented Lambda application can be found [on GitHub](https://github.com/j-d-ha/minimal-lambda/tree/main/examples/MinimalLambda.Example.OpenTelemetry).

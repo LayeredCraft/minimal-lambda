@@ -26,6 +26,7 @@ Before starting, ensure you've completed the [Installation](installation.md) gui
 Create strongly-typed models for your Lambda's input and output using C# records.
 
 !!! note "Keep supporting types at the bottom"
+
     Place records, interfaces, and service implementations **after** the main pipeline (after `await lambda.RunAsync();`).
     This keeps startup logic together at the top while still shipping everything as a single file.
 
@@ -49,9 +50,11 @@ public record GreetingResponse(
 ```
 
 !!! tip "Why Records?"
+
     Records provide immutable data models with built-in equality and deconstruction. They're perfect for Lambda events and responses.
 
 !!! note "JsonPropertyName Attribute"
+
     The `JsonPropertyName` attribute ensures your JSON property names follow your preferred casing convention (e.g., camelCase for JavaScript clients).
 
 ## Step 2: Create a Service Interface
@@ -114,6 +117,7 @@ var lambda = builder.Build();
 ```
 
 !!! info "Service Lifetime: Singleton"
+
     We use `AddSingleton` because our `GreetingService` is stateless and can be shared across all invocations. This is more efficient than creating a new instance for each request.
 
 ## Step 5: Add Middleware (Optional)
@@ -135,9 +139,11 @@ lambda.UseMiddleware(
 ```
 
 !!! tip "Middleware Use Cases"
+
     Middleware is perfect for cross-cutting concerns like logging, metrics, validation, error handling, and authentication.
 
 !!! note "Clear Lambda Output Formatting"
+
     The .NET Lambda runtime captures standard output/error and re-wraps every line into its own structured log record.
     If you're running locally or relying on a custom logger (Serilog, NLog, etc.), disable that extra formatting so your
     log payloads stay untouched:
@@ -168,7 +174,8 @@ lambda.MapHandler(
 );
 ```
 
-!!! warning "The [FromEvent] Attribute"
+!!! warning "The `[FromEvent]` Attribute"
+
     Add `[FromEvent]` to at most one handler parameter to mark it as the deserialized Lambda event. If your handler does not accept an event payload (e.g., scheduled invocations or DI-only inputs), you can omit the attribute entirely.
 
 ## Step 7: Run the Lambda
@@ -569,7 +576,7 @@ sequenceDiagram
 
 **Solution**: Verify you've added `[property: JsonPropertyName("...")]` attributes to your record properties.
 
-### Build Errors with [FromEvent] Attribute
+### Build Errors with `[FromEvent]` Attribute
 
 **Error**: `The [FromEvent] attribute is not recognized`
 
@@ -580,6 +587,7 @@ sequenceDiagram
 **Error**: Lambda times out during execution
 
 **Solution**:
+
 - Increase timeout in your deployment template (default is 30 seconds)
 - Check for blocking operations in your handler
 - Ensure async/await is used correctly

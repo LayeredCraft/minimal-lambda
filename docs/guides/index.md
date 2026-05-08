@@ -7,6 +7,7 @@ Comprehensive guides for building production Lambda functions with `MinimalLambd
 Master the essential framework features that power your Lambda functions.
 
 ### [Dependency Injection](dependency-injection.md)
+
 Learn service registration patterns, understand Singleton vs Scoped lifetimes, and master dependency injection in handlers and lifecycle methods.
 
 **Topics covered:**
@@ -18,6 +19,7 @@ Learn service registration patterns, understand Singleton vs Scoped lifetimes, a
 - Best practices and anti-patterns
 
 ### [Middleware](middleware.md)
+
 Build middleware pipelines for cross-cutting concerns like logging, metrics, validation, and error handling.
 
 **Topics covered:**
@@ -29,6 +31,7 @@ Build middleware pipelines for cross-cutting concerns like logging, metrics, val
 - Reusable middleware components
 
 ### [Lifecycle Management](lifecycle-management.md)
+
 Understand and control the Lambda lifecycle phases: OnInit, Invocation, and OnShutdown.
 
 **Topics covered:**
@@ -40,6 +43,7 @@ Understand and control the Lambda lifecycle phases: OnInit, Invocation, and OnSh
 - Error handling in lifecycle
 
 ### [Handler Registration](handler-registration.md)
+
 Register type-safe Lambda handlers with automatic dependency injection and source generation.
 
 **Topics covered:**
@@ -52,6 +56,7 @@ Register type-safe Lambda handlers with automatic dependency injection and sourc
 - Handler patterns
 
 ### [Hosting & Builder](hosting.md)
+
 Understand what `LambdaApplication.CreateBuilder()` configures, how the runtime composes middleware,
 and how to customize the host for advanced scenarios.
 
@@ -62,7 +67,9 @@ and how to customize the host for advanced scenarios.
 - LambdaHostedService orchestration
 - Default serializers and cancellation factories
 - Troubleshooting host setup
+
 ### [Configuration](configuration.md)
+
 Configure framework behavior with LambdaHostOptions and application settings.
 
 **Topics covered:**
@@ -79,6 +86,7 @@ Configure framework behavior with LambdaHostOptions and application settings.
 Build robust, testable, and deployable Lambda functions.
 
 ### [Error Handling](error-handling.md)
+
 Implement resilient error handling with retries, graceful degradation, and proper exception management.
 
 **Topics covered:**
@@ -91,6 +99,7 @@ Implement resilient error handling with retries, graceful degradation, and prope
 - Best practices
 
 ### [Testing](testing.md)
+
 Write comprehensive tests for your Lambda functions using xUnit, NSubstitute, and AutoFixture.
 
 **Topics covered:**
@@ -101,7 +110,7 @@ Write comprehensive tests for your Lambda functions using xUnit, NSubstitute, an
 - Testing handlers and middleware
 - Integration testing
 - Test naming conventions
- - In-memory end-to-end testing with `MinimalLambda.Testing` (`WebApplicationFactory`-style runtime shim)
+- In-memory end-to-end testing with `MinimalLambda.Testing` (`WebApplicationFactory`-style runtime shim)
 
 ## Learning Path
 
@@ -130,6 +139,6 @@ If you encounter issues not covered in these guides:
 - Search or ask in [GitHub Discussions](https://github.com/j-d-ha/minimal-lambda/discussions)
 - Report bugs in [GitHub Issues](https://github.com/j-d-ha/minimal-lambda/issues)
 
----
+______________________________________________________________________
 
 Ready to dive in? Choose a guide above or start with [Dependency Injection](dependency-injection.md).

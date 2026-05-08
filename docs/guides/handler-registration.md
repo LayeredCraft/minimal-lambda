@@ -102,14 +102,14 @@ lambda.MapHandler((ILogger<Program> logger) =>
 
 Handlers can mix lambda events with services, context objects, and cancellation tokens. This table shows what the generator knows how to supply:
 
-| Parameter                                        | Source                                                                                              |
-|--------------------------------------------------|-----------------------------------------------------------------------------------------------------|
-| `[FromEvent] T event`                                | Deserialized from the Lambda payload (or envelope). Optional—only include when the handler expects an input. |
-| `IServiceType service`                           | Resolved from the DI container using the invocation scope.                                          |
-| `[FromKeyedServices("key")] IServiceType keyed`  | Resolves a keyed service registered with `AddKeyed*`. Keys must be constants supported by the BCL.  |
-| `ILambdaInvocationContext context`                     | Framework context that extends `ILambdaContext`, exposes scoped `ServiceProvider`, `Items`, `Features`, `Properties`, and the invocation `CancellationToken`. |
-| `ILambdaContext lambdaContext`                   | Raw AWS Lambda context for folks that prefer the SDK contract.                                      |
-| `CancellationToken cancellationToken`            | Cancels when `InvocationCancellationBuffer` elapses before the Lambda timeout.                      |
+| Parameter                                       | Source                                                                                                                                                        |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `[FromEvent] T event`                           | Deserialized from the Lambda payload (or envelope). Optional—only include when the handler expects an input.                                                  |
+| `IServiceType service`                          | Resolved from the DI container using the invocation scope.                                                                                                    |
+| `[FromKeyedServices("key")] IServiceType keyed` | Resolves a keyed service registered with `AddKeyed*`. Keys must be constants supported by the BCL.                                                            |
+| `ILambdaInvocationContext context`              | Framework context that extends `ILambdaContext`, exposes scoped `ServiceProvider`, `Items`, `Features`, `Properties`, and the invocation `CancellationToken`. |
+| `ILambdaContext lambdaContext`                  | Raw AWS Lambda context for folks that prefer the SDK contract.                                                                                                |
+| `CancellationToken cancellationToken`           | Cancels when `InvocationCancellationBuffer` elapses before the Lambda timeout.                                                                                |
 
 ```csharp title="Program.cs" linenums="1"
 lambda.MapHandler(async (

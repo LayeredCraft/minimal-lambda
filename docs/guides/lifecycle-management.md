@@ -210,21 +210,21 @@ The `Properties` dictionary is backed by a thread-safe `ConcurrentDictionary<str
 
 `ILambdaLifecycleContext` exposes the following properties:
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `CancellationToken` | `CancellationToken` | Signals cancellation when `InitTimeout` (OnInit) or `ShutdownDuration - ShutdownDurationBuffer` (OnShutdown) elapses, or when SIGTERM is received |
-| `ServiceProvider` | `IServiceProvider` | The scoped service container for this handler invocation. Use for manual service resolution when direct injection isn't sufficient |
-| `Properties` | `IDictionary<string, object?>` | Thread-safe dictionary for sharing data between handlers or from OnInit to invocation handlers |
-| `ElapsedTime` | `TimeSpan` | Time elapsed since the Lambda execution environment started |
-| `Region` | `string?` | AWS region where the function is running (from `AWS_REGION` env var) |
-| `ExecutionEnvironment` | `string?` | Runtime identifier like `AWS_Lambda_dotnet8` (from `AWS_EXECUTION_ENV` env var) |
-| `FunctionName` | `string?` | Name of the Lambda function (from `AWS_LAMBDA_FUNCTION_NAME` env var) |
-| `FunctionMemorySize` | `int?` | Memory allocated to the function in MB (from `AWS_LAMBDA_FUNCTION_MEMORY_SIZE` env var) |
-| `FunctionVersion` | `string?` | Version of the function being executed (from `AWS_LAMBDA_FUNCTION_VERSION` env var) |
-| `InitializationType` | `string?` | Type of initialization: `on-demand`, `provisioned-concurrency`, `snap-start`, or `lambda-managed-instances` (from `AWS_LAMBDA_INITIALIZATION_TYPE` env var) |
-| `LogGroupName` | `string?` | CloudWatch Logs group name (from `AWS_LAMBDA_LOG_GROUP_NAME` env var, not available in SnapStart) |
-| `LogStreamName` | `string?` | CloudWatch Logs stream name (from `AWS_LAMBDA_LOG_STREAM_NAME` env var, not available in SnapStart) |
-| `TaskRoot` | `string?` | Path to the Lambda function code (from `LAMBDA_TASK_ROOT` env var) |
+| Property               | Type                           | Description                                                                                                                                                 |
+| ---------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CancellationToken`    | `CancellationToken`            | Signals cancellation when `InitTimeout` (OnInit) or `ShutdownDuration - ShutdownDurationBuffer` (OnShutdown) elapses, or when SIGTERM is received           |
+| `ServiceProvider`      | `IServiceProvider`             | The scoped service container for this handler invocation. Use for manual service resolution when direct injection isn't sufficient                          |
+| `Properties`           | `IDictionary<string, object?>` | Thread-safe dictionary for sharing data between handlers or from OnInit to invocation handlers                                                              |
+| `ElapsedTime`          | `TimeSpan`                     | Time elapsed since the Lambda execution environment started                                                                                                 |
+| `Region`               | `string?`                      | AWS region where the function is running (from `AWS_REGION` env var)                                                                                        |
+| `ExecutionEnvironment` | `string?`                      | Runtime identifier like `AWS_Lambda_dotnet8` (from `AWS_EXECUTION_ENV` env var)                                                                             |
+| `FunctionName`         | `string?`                      | Name of the Lambda function (from `AWS_LAMBDA_FUNCTION_NAME` env var)                                                                                       |
+| `FunctionMemorySize`   | `int?`                         | Memory allocated to the function in MB (from `AWS_LAMBDA_FUNCTION_MEMORY_SIZE` env var)                                                                     |
+| `FunctionVersion`      | `string?`                      | Version of the function being executed (from `AWS_LAMBDA_FUNCTION_VERSION` env var)                                                                         |
+| `InitializationType`   | `string?`                      | Type of initialization: `on-demand`, `provisioned-concurrency`, `snap-start`, or `lambda-managed-instances` (from `AWS_LAMBDA_INITIALIZATION_TYPE` env var) |
+| `LogGroupName`         | `string?`                      | CloudWatch Logs group name (from `AWS_LAMBDA_LOG_GROUP_NAME` env var, not available in SnapStart)                                                           |
+| `LogStreamName`        | `string?`                      | CloudWatch Logs stream name (from `AWS_LAMBDA_LOG_STREAM_NAME` env var, not available in SnapStart)                                                         |
+| `TaskRoot`             | `string?`                      | Path to the Lambda function code (from `LAMBDA_TASK_ROOT` env var)                                                                                          |
 
 All AWS environment properties are nullable because they depend on environment variables set by the Lambda runtime. Most are available during normal execution, but some (like `LogGroupName` and `LogStreamName`) are unavailable in SnapStart functions.
 
