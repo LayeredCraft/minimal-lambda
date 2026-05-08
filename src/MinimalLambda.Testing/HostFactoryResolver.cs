@@ -48,16 +48,16 @@ internal sealed class HostFactoryResolver
         return TimeSpan.FromMinutes(5);
     }
 
-    public static Func<string[], TWebHost>? ResolveWebHostFactory<TWebHost>(Assembly assembly)
-        => ResolveFactory<TWebHost>(assembly, BuildWebHost);
+    public static Func<string[], TWebHost>? ResolveWebHostFactory<TWebHost>(Assembly assembly) =>
+        ResolveFactory<TWebHost>(assembly, BuildWebHost);
 
     public static Func<string[], TWebHostBuilder>? ResolveWebHostBuilderFactory<TWebHostBuilder>(
-        Assembly assembly)
-        => ResolveFactory<TWebHostBuilder>(assembly, CreateWebHostBuilder);
+        Assembly assembly) =>
+        ResolveFactory<TWebHostBuilder>(assembly, CreateWebHostBuilder);
 
     public static Func<string[], THostBuilder>? ResolveHostBuilderFactory<THostBuilder>(
-        Assembly assembly)
-        => ResolveFactory<THostBuilder>(assembly, CreateHostBuilder);
+        Assembly assembly) =>
+        ResolveFactory<THostBuilder>(assembly, CreateHostBuilder);
 
     // This helpers encapsulates all of the complex logic required to:
     // 1. Execute the entry point of the specified assembly in a different thread.
@@ -115,11 +115,11 @@ internal sealed class HostFactoryResolver
     }
 
     // TReturn Factory(string[] args);
-    private static bool IsFactory<TReturn>(MethodInfo? factory)
-        => factory != null
-           && typeof(TReturn).IsAssignableFrom(factory.ReturnType)
-           && factory.GetParameters().Length == 1
-           && typeof(string[]).Equals(factory.GetParameters()[0].ParameterType);
+    private static bool IsFactory<TReturn>(MethodInfo? factory) =>
+        factory != null
+        && typeof(TReturn).IsAssignableFrom(factory.ReturnType)
+        && factory.GetParameters().Length == 1
+        && typeof(string[]).Equals(factory.GetParameters()[0].ParameterType);
 
     // Used by EF tooling without any Hosting references. Looses some return type safety checks.
     public static Func<string[], IServiceProvider?>? ResolveServiceProviderFactory(
@@ -157,9 +157,9 @@ internal sealed class HostFactoryResolver
         if (hostFactory != null)
             return args =>
             {
-                static bool IsApplicationNameArg(string arg)
-                    => arg.Equals("--applicationName", StringComparison.OrdinalIgnoreCase)
-                       || arg.Equals("/applicationName", StringComparison.OrdinalIgnoreCase);
+                static bool IsApplicationNameArg(string arg) =>
+                    arg.Equals("--applicationName", StringComparison.OrdinalIgnoreCase)
+                    || arg.Equals("/applicationName", StringComparison.OrdinalIgnoreCase);
 
                 if (!args.Any(arg => IsApplicationNameArg(arg))
                     && assembly.GetName().Name is string assemblyName)
