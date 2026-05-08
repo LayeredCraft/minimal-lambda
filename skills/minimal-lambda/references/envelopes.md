@@ -2,26 +2,9 @@
 
 Read when task touches SQS, SNS, API Gateway, Kinesis, Kinesis Firehose, Kafka/MSK, CloudWatch Logs, ALB, event bodies, typed payloads, or AWS trigger-specific request/response types.
 
-## Docs to consult
+## Portability note
 
-- `docs/features/envelopes.md`
-- `src/Envelopes/README.md`
-- `src/Envelopes/MinimalLambda.Envelopes/README.md`
-- trigger package README:
-  - `src/Envelopes/MinimalLambda.Envelopes.Sqs/README.md`
-  - `src/Envelopes/MinimalLambda.Envelopes.Sns/README.md`
-  - `src/Envelopes/MinimalLambda.Envelopes.ApiGateway/README.md`
-  - `src/Envelopes/MinimalLambda.Envelopes.Kinesis/README.md`
-  - `src/Envelopes/MinimalLambda.Envelopes.KinesisFirehose/README.md`
-  - `src/Envelopes/MinimalLambda.Envelopes.Kafka/README.md`
-  - `src/Envelopes/MinimalLambda.Envelopes.CloudWatchLogs/README.md`
-  - `src/Envelopes/MinimalLambda.Envelopes.Alb/README.md`
-
-## Code to validate
-
-- `src/Envelopes/MinimalLambda.Envelopes*/**/*.cs`
-- `tests/MinimalLambda.Envelopes.UnitTests/`
-- `examples/MinimalLambda.Example.Events/`
+This reference is self-contained for client-project use. Do not assume envelope package source or tests exist in the current workspace. If the task is a repo contribution, switch to `repo-workflow.md` before inspecting local source.
 
 ## Mental model
 

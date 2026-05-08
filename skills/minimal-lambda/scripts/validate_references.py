@@ -32,25 +32,6 @@ REQUIRED_FILES = [
     SKILL / "evals" / "evals.json",
 ]
 
-REPO_PATHS = [
-    "README.md",
-    "docs/getting-started/core-concepts.md",
-    "docs/guides/handler-registration.md",
-    "docs/guides/dependency-injection.md",
-    "docs/guides/middleware.md",
-    "docs/guides/lifecycle-management.md",
-    "docs/guides/configuration.md",
-    "docs/guides/testing.md",
-    "docs/features/envelopes.md",
-    "docs/features/open_telemetry.md",
-    "src/MinimalLambda/Builder/LambdaApplication.cs",
-    "src/MinimalLambda/Builder/Extensions/BuilderLambdaApplicationExtensions.cs",
-    "src/MinimalLambda/Builder/InterceptionTargets/MapHandlerLambdaApplicationExtensions.cs",
-    "src/MinimalLambda/Core/Features/FeatureLambdaInvocationContextExtensions.cs",
-    "src/MinimalLambda.Testing/README.md",
-    "src/Envelopes/MinimalLambda.Envelopes.ApiGateway/README.md",
-]
-
 SYMBOL_CHECKS = {
     "LambdaApplication": "src/MinimalLambda/Builder/LambdaApplication.cs",
     "MapHandler": "src/MinimalLambda/Builder/InterceptionTargets/MapHandlerLambdaApplicationExtensions.cs",
@@ -74,10 +55,6 @@ def main() -> None:
     if missing:
         fail("missing skill files:\n" + "\n".join(str(p) for p in missing))
 
-    missing_repo = [ROOT / p for p in REPO_PATHS if not (ROOT / p).exists()]
-    if missing_repo:
-        fail("missing repo source/doc paths:\n" + "\n".join(str(p) for p in missing_repo))
-
     for symbol, rel_path in SYMBOL_CHECKS.items():
         path = ROOT / rel_path
         if not path.exists():
@@ -89,9 +66,13 @@ def main() -> None:
     if re.search(r"\.Response\s*=", skill_text):
         fail("docs use non-existent IResponseFeature<T>.Response setter; use SetResponse(...)")
 
-    for rel_path in REPO_PATHS:
-        if rel_path not in skill_text and not re.search(re.escape(Path(rel_path).name), skill_text):
-            print(f"WARN: repo path not mentioned explicitly: {rel_path}")
+    client_reference_text = "\n".join(
+        p.read_text(encoding="utf-8")
+        for p in SKILL.rglob("*.md")
+        if p.name != "repo-workflow.md"
+    )
+    if re.search(r"`(?:src|docs|tests|examples)/", client_reference_text):
+        fail("client-facing skill references should not point at MinimalLambda repo-local paths")
 
     print("OK: MinimalLambda skill references validated")
 

@@ -2,30 +2,9 @@
 
 Read when task touches `LambdaApplication`, `MapHandler`, `[FromEvent]`, DI, lifecycle hooks, middleware, features, configuration, or source-generated handler behavior.
 
-## Docs to consult
+## Portability note
 
-- `README.md`
-- `docs/getting-started/core-concepts.md`
-- `docs/guides/handler-registration.md`
-- `docs/guides/dependency-injection.md`
-- `docs/guides/middleware.md`
-- `docs/guides/lifecycle-management.md`
-- `docs/guides/configuration.md`
-- `src/MinimalLambda/README.md`
-- `src/MinimalLambda.Abstractions/README.md`
-
-## Code to validate
-
-- `src/MinimalLambda/Builder/LambdaApplication.cs`
-- `src/MinimalLambda/Builder/Extensions/BuilderLambdaApplicationExtensions.cs`
-- `src/MinimalLambda/Builder/InterceptionTargets/MapHandlerLambdaApplicationExtensions.cs`
-- `src/MinimalLambda/Builder/InterceptionTargets/UseMiddlewareLambdaApplicationExtensions.cs`
-- `src/MinimalLambda/Builder/InterceptionTargets/OnInitLambdaApplicationExtensions.cs`
-- `src/MinimalLambda/Builder/InterceptionTargets/OnShutdownLambdaApplicationExtensions.cs`
-- `src/MinimalLambda/Core/Context/LambdaInvocationContext.cs`
-- `src/MinimalLambda/Core/Features/*`
-- `src/MinimalLambda/Core/Features/FeatureLambdaInvocationContextExtensions.cs`
-- `src/MinimalLambda.SourceGenerators/*`
+This reference is self-contained for client-project use. Do not assume the MinimalLambda source tree exists in the current workspace. If the task is a repo contribution, switch to `repo-workflow.md` for local source landmarks.
 
 ## Builder shape
 

@@ -2,13 +2,9 @@
 
 Read when task asks for tracing, metrics, X-Ray/OTLP, `UseOpenTelemetryTracing`, AWS Lambda instrumentation, or telemetry flush on shutdown.
 
-## Docs to consult
+## Portability note
 
-- `docs/features/open_telemetry.md`
-- `src/MinimalLambda.OpenTelemetry/README.md`
-- `examples/MinimalLambda.Example.OpenTelemetry/README.md`
-- `src/MinimalLambda.OpenTelemetry/`
-- `tests/MinimalLambda.OpenTelemetry.UnitTests/`
+This reference is self-contained for client-project use. Do not assume MinimalLambda OpenTelemetry source, examples, or tests exist in the current workspace. If the task is a repo contribution, switch to `repo-workflow.md` before inspecting local source.
 
 ## Packages
 

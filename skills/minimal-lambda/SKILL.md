@@ -20,8 +20,9 @@ Use this skill to give agents enough MinimalLambda project context without loadi
    - tracing/metrics/shutdown flush → read `references/opentelemetry.md`
    - compile/runtime/test failure → read `references/troubleshooting.md`
    - repo contribution/source generator/AOT work → read `references/repo-workflow.md`
-2. Validate against local docs/code when in MinimalLambda repo. Prefer docs first, then source/tests for exact API.
-3. Keep Lambda-first constraints in mind: source generation, AOT friendliness, scoped per-invocation services, one handler per runtime execution.
+2. Use bundled references as the primary source. They are included so the skill works in client projects and global installs without assuming the MinimalLambda repository is present.
+3. Only inspect local MinimalLambda source paths after confirming the current workspace is this repository; for repo contributions, read `references/repo-workflow.md` first.
+4. Keep Lambda-first constraints in mind: source generation, AOT friendliness, scoped per-invocation services, one handler per runtime execution.
 
 ## Fast mental model
 
@@ -49,19 +50,9 @@ Core pieces:
 - `MinimalLambda.Testing` runs real pipeline in memory for client project tests.
 - Envelope packages provide trigger-specific typed event/body access; use matching package rather than hand-parsing AWS records.
 
-## Source-of-truth files
+## Portability rule
 
-When details matter, inspect these:
-
-- docs index: `docs/`
-- package READMEs: `src/*/README.md`, `src/Envelopes/*/README.md`
-- core runtime: `src/MinimalLambda/`
-- abstractions: `src/MinimalLambda.Abstractions/`
-- source generator: `src/MinimalLambda.SourceGenerators/`
-- tests: `tests/`
-- examples: `examples/`
-
-Use `rg` for exact APIs before changing code. Existing docs can lag implementation; code/tests win.
+Assume this skill may run in a client project, not the MinimalLambda repository. Do not try to read MinimalLambda repo-local source, docs, test, or example paths unless the task is explicitly about changing MinimalLambda itself or the workspace clearly contains this repository. For client-project work, answer from bundled references and the user's project files.
 
 ## Common advice patterns
 

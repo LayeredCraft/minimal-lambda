@@ -91,7 +91,7 @@ lambda.MapHandler(([FromEvent] KinesisFirehoseEventEnvelope<InputRecord> envelop
 });
 ```
 
-Firehose response contracts are easy to get wrong; validate against package tests/source.
+Firehose response contracts are easy to get wrong; use the current package documentation or repo workflow before changing framework code.
 
 ## AOT envelope pattern
 

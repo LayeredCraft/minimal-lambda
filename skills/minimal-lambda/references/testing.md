@@ -2,11 +2,9 @@
 
 Read when task asks for integration tests, in-memory Lambda execution, test fixtures, host overrides, lifecycle tests, or client project test setup.
 
-## Docs to consult
+## Portability note
 
-- `docs/guides/testing.md`
-- `src/MinimalLambda.Testing/README.md`
-- `tests/MinimalLambda.Testing.UnitTests/`
+This reference is self-contained for client-project use. Do not assume MinimalLambda test-source paths exist in the current workspace. If the task is a repo contribution, switch to `repo-workflow.md` before inspecting local tests.
 
 ## Core idea
 
