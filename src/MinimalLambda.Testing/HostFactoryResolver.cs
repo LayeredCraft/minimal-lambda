@@ -40,27 +40,24 @@ internal sealed class HostFactoryResolver
         if (Debugger.IsAttached)
             return Timeout.InfiniteTimeSpan;
 
-        if (
-            uint.TryParse(
+        if (uint.TryParse(
                 Environment.GetEnvironmentVariable(TimeoutEnvironmentKey),
-                out var timeoutInSeconds
-            )
-        )
+                out var timeoutInSeconds))
             return TimeSpan.FromSeconds((int)timeoutInSeconds);
 
         return TimeSpan.FromMinutes(5);
     }
 
-    public static Func<string[], TWebHost>? ResolveWebHostFactory<TWebHost>(Assembly assembly) =>
-        ResolveFactory<TWebHost>(assembly, BuildWebHost);
+    public static Func<string[], TWebHost>? ResolveWebHostFactory<TWebHost>(Assembly assembly)
+        => ResolveFactory<TWebHost>(assembly, BuildWebHost);
 
     public static Func<string[], TWebHostBuilder>? ResolveWebHostBuilderFactory<TWebHostBuilder>(
-        Assembly assembly
-    ) => ResolveFactory<TWebHostBuilder>(assembly, CreateWebHostBuilder);
+        Assembly assembly)
+        => ResolveFactory<TWebHostBuilder>(assembly, CreateWebHostBuilder);
 
     public static Func<string[], THostBuilder>? ResolveHostBuilderFactory<THostBuilder>(
-        Assembly assembly
-    ) => ResolveFactory<THostBuilder>(assembly, CreateHostBuilder);
+        Assembly assembly)
+        => ResolveFactory<THostBuilder>(assembly, CreateHostBuilder);
 
     // This helpers encapsulates all of the complex logic required to:
     // 1. Execute the entry point of the specified assembly in a different thread.
@@ -73,8 +70,7 @@ internal sealed class HostFactoryResolver
         TimeSpan? waitTimeout = null,
         bool stopApplication = true,
         Action<object>? configureHostBuilder = null,
-        Action<Exception?>? entrypointCompleted = null
-    )
+        Action<Exception?>? entrypointCompleted = null)
     {
         if (assembly.EntryPoint is null)
             return null;
@@ -96,15 +92,13 @@ internal sealed class HostFactoryResolver
             return null;
         }
 
-        return args =>
-            new HostingListener(
-                args,
-                assembly.EntryPoint,
-                waitTimeout ?? s_defaultWaitTimeout,
-                stopApplication,
-                configureHostBuilder,
-                entrypointCompleted
-            ).CreateHost();
+        return args => new HostingListener(
+            args,
+            assembly.EntryPoint,
+            waitTimeout ?? s_defaultWaitTimeout,
+            stopApplication,
+            configureHostBuilder,
+            entrypointCompleted).CreateHost();
     }
 
     private static Func<string[], T>? ResolveFactory<T>(Assembly assembly, string name)
@@ -121,17 +115,16 @@ internal sealed class HostFactoryResolver
     }
 
     // TReturn Factory(string[] args);
-    private static bool IsFactory<TReturn>(MethodInfo? factory) =>
-        factory != null
-        && typeof(TReturn).IsAssignableFrom(factory.ReturnType)
-        && factory.GetParameters().Length == 1
-        && typeof(string[]).Equals(factory.GetParameters()[0].ParameterType);
+    private static bool IsFactory<TReturn>(MethodInfo? factory)
+        => factory != null
+           && typeof(TReturn).IsAssignableFrom(factory.ReturnType)
+           && factory.GetParameters().Length == 1
+           && typeof(string[]).Equals(factory.GetParameters()[0].ParameterType);
 
     // Used by EF tooling without any Hosting references. Looses some return type safety checks.
     public static Func<string[], IServiceProvider?>? ResolveServiceProviderFactory(
         Assembly assembly,
-        TimeSpan? waitTimeout = null
-    )
+        TimeSpan? waitTimeout = null)
     {
         // Prefer the older patterns by default for back compat.
         var webHostFactory = ResolveWebHostFactory<object>(assembly);
@@ -164,14 +157,12 @@ internal sealed class HostFactoryResolver
         if (hostFactory != null)
             return args =>
             {
-                static bool IsApplicationNameArg(string arg) =>
-                    arg.Equals("--applicationName", StringComparison.OrdinalIgnoreCase)
-                    || arg.Equals("/applicationName", StringComparison.OrdinalIgnoreCase);
+                static bool IsApplicationNameArg(string arg)
+                    => arg.Equals("--applicationName", StringComparison.OrdinalIgnoreCase)
+                       || arg.Equals("/applicationName", StringComparison.OrdinalIgnoreCase);
 
-                if (
-                    !args.Any(arg => IsApplicationNameArg(arg))
-                    && assembly.GetName().Name is string assemblyName
-                )
+                if (!args.Any(arg => IsApplicationNameArg(arg))
+                    && assembly.GetName().Name is string assemblyName)
                     args = args.Concat(new[] { "--applicationName", assemblyName }).ToArray();
 
                 var host = hostFactory(args);
@@ -197,8 +188,7 @@ internal sealed class HostFactoryResolver
     }
 
     private sealed class HostingListener
-        : IObserver<DiagnosticListener>,
-            IObserver<KeyValuePair<string, object?>>
+        : IObserver<DiagnosticListener>, IObserver<KeyValuePair<string, object?>>
     {
         private static readonly AsyncLocal<HostingListener> _currentListener = new();
         private readonly string[] _args;
@@ -217,8 +207,7 @@ internal sealed class HostFactoryResolver
             TimeSpan waitTimeout,
             bool stopApplication,
             Action<object>? configure,
-            Action<Exception?>? entrypointCompleted
-        )
+            Action<Exception?>? entrypointCompleted)
         {
             _args = args;
             _entryPoint = entryPoint;
@@ -289,12 +278,10 @@ internal sealed class HostFactoryResolver
                     // build to throw
                     _hostTcs.TrySetException(
                         new InvalidOperationException(
-                            "The entry point exited without ever building an IHost."
-                        )
-                    );
+                            "The entry point exited without ever building an IHost."));
                 }
-                catch (TargetInvocationException tie)
-                    when (tie.InnerException?.GetType().Name == "HostAbortedException")
+                catch (TargetInvocationException tie) when (tie.InnerException?.GetType().Name
+                                                            == "HostAbortedException")
                 {
                     // The host was stopped by our own logic
                 }
@@ -331,8 +318,7 @@ internal sealed class HostFactoryResolver
                 // Wait before throwing an exception
                 if (!_hostTcs.Task.Wait(_waitTimeout))
                     throw new InvalidOperationException(
-                        $"Timed out waiting for the entry point to build the IHost after {s_defaultWaitTimeout}. This timeout can be modified using the '{TimeoutEnvironmentKey}' environment variable."
-                    );
+                        $"Timed out waiting for the entry point to build the IHost after {s_defaultWaitTimeout}. This timeout can be modified using the '{TimeoutEnvironmentKey}' environment variable.");
             }
             catch (AggregateException) when (_hostTcs.Task.IsCompleted)
             {
@@ -354,8 +340,7 @@ internal sealed class HostFactoryResolver
         {
             var publicHostAbortedExceptionType = Type.GetType(
                 "Microsoft.Extensions.Hosting.HostAbortedException, Microsoft.Extensions.Hosting.Abstractions",
-                false
-            );
+                false);
             if (publicHostAbortedExceptionType != null)
                 throw (Exception)Activator.CreateInstance(publicHostAbortedExceptionType)!;
 
