@@ -6,11 +6,13 @@ objects. On top of that, `LambdaHostOptions` control the Lambda-specific runtime
 shutdown windows, serializer choices, etc.). This guide covers both layers.
 
 !!! warning "Breaking Change - Configuration Section Renamed"
+
     Starting with version 2.0.0, the configuration section name has changed from `AwsLambdaHost` to `LambdaHost`.
 
     **Migration Required:**
 
     Update your `appsettings.json`:
+
     ```json
     // Before
     {
@@ -28,6 +30,7 @@ shutdown windows, serializer choices, etc.). This guide covers both layers.
     ```
 
     Update environment variables:
+
     - `AwsLambdaHost__InvocationCancellationBuffer` → `LambdaHost__InvocationCancellationBuffer`
     - Pattern: `AwsLambdaHost__*` → `LambdaHost__*`
 
@@ -45,6 +48,7 @@ providers are added in the following order (later entries override earlier ones)
 6. All remaining environment variables (no prefix filter).
 
 !!! warning "`ASPNETCORE_` Prefixed Environment Variable"
+
     Enviroment variables with the `ASPNETCORE_` prefix are not automatically loaded by `CreateBuilder()` and must be added manually. As such, the enviroment cannot be set using the `ASPNETCORE_ENVIRONMENT` environment variable.
 
     To load environment variables prefixed with `ASPNETCORE_` after calling `CreateBuilder()`, you can add the following code:
@@ -53,13 +57,13 @@ providers are added in the following order (later entries override earlier ones)
     var builder = LambdaApplication.CreateBuilder();
     builder.Configuration.AddEnvironmentVariables("ASPNETCORE_");
     ```
-  
+
     If you need to use `ASPNETCORE_` prefixed environment variables when creating the `LambdaApplicationBuilder`, you can add the following code:
 
     ```csharp
     var configuration = new ConfigurationManager();
     configuration.AddEnvironmentVariables("ASPNETCORE_");
-    
+
     var builder = LambdaApplication.CreateBuilder(
         new LambdaApplicationOptions { Configuration = configuration }
     );
@@ -106,7 +110,7 @@ builder.Services.ConfigureLambdaHostOptions(options =>
 ```
 
 | Option                         | Type                     | Default                                       | Description                                                                        |
-|--------------------------------|--------------------------|-----------------------------------------------|------------------------------------------------------------------------------------|
+| ------------------------------ | ------------------------ | --------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `InitTimeout`                  | `TimeSpan`               | 5 seconds                                     | Maximum time all `OnInit` handlers collectively have before cancellation.          |
 | `InvocationCancellationBuffer` | `TimeSpan`               | 500 milliseconds                              | Buffer subtracted from remaining time before the invocation token fires.           |
 | `ShutdownDuration`             | `TimeSpan`               | `ShutdownDuration.ExternalExtensions` (500ms) | Expected window between SIGTERM and SIGKILL.                                       |
@@ -291,11 +295,11 @@ public class OrderService : IOrderService
 }
 ```
 
-| Interface             | Lifetime  | Reloads        | Lambda Guidance                                                    |
-|-----------------------|-----------|----------------|--------------------------------------------------------------------|
-| `IOptions<T>`         | Singleton | Never          | ✅ Recommended—configuration ships with the deployment package.     |
-| `IOptionsSnapshot<T>` | Scoped    | Per invocation | Use only if you vary config between invocations (rare).            |
-| `IOptionsMonitor<T>`  | Singleton | On change      | Rarely useful unless you reload from remote providers at runtime.  |
+| Interface             | Lifetime  | Reloads        | Lambda Guidance                                                   |
+| --------------------- | --------- | -------------- | ----------------------------------------------------------------- |
+| `IOptions<T>`         | Singleton | Never          | ✅ Recommended—configuration ships with the deployment package.   |
+| `IOptionsSnapshot<T>` | Scoped    | Per invocation | Use only if you vary config between invocations (rare).           |
+| `IOptionsMonitor<T>`  | Singleton | On change      | Rarely useful unless you reload from remote providers at runtime. |
 
 ### Environment-Specific Files
 
@@ -398,7 +402,7 @@ For more complex rules implement `IValidatableObject` or add a custom validator.
 - **Copy `appsettings.*` to the output** – Without it, Lambda cannot load the files.
 - **Use environment variables for secrets** – Combine SAM/CDK parameters with Secrets Manager references.
 - **Stick to `LambdaHost` section for framework knobs** – Keeps host settings discoverable and
-  separate from business configuration.
+    separate from business configuration.
 - **Clear Lambda output formatting when you own logging** – Avoid double-wrapping JSON payloads.
 
 ## Troubleshooting

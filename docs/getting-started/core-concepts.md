@@ -117,11 +117,11 @@ graph LR
 
 `MinimalLambda` uses the standard `Microsoft.Extensions.DependencyInjection` container. Registrations happen before `builder.Build()`, and the framework aligns service lifetimes with the Lambda lifecycle.
 
-| Lifetime  | Created                              | Disposed                                  | Use for                                     |
-|-----------|--------------------------------------|-------------------------------------------|---------------------------------------------|
-| Singleton | During OnInit (cold start)           | When AWS tears down the execution context | HttpClient, caches, configuration, SDKs     |
-| Scoped    | At the beginning of each invocation  | After the invocation completes            | DbContext, repositories, per-request state  |
-| Transient | Each time the service is requested   | With the consuming scope                  | Lightweight helpers, formatters, pure logic |
+| Lifetime  | Created                             | Disposed                                  | Use for                                     |
+| --------- | ----------------------------------- | ----------------------------------------- | ------------------------------------------- |
+| Singleton | During OnInit (cold start)          | When AWS tears down the execution context | HttpClient, caches, configuration, SDKs     |
+| Scoped    | At the beginning of each invocation | After the invocation completes            | DbContext, repositories, per-request state  |
+| Transient | Each time the service is requested  | With the consuming scope                  | Lightweight helpers, formatters, pure logic |
 
 **Tips:**
 

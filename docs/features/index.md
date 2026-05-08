@@ -4,7 +4,7 @@ The `MinimalLambda` framework provides a rich ecosystem of features and extensio
 
 This section provides an overview of the available features.
 
----
+______________________________________________________________________
 
 ## Feature Categories
 
@@ -15,4 +15,3 @@ The Envelope pattern provides type-safe wrappers for various AWS event sources l
 ### [Observability (OpenTelemetry)](./open_telemetry.md)
 
 This feature provides comprehensive observability through OpenTelemetry integration. It enables distributed tracing and metrics collection, offering deep insights into your Lambda function's performance and behavior.
-

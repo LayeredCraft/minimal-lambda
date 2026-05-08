@@ -8,11 +8,11 @@ lifecycle hooks, DI) without deploying or opening ports.
 ## When to Use
 
 - **End-to-end pipeline coverage** – Exercise source-generated handlers, middleware, envelopes, and
-  lifecycle hooks with real DI and serialization.
+    lifecycle hooks with real DI and serialization.
 - **Regression nets** – Verify bootstrapping, cold-start logic, and error payloads stay stable.
 - **Host customization** – Override configuration/services per test via `WithHostBuilder`.
 - Prefer plain unit tests for isolated logic; reach for MinimalLambda.Testing when you need
-  confidence in the Lambda runtime behavior.
+    confidence in the Lambda runtime behavior.
 
 ## Quick Start
 
@@ -24,6 +24,7 @@ dotnet add package MinimalLambda.Testing
 ```
 
 !!! warning "Package Versions"
+
     Ensure `MinimalLambda.Testing` version matches your `MinimalLambda` version.
     Mismatched versions may cause runtime errors or unexpected behavior.
 
@@ -62,11 +63,11 @@ public class HelloWorldTests
 ## Invocation APIs
 
 - `InvokeAsync<TEvent, TResponse>(event, token)` – Send a strongly typed event, expect a typed
-  response; fails with an `InvocationResponse<TResponse>` containing error details on handler
-  exceptions.
+    response; fails with an `InvocationResponse<TResponse>` containing error details on handler
+    exceptions.
 - `InvokeNoEventAsync<TResponse>(token)` – Invoke a handler that does not take an event payload.
 - `InvokeNoResponseAsync<TEvent>(event, token)` – Fire-and-forget style; skips response
-  deserialization for handlers that return `void`/`Task` or write directly to streams.
+    deserialization for handlers that return `void`/`Task` or write directly to streams.
 
 `InvocationResponse`/`InvocationResponse<T>` include `WasSuccess`, `Response`, and structured
 `Error` information that mirrors Lambda runtime error payloads—assert on these to verify failures.
@@ -90,15 +91,15 @@ If omitted, a new GUID is generated for each invocation.
 ## Working with Cancellation
 
 - **Propagate test cancellation** – Call `WithCancellationToken(...)` on the factory to flow your
-  test framework's token into the in-memory runtime. All server operations observe it.
+    test framework's token into the in-memory runtime. All server operations observe it.
 - **Per-call tokens** – Pass tokens to `StartAsync` and `Invoke*` to bound individual operations.
 - **Pre-canceled tokens** – A pre-canceled token will fail the invocation immediately (see
-  `SimpleLambda_WithPreCanceledToken_CancelsInvocation` in the test suite).
+    `SimpleLambda_WithPreCanceledToken_CancelsInvocation` in the test suite).
 - **Automatic timeouts** – Every invocation automatically times out after
-  `LambdaServerOptions.FunctionTimeout` (defaults to 3 seconds, matching AWS Lambda's default).
-  The test server creates a linked cancellation token for each invocation that enforces this deadline,
-  mirroring Lambda's actual timeout behavior. Adjust `factory.ServerOptions.FunctionTimeout` before
-  invoking to test different timeout scenarios or catch slow handlers.
+    `LambdaServerOptions.FunctionTimeout` (defaults to 3 seconds, matching AWS Lambda's default).
+    The test server creates a linked cancellation token for each invocation that enforces this deadline,
+    mirroring Lambda's actual timeout behavior. Adjust `factory.ServerOptions.FunctionTimeout` before
+    invoking to test different timeout scenarios or catch slow handlers.
 
 ## Host Customization and Fixtures
 
@@ -174,7 +175,7 @@ public class SimpleLambdaTests(LambdaApplicationFactory<Program> factory)
 - OnShutdown runs once when all tests complete
 - Singleton services are shared across all tests in the class
 - Do not use this pattern if you need to test initialization/shutdown behavior (use a fresh factory
-  per test instead)
+    per test instead)
 
 #### Custom Factory for Reusable Configuration
 
@@ -243,7 +244,7 @@ Access it via `factory.ServerOptions` before starting the server if you need tes
 - **Runtime headers** – `FunctionArn`, `AdditionalHeaders` for custom Lambda runtime headers
 - **Timeout behavior** – `FunctionTimeout` controls invocation deadline (defaults to 3 seconds)
 - **JSON serialization** – `SerializerOptions` controls how the test server serializes events and
-  responses sent to your handler
+    responses sent to your handler
 
 ```csharp linenums="1"
 await using var factory = new LambdaApplicationFactory<Program>();
@@ -266,14 +267,15 @@ var response = await factory.TestServer.InvokeAsync<MyEvent, MyResponse>(
 ## Initialization and Shutdown Behavior
 
 - `StartAsync` returns `InitResponse` with `InitStatus` values:
-  - `InitCompleted` / `InitAlreadyCompleted` – Ready to invoke.
-  - `InitError` – An `ErrorResponse` from OnInit failures; server stops itself.
-  - `HostExited` – Entry point exited early (e.g., OnInit signaled stop).
+    - `InitCompleted` / `InitAlreadyCompleted` – Ready to invoke.
+    - `InitError` – An `ErrorResponse` from OnInit failures; server stops itself.
+    - `HostExited` – Entry point exited early (e.g., OnInit signaled stop).
 - `Invoke*` will start the server on-demand; if init fails it throws with the reported status.
 - `StopAsync` triggers OnShutdown and aggregates any exceptions (surfaced as `AggregateException`).
 - `DisposeAsync` is idempotent; safe to call multiple times.
 
 !!! tip "StartAsync is Optional"
+
     `InvokeAsync` will automatically call `StartAsync` if you haven't called it explicitly.
 
     **When to call StartAsync explicitly:**
@@ -498,20 +500,21 @@ public async Task ColdStart_InitCompletesWithinTimeout()
 ## Best Practices
 
 - **Reuse factories per class** – Creating a new factory per test is fine; reuse within a class to
-  speed up suites that share the same host configuration.
+    speed up suites that share the same host configuration.
 - **Runtime headers** – Responses include the same headers Lambda sends (`Lambda-Runtime-*` plus any
-  `AdditionalHeaders` you set); assert on them if you need to prove deadline/ARN behavior.
+    `AdditionalHeaders` you set); assert on them if you need to prove deadline/ARN behavior.
 - **Fresh factory per test for lifecycle testing** – When testing OnInit/OnShutdown, create a new
-  factory per test so lifecycle hooks run predictably.
+    factory per test so lifecycle hooks run predictably.
 
 !!! warning "Fixture Reuse Pitfalls"
+
     - Using `IClassFixture`/`ICollectionFixture` with a single `LambdaApplicationFactory` means one
-      host instance is shared across all tests in that scope. Avoid this pattern if you need to test
-      startup/shutdown logic—use a fresh factory per test so OnInit/OnShutdown run predictably.
+        host instance is shared across all tests in that scope. Avoid this pattern if you need to test
+        startup/shutdown logic—use a fresh factory per test so OnInit/OnShutdown run predictably.
     - Do not mix a fixture-based factory with new factories created inside individual tests; they can
-      overlap and run simultaneously, leading to multiple hosts executing in parallel and surprising
-      side effects. Choose one approach (per-test or shared fixture) for a given test class/collection
-      and clean up via `DisposeAsync`/`StopAsync` when done.
+        overlap and run simultaneously, leading to multiple hosts executing in parallel and surprising
+        side effects. Choose one approach (per-test or shared fixture) for a given test class/collection
+        and clean up via `DisposeAsync`/`StopAsync` when done.
 
 ## Complete Examples
 
