@@ -123,6 +123,30 @@ See the [examples directory](./examples/) for more complete examples, including 
 OpenTelemetry integration. For in-memory integration tests, use
 [MinimalLambda.Testing](./docs/guides/testing.md) (a `WebApplicationFactory`-style runtime shim).
 
+## AI Agent Skill
+
+This repository includes a `minimal-lambda` agent skill with focused guidance for building,
+debugging, testing, and reviewing MinimalLambda code without loading the full repository into agent
+context.
+
+Install it with [skills.sh](https://skills.sh):
+
+```bash
+npx skills add j-d-ha/minimal-lambda --skill minimal-lambda
+```
+
+Install globally for Claude Code:
+
+```bash
+npx skills add j-d-ha/minimal-lambda --skill minimal-lambda --global --agent claude-code
+```
+
+Update later with:
+
+```bash
+npx skills update minimal-lambda
+```
+
 ## Documentation
 
 - [MinimalLambda](./src/MinimalLambda/README.md) – Core framework documentation

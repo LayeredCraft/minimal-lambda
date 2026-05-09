@@ -1,0 +1,72 @@
+{
+  "skill_name": "minimal-lambda",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I have a .NET Lambda using MinimalLambda. Create a clean Program.cs for an order processor with DI, an inline MapHandler arrow function, cancellation token propagation, and a service boundary for non-Lambda business logic. Also mention what package/usings I need.",
+      "expected_output": "Uses LambdaApplication.CreateBuilder, registers services before Build, maps exactly one inline handler with one [FromEvent] OrderRequest parameter, injects IOrderService and CancellationToken, delegates business logic to the service, calls RunAsync, and explains MinimalLambda package/usings.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Output uses inline MapHandler arrow function as the Lambda adapter and delegates non-trivial business logic to a service."
+        },
+        {
+          "text": "Handler signature has exactly one [FromEvent] payload parameter and propagates CancellationToken."
+        },
+        { "text": "DI registration happens before builder.Build()." },
+        { "text": "Output does not recommend manual JSON parsing or reflection-based dispatch." }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "We're building an API Gateway HTTP API v2 Lambda with MinimalLambda and Native AOT. Show the request/response envelope pattern and serializer setup for CreateOrderRequest/CreateOrderResponse.",
+      "expected_output": "Selects MinimalLambda.Envelopes.ApiGateway, uses ApiGatewayV2RequestEnvelope<T> and ApiGatewayV2ResponseEnvelope<T> or ApiGatewayV2Result, includes JsonSerializerContext entries for envelope and payload/response, registers AddLambdaSerializerWithContext and ConfigureEnvelopeOptions.",
+      "files": [],
+      "assertions": [
+        { "text": "Output chooses API Gateway v2 envelope/result types, not v1-only types." },
+        { "text": "Output registers AddLambdaSerializerWithContext<TContext>()." },
+        { "text": "Output configures envelope options TypeInfoResolver for nested body content." },
+        {
+          "text": "Output includes both envelope and payload/response types in JsonSerializerContext."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "My MinimalLambda middleware isn't seeing the order request and sometimes scoped data leaks between invocations. Review likely causes and show a better inline middleware pattern, noting when to extract a class or delegate to a service.",
+      "expected_output": "Explains middleware order before MapHandler, uses ILambdaInvocationContext feature helpers like TryGetEvent/GetResponse, distinguishes Items vs Properties, warns against singleton/scoped leaks, shows thin inline middleware, says to extract class middleware or services only when logic is complex/reusable/stateful/test-worthy, and keeps Lambda context objects out of services.",
+      "files": [],
+      "assertions": [
+        { "text": "Output says middleware should be registered before MapHandler." },
+        { "text": "Output uses context.TryGetEvent<T>() or features for typed event access." },
+        {
+          "text": "Output distinguishes per-invocation Items from cross-invocation Properties/singletons."
+        },
+        {
+          "text": "Output warns against capturing scoped services/state in singletons."
+        },
+        {
+          "text": "Output prefers inline middleware for simple Lambda glue and extracts class middleware/services only for complex, reusable, stateful, or separately tested logic."
+        },
+        {
+          "text": "Output says inline middleware does not support direct service injection and uses context.ServiceProvider, class middleware, or factory middleware for dependencies."
+        },
+        {
+          "text": "Output does not pass ILambdaInvocationContext, ILambdaContext, or feature collections into application services; it extracts needed domain values at the edge."
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Add integration tests for a MinimalLambda function. I need to override IOrderService in tests, invoke a typed event, assert success, and know when not to use a shared fixture.",
+      "expected_output": "Uses MinimalLambda.Testing LambdaApplicationFactory<Program>, WithHostBuilder ConfigureServices override, InvokeAsync<TEvent,TResponse>, WasSuccess assertion, and warns shared factory reuses OnInit/singletons.",
+      "files": [],
+      "assertions": [
+        { "text": "Output uses LambdaApplicationFactory<Program> from MinimalLambda.Testing." },
+        { "text": "Output overrides services with WithHostBuilder/ConfigureServices." },
+        { "text": "Output invokes typed event using InvokeAsync<TEvent,TResponse>()." },
+        { "text": "Output warns shared fixtures reuse OnInit and singleton state." }
+      ]
+    }
+  ]
+}

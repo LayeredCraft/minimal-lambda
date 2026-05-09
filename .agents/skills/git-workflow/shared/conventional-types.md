@@ -3,7 +3,7 @@
 Valid `<type>` values:
 
 | Type       | Description                                                       | SemVer impact |
-|------------|-------------------------------------------------------------------|---------------|
+| ---------- | ----------------------------------------------------------------- | ------------- |
 | `feat`     | Introduces a new feature                                          | MINOR         |
 | `fix`      | Patches a bug                                                     | PATCH         |
 | `build`    | Changes to the build system or external dependencies              | —             |
