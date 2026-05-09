@@ -2,28 +2,65 @@
 
 Read when implementing or reviewing handler shape.
 
-## Thin method-group handler
+## Default: inline Lambda adapter in `Program.cs`
 
-Best default for client projects.
+Prefer mapping an inline arrow function in `Program.cs` for normal MinimalLambda apps.
 
 ```csharp
-lambda.MapHandler(OrderHandlers.HandleAsync);
-
-internal static class OrderHandlers
-{
-    public static Task<OrderResponse> HandleAsync(
-        [FromEvent] OrderRequest request,
-        IOrderService orders,
-        CancellationToken ct) =>
-        orders.ProcessAsync(request, ct);
-}
+lambda.MapHandler(([FromEvent] OrderRequest request, IOrderService orders, CancellationToken ct) =>
+    orders.ProcessAsync(request, ct));
 ```
 
-Why:
+Handler job: Lambda edge only.
 
-- source generator gets explicit signature
-- handler can be unit-tested directly
-- business logic stays in service
+- Bind payload with `[FromEvent]`.
+- Accept Lambda/context parameters only when needed.
+- Keep Lambda context objects at edge; pass services domain values, not `ILambdaInvocationContext`/
+  `ILambdaContext`.
+- Accept injected services explicitly.
+- Pass `CancellationToken` through.
+- Return response shape.
+
+Business job: service/helper.
+
+- validation workflows
+- authorization/business policy decisions
+- persistence
+- external API orchestration
+- transformations large enough to need names/tests
+
+Why: readers see whole Lambda entry point in one place, source generator gets analyzable signature,
+business code remains independent of Lambda.
+
+## Complex business logic: delegate immediately
+
+```csharp
+var builder = LambdaApplication.CreateBuilder();
+
+builder.Services.AddScoped<IOrderService, OrderService>();
+
+await using var lambda = builder.Build();
+
+lambda.MapHandler(([FromEvent] OrderRequest request, IOrderService orders, CancellationToken ct) =>
+    orders.ProcessAsync(request, ct));
+
+await lambda.RunAsync();
+```
+
+Do not move complex logic into a named handler class just to hide it. Move it into app
+services/domain helpers because that code is not Lambda-specific.
+
+## Tiny logic: keep it inline
+
+Small, obvious logic is fine directly in `Program.cs`.
+
+```csharp
+lambda.MapHandler(([FromEvent] PingRequest request) =>
+    new PingResponse(request.Message.Trim(), DateTimeOffset.UtcNow));
+```
+
+Keep inline when it is easier to read than a service, has no persistence/external orchestration, and
+probably does not need isolated unit tests.
 
 ## No-event handler
 
@@ -50,11 +87,16 @@ lambda.MapHandler(async (
     CancellationToken ct) =>
 {
     context.Items["OrderId"] = request.OrderId;
-    return await orders.ProcessAsync(request, context.AwsRequestId, ct);
+    context.Items["AwsRequestId"] = context.AwsRequestId;
+    return await orders.ProcessAsync(request, ct);
 });
 ```
 
-Use context sparingly. Prefer services for business operations.
+Use context sparingly. Prefer services for business operations. Do not pass
+`ILambdaInvocationContext`, raw AWS `ILambdaContext`, features, or Lambda wrappers into
+domain/application services. Extract needed values (`AwsRequestId`, deadline, tenant id, claims,
+headers) in handler/middleware and pass those values instead. Only isolate a service behind Lambda
+context when boundary cannot be expressed otherwise.
 
 ## Keyed service handler
 
@@ -72,25 +114,13 @@ lambda.MapHandler((
 
 Keep keys simple constants.
 
-## Unit-testable handler method
+## Testing guidance
 
-```csharp
-[Fact]
-public async Task HandleAsync_ReturnsAcceptedOrder()
-{
-    var orders = Substitute.For<IOrderService>();
-    var request = new OrderRequest("order-123");
-    var expected = new OrderResponse("order-123", Accepted: true);
+Unit-test services/helpers for business behavior. Use integration tests for source-generated
+binding, DI, middleware, envelopes, and serialization.
 
-    orders.ProcessAsync(request, Arg.Any<CancellationToken>()).Returns(expected);
-
-    var actual = await OrderHandlers.HandleAsync(request, orders, TestContext.Current.CancellationToken);
-
-    actual.Should().Be(expected);
-}
-```
-
-Use integration tests for source-generated binding; direct unit tests for business behavior.
+Extract a named static handler only when the adapter itself has enough Lambda-specific branching to
+deserve direct unit tests. That should be uncommon.
 
 ## Anti-pattern: routing many event shapes in one handler
 

@@ -3,11 +3,13 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "I have a .NET Lambda using MinimalLambda. Create a clean Program.cs for an order processor with DI, a static method-group handler, cancellation token propagation, and a unit-testable service boundary. Also mention what package/usings I need.",
-      "expected_output": "Uses LambdaApplication.CreateBuilder, registers services before Build, maps exactly one method-group handler with one [FromEvent] OrderRequest parameter, injects IOrderService and CancellationToken, calls RunAsync, and explains MinimalLambda package/usings.",
+      "prompt": "I have a .NET Lambda using MinimalLambda. Create a clean Program.cs for an order processor with DI, an inline MapHandler arrow function, cancellation token propagation, and a service boundary for non-Lambda business logic. Also mention what package/usings I need.",
+      "expected_output": "Uses LambdaApplication.CreateBuilder, registers services before Build, maps exactly one inline handler with one [FromEvent] OrderRequest parameter, injects IOrderService and CancellationToken, delegates business logic to the service, calls RunAsync, and explains MinimalLambda package/usings.",
       "files": [],
       "assertions": [
-        { "text": "Output uses method-group handler pattern rather than inline business logic." },
+        {
+          "text": "Output uses inline MapHandler arrow function as the Lambda adapter and delegates non-trivial business logic to a service."
+        },
         {
           "text": "Handler signature has exactly one [FromEvent] payload parameter and propagates CancellationToken."
         },
@@ -31,8 +33,8 @@
     },
     {
       "id": 3,
-      "prompt": "My MinimalLambda middleware isn't seeing the order request and sometimes scoped data leaks between invocations. Review likely causes and show a better middleware pattern.",
-      "expected_output": "Explains middleware order before MapHandler, uses ILambdaInvocationContext feature helpers like TryGetEvent/GetResponse, distinguishes Items vs Properties, warns against singleton/scoped leaks, and shows thin middleware pattern.",
+      "prompt": "My MinimalLambda middleware isn't seeing the order request and sometimes scoped data leaks between invocations. Review likely causes and show a better inline middleware pattern, noting when to extract a class or delegate to a service.",
+      "expected_output": "Explains middleware order before MapHandler, uses ILambdaInvocationContext feature helpers like TryGetEvent/GetResponse, distinguishes Items vs Properties, warns against singleton/scoped leaks, shows thin inline middleware, says to extract class middleware or services only when logic is complex/reusable/stateful/test-worthy, and keeps Lambda context objects out of services.",
       "files": [],
       "assertions": [
         { "text": "Output says middleware should be registered before MapHandler." },
@@ -40,7 +42,18 @@
         {
           "text": "Output distinguishes per-invocation Items from cross-invocation Properties/singletons."
         },
-        { "text": "Output warns against capturing scoped services/state in singletons." }
+        {
+          "text": "Output warns against capturing scoped services/state in singletons."
+        },
+        {
+          "text": "Output prefers inline middleware for simple Lambda glue and extracts class middleware/services only for complex, reusable, stateful, or separately tested logic."
+        },
+        {
+          "text": "Output says inline middleware does not support direct service injection and uses context.ServiceProvider, class middleware, or factory middleware for dependencies."
+        },
+        {
+          "text": "Output does not pass ILambdaInvocationContext, ILambdaContext, or feature collections into application services; it extracts needed domain values at the edge."
+        }
       ]
     },
     {

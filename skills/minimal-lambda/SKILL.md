@@ -14,6 +14,8 @@ Use this skill to give agents enough MinimalLambda project context without loadi
    - app setup/handler/DI/lifecycle → read `references/core-hosting.md` and `references/best-practices.md`
    - handler shape/unit-testable handlers → read `references/patterns/handler-patterns.md`
    - middleware/features/context → read `references/core-hosting.md` and `references/patterns/middleware-patterns.md`
+   - lifecycle hooks (`OnInit`/`OnShutdown`) → read `references/core-hosting.md` and
+     `references/patterns/lifecycle-hook-patterns.md`
    - SQS/SNS/API Gateway/Kinesis/Firehose/Kafka/CloudWatch/ALB envelopes → read `references/envelopes.md` and `references/patterns/envelope-patterns.md`
    - Native AOT/trimming/serializer context → read `references/patterns/aot-and-envelopes.md`
    - integration tests/client project tests → read `references/testing.md` and `references/patterns/testing-patterns.md`
@@ -58,13 +60,24 @@ Assume this skill may run in a client project, not the MinimalLambda repository.
 
 Read `references/best-practices.md` before giving architectural advice.
 
-- Prefer thin handlers delegating to injected services.
+- Prefer inline `MapHandler` arrow functions, inline middleware, and inline lifecycle hooks in
+  `Program.cs` when they are Lambda adapter/glue code.
+- Keep complex business logic out of handlers, middleware, and hooks; put it in injected services or
+  small domain helpers.
+- Treat `ILambdaInvocationContext`, raw AWS `ILambdaContext`, features, lifecycle context, and other
+  Lambda context objects as edge concerns. Almost never pass them into services; extract needed
+  primitive/domain values at the edge. Passing Lambda context into services is usually a
+  layer-boundary smell.
+- Allow simple inline logic in `Program.cs` when logic is tiny and Lambda remains easy to read.
+- Extract middleware classes only when middleware is complex, reusable, stateful, or worth testing
+  separately.
 - Prefer `CancellationToken` in async handlers and downstream calls.
 - Prefer scoped services for per-invocation state; singleton for reusable clients/caches.
 - Avoid storing scoped services in singletons.
 - Prefer typed records/responses/envelopes over anonymous response contracts.
 - Keep AOT/trimming safe: avoid reflection-heavy dynamic paths unless guarded and tested.
-- Use method-group handlers or static handler methods when unit-testing handler logic directly.
+- For direct unit tests, test services/helpers; only extract a named handler when handler adapter
+  logic itself needs focused tests.
 - For end-to-end behavior, use `LambdaApplicationFactory<TProgram>`.
 
 ## Validation checklist

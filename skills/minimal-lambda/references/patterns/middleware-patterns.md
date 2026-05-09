@@ -2,6 +2,17 @@
 
 Read when adding logging, metrics, validation, auth, idempotency, response mapping, or feature access.
 
+Default: inline app-local middleware in `Program.cs`. Middleware should mostly be Lambda pipeline
+glue: read context/features, set scopes/items/responses, call `next`, or delegate to services.
+Inline middleware receives only `context` and `next`; it does not support direct service injection.
+Resolve simple dependencies from `context.ServiceProvider`, use `UseMiddleware<T>()` class
+middleware when constructor DI is cleaner, or use `UseMiddleware<TFactory>()` when construction must
+be custom/deferred per invocation. Class middleware constructor parameters can come from DI and/or
+explicit `UseMiddleware<T>(args)` values; use `[FromServices]` or `[FromArguments]` to remove
+ambiguity. Keep Lambda context objects at this edge; services should receive domain values, options,
+and `CancellationToken`, not `ILambdaInvocationContext`/`ILambdaContext`. Extract class middleware
+when logic is complex, reusable, stateful, or needs direct unit tests.
+
 ## Inline logging/correlation
 
 ```csharp
@@ -71,7 +82,8 @@ internal sealed class TimingMiddleware(ILogger<TimingMiddleware> logger) : ILamb
 lambda.UseMiddleware<TimingMiddleware>();
 ```
 
-Use class middleware for reusable code, dependencies, and easier unit tests.
+Use class middleware for reusable code, complex pipeline behavior, stateful middleware, or easier
+unit tests. Do not extract a class just to hide a small inline delegate.
 
 ## Short-circuit cache
 
@@ -94,7 +106,9 @@ lambda.UseMiddleware(async (context, next) =>
 });
 ```
 
-Place short-circuit middleware after auth/validation and before handler.
+Place short-circuit middleware after auth/validation and before handler. If cache policy grows
+beyond simple Lambda pipeline glue, delegate policy decisions to an injected service and pass
+request ids/keys/values, not the whole Lambda context.
 
 ## Error boundary pattern
 

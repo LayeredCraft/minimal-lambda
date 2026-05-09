@@ -15,7 +15,7 @@ Check:
 
 - project uses supported C# language version
 - package references include `MinimalLambda`
-- `MapHandler` call shape is a static, analyzable delegate/method group
+- `MapHandler` call shape is a static, analyzable inline delegate or method group
 - source generator diagnostics in build output
 
 ### Missing or duplicate `[FromEvent]`

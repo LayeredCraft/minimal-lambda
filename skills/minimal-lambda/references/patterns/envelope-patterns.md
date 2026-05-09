@@ -17,7 +17,9 @@ Read when selecting or implementing strongly typed AWS trigger envelopes.
 | Kafka/MSK                              | `KafkaEnvelope<T>`                                      | usually no response                                       |
 | CloudWatch Logs                        | `CloudWatchLogsEnvelope<T>` or `CloudWatchLogsEnvelope` | usually no response                                       |
 
-Always inspect matching README/source for current property names and special cases.
+Always inspect matching README/source for current property names and special cases when available.
+In client projects/global installs without source, use bundled references plus package
+docs/IntelliSense.
 
 ## API Gateway result pattern
 

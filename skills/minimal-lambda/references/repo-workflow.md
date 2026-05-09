@@ -31,9 +31,12 @@ Tests:
 
 ```bash
 task test:all
-# or
+# or pick the target framework relevant to the change
 DOTNET_NOLOGO=1 dotnet test --configuration Release -f net10.0
 ```
+
+Use `task test:all` when practical; focused `dotnet test -f ...` commands are shortcuts, not the
+canonical full suite.
 
 AOT check:
 

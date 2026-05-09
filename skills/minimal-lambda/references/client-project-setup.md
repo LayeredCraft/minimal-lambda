@@ -34,7 +34,9 @@ Keep `MinimalLambda.Testing` version aligned with `MinimalLambda`.
 
 ## Project file basics
 
-Use C# 11+ because interceptors/source generation paths require modern language support. Repo uses newer versions; client project can use current SDK/LangVersion.
+Use a current .NET SDK and modern C# language version. Interceptors/source-generation paths require
+compiler support; prefer `LangVersion` `latest`/`preview` when package docs or build diagnostics
+require it. Repo uses newer versions; client project can use current SDK/LangVersion.
 
 ```xml
 <PropertyGroup>
@@ -60,21 +62,13 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 
 await using var lambda = builder.Build();
 
-lambda.MapHandler(OrderHandlers.HandleAsync);
+lambda.MapHandler(([FromEvent] OrderRequest request, IOrderService orders, CancellationToken cancellationToken) =>
+    orders.ProcessAsync(request, cancellationToken));
 
 await lambda.RunAsync();
 
 public sealed record OrderRequest(string OrderId);
 public sealed record OrderResponse(string OrderId, bool Accepted);
-
-internal static class OrderHandlers
-{
-    public static Task<OrderResponse> HandleAsync(
-        [FromEvent] OrderRequest request,
-        IOrderService orders,
-        CancellationToken cancellationToken) =>
-        orders.ProcessAsync(request, cancellationToken);
-}
 
 internal interface IOrderService
 {
@@ -150,6 +144,6 @@ For envelope payloads, also configure envelope options. See `patterns/aot-and-en
 2. Add `MinimalLambda.Builder` using for builder + `[FromEvent]`.
 3. Add service registrations before `Build()`.
 4. Add middleware before `MapHandler`.
-5. Add exactly one handler mapping path.
+5. Ensure exactly one `MapHandler` path executes at runtime.
 6. Add serializer context for AOT or explicit serialization requirements.
 7. Add integration test using `MinimalLambda.Testing` when pipeline behavior matters.

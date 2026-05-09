@@ -63,7 +63,9 @@ lambda.MapHandler(async ([FromEvent] SqsEnvelope<OrderMessage> envelope, IOrderS
 });
 ```
 
-When exact type/member names matter, inspect target package README and source. Names vary by trigger.
+When exact type/member names matter, inspect target package README/source if available. In client
+projects/global installs where source is unavailable, rely on bundled references plus installed
+package docs/IntelliSense. Names vary by trigger.
 
 ## AOT / serialization guidance
 
@@ -79,7 +81,10 @@ See `patterns/aot-and-envelopes.md` for complete snippets.
 ## Agent workflow for envelope questions
 
 1. Identify AWS event source.
-2. Read matching envelope README.
-3. Inspect source/tests for exact type/member names.
-4. Propose minimal package references and handler signature.
-5. Add/adjust tests using `MinimalLambda.Testing` or existing envelope unit test style.
+2. Read matching envelope README/package docs when available.
+3. Inspect source/tests for exact type/member names only when available; otherwise use package
+   docs/IntelliSense.
+4. Check production batch semantics for queue/stream triggers, especially partial-batch failure
+   support.
+5. Propose minimal package references and handler signature.
+6. Add/adjust tests using `MinimalLambda.Testing` or existing envelope unit test style.

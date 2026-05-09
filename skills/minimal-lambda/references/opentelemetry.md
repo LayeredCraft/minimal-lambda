@@ -78,4 +78,6 @@ await lambda.RunAsync();
 3. Configure `AddOpenTelemetry()` with tracing/metrics.
 4. Add `UseOpenTelemetryTracing()` and shutdown flush.
 5. Validate source names/meters match app instrumentation.
-6. For tests, inspect OpenTelemetry unit tests for exact assertions/patterns.
+6. For tests, inspect OpenTelemetry unit tests for exact assertions/patterns only when working in
+   this repo or when test sources are available; otherwise use bundled references and public package
+   docs.

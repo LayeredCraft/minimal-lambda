@@ -29,7 +29,7 @@ await lambda.RunAsync();
 
 `CreateBuilder()` wires standard .NET configuration/logging/DI defaults unless `LambdaApplicationOptions.DisableDefaults = true`.
 
-Configuration provider order from docs:
+Configuration provider order from docs; later providers override earlier values:
 
 1. `AWS_` env vars
 2. `DOTNET_` env vars
@@ -52,19 +52,12 @@ Framework options bind from `LambdaHost` section, not old `AwsLambdaHost`.
 Good handler style:
 
 ```csharp
-lambda.MapHandler(MyHandlers.HandleAsync);
-
-internal static class MyHandlers
-{
-    public static Task<OrderResponse> HandleAsync(
-        [FromEvent] OrderRequest request,
-        IOrderService service,
-        CancellationToken ct) =>
-        service.ProcessAsync(request, ct);
-}
+lambda.MapHandler(([FromEvent] OrderRequest request, IOrderService service, CancellationToken ct) =>
+    service.ProcessAsync(request, ct));
 ```
 
-Method groups keep handler logic unit-testable.
+Keep handler inline in `Program.cs` as Lambda adapter code. Put complex business logic in
+services/helpers; tiny obvious logic may stay inline.
 
 ## DI and lifetimes
 
@@ -85,6 +78,12 @@ Method groups keep handler logic unit-testable.
 - `Features` typed feature collection
 - also exposes AWS Lambda context members
 
+Keep `ILambdaInvocationContext`, raw AWS `ILambdaContext`, lifecycle context, and feature
+collections at the Lambda edge. Handlers/middleware/hooks may read them, then pass primitive/domain
+values to services (for example `awsRequestId`, tenant id, headers, payload fields). Almost never
+make application services depend on Lambda context types; that usually means Lambda boundary
+concerns leaked into application layers.
+
 Useful feature helpers from docs:
 
 ```csharp
@@ -99,7 +98,13 @@ Use features in middleware to avoid coupling middleware directly to handlers.
 
 Register before `MapHandler`. Execution order follows registration order and unwinds in reverse.
 
-Inline middleware: quick app-specific glue.
+Inline middleware: quick app-specific glue. Inline middleware receives
+`(ILambdaInvocationContext context, LambdaInvocationDelegate next)` only; it does not support direct
+service injection like `MapHandler`/hooks. Use `context.ServiceProvider` for simple dependencies,
+`UseMiddleware<T>()` class middleware for constructor DI, or `UseMiddleware<TFactory>()` factory
+middleware for custom/deferred per-invocation construction. Class middleware constructor parameters
+can be resolved from DI and/or explicit `UseMiddleware<T>(args)` values; use `[FromServices]` or
+`[FromArguments]` when resolution must be forced.
 
 ```csharp
 lambda.UseMiddleware(async (context, next) =>
@@ -110,6 +115,9 @@ lambda.UseMiddleware(async (context, next) =>
     logger.LogInformation("After");
 });
 ```
+
+Keep middleware inline when it is app-local Lambda glue. Use class middleware when it becomes
+complex, reusable, stateful, or worth direct unit tests.
 
 Class middleware: reusable/testable.
 
@@ -163,6 +171,12 @@ lambda.OnShutdown(async (ITelemetrySink sink, CancellationToken ct) =>
     await sink.FlushAsync(ct);
 });
 ```
+
+Keep hooks inline when they are Lambda lifecycle glue or tiny. Hook delegates support DI parameters,
+so prefer `lambda.OnInit((ICache cache, CancellationToken ct) => ...)` over manual service
+resolution. Delegate complex warmup, health validation, telemetry flushing, or external cleanup to
+DI services. Do not pass lifecycle/context objects to services; pass cancellation tokens and
+domain/config values.
 
 ## Options
 
