@@ -59,11 +59,11 @@ tasks:
       - dotnet lambda-test-tool start --lambda-emulator-port 5050 --config-storage-path ./lambda_test_tool
   
   docs:serve:
-    desc: Serve docs locally with Zensical
+    desc: Serve docs locally with Zensical and open browser
     silent: true
     cmds:
       - echo "📖 Serving Docs"
-      - uv run zensical serve -f mkdocs.yml
+      - uv run zensical serve -f mkdocs.yml --open
 
   docs:build:
     desc: Build docs site with Zensical

@@ -180,6 +180,9 @@ await lambda.RunAsync();
 
 !!! tip "Next Steps"
 
+    Ready to dive deeper? Check out the [Getting Started Guide](getting-started/index.md) for a complete
+    tutorial, or explore the [Examples](examples/index.md) to see real-world applications.
+
 ## AI Agent Skill
 
 Use the bundled `minimal-lambda` agent skill to give coding agents focused MinimalLambda guidance
@@ -196,10 +199,6 @@ For a global Claude Code install:
 ```bash
 npx skills add j-d-ha/minimal-lambda --skill minimal-lambda --global --agent claude-code
 ```
-
----
-    Ready to dive deeper? Check out the [Getting Started Guide](getting-started/index.md) for a complete
-    tutorial, or explore the [Examples](examples/index.md) to see real-world applications.
 
 ______________________________________________________________________
 
