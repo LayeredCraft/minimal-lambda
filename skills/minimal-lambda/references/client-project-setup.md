@@ -2,6 +2,18 @@
 
 Read when creating or modifying a consumer project that uses MinimalLambda packages.
 
+## Project templates
+
+For new consumer projects, prefer the templates when they fit:
+
+```bash
+dotnet new install MinimalLambda.Templates
+dotnet new mlambda -n MyLambda
+dotnet new mlambda-aot -n MyAotLambda
+```
+
+Templates create `src/` and `test/` projects, include `aws-lambda-tools-defaults.json`, use inline handlers, and test through `MinimalLambda.Testing`.
+
 ## Minimal packages
 
 Plain Lambda handler:
