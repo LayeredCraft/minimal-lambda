@@ -5,19 +5,14 @@
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <AWSProjectType>Lambda</AWSProjectType>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <PublishAot>true</PublishAot>
-    <PublishTrimmed>true</PublishTrimmed>
-    <StripSymbols>true</StripSymbols>
-    <TrimMode>partial</TrimMode>
-    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
-    <AssemblyName>bootstrap</AssemblyName>
-    <RootNamespace>Company.Project</RootNamespace>
+    <PublishReadyToRun>true</PublishReadyToRun>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MinimalLambda" Version="2.2.0-beta.1"/>
+    <PackageReference Include="MinimalLambda" Version="2.2.0-beta.1" />
   </ItemGroup>
 </Project>

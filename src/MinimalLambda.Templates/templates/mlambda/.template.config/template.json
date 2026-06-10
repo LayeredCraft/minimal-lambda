@@ -14,7 +14,7 @@
     "language": "C#",
     "type": "project"
   },
-  "sourceName": "Company.Project",
+  "sourceName": "BlueprintBaseName.1",
   "preferNameDirectory": true,
   "symbols": {
     "profile": {
@@ -34,7 +34,7 @@
   },
   "primaryOutputs": [
     {
-      "path": "./src/Company.Project/Company.Project.csproj"
+      "path": "./src/BlueprintBaseName.1/BlueprintBaseName.1.csproj"
     }
   ]
 }

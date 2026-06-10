@@ -3,9 +3,9 @@ using Xunit;
 
 [assembly:
     LambdaApplicationFactoryContentRoot(
-        "bootstrap",
-        "../../../../../src/Company.Project",
-        "Company.Project.csproj",
+        "BlueprintBaseName.1",
+        "../../../../../src/BlueprintBaseName.1",
+        "BlueprintBaseName.1.csproj",
         "0")]
 
 public class LambdaTests

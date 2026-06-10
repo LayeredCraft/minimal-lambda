@@ -5,7 +5,7 @@ This project contains a MinimalLambda AWS Lambda function configured for Native 
 ## Run tests
 
 ```bash
-dotnet test ../../test/Company.Project.Tests/Company.Project.Tests.csproj
+dotnet test ../../test/BlueprintBaseName.1.Tests/BlueprintBaseName.1.Tests.csproj
 ```
 
 ## Native AOT
