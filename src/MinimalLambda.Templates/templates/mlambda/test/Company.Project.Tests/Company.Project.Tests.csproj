@@ -8,16 +8,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MinimalLambda.Testing" Version="2.2.0-beta.1"/>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.6.0"/>
+    <PackageReference Include="MinimalLambda.Testing" Version="2.2.0-beta.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="xunit.v3.mtp-v2" Version="3.2.2"/>
+    <PackageReference Include="xunit" Version="2.9.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Company.Project\Company.Project.csproj"/>
+    <ProjectReference Include="..\..\src\Company.Project\Company.Project.csproj" />
   </ItemGroup>
 </Project>

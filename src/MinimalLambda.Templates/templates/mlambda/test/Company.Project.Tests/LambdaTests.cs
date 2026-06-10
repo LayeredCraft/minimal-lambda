@@ -1,6 +1,13 @@
 using MinimalLambda.Testing;
 using Xunit;
 
+[assembly:
+    LambdaApplicationFactoryContentRoot(
+        "Company.Project",
+        "../../../../../src/Company.Project",
+        "Company.Project.csproj",
+        "0")]
+
 public class LambdaTests
 {
     [Fact]

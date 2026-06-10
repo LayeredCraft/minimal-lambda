@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using MinimalLambda.Builder;
 
 var builder = LambdaApplication.CreateBuilder();
@@ -9,7 +10,7 @@ builder.Services.AddLambdaSerializerWithContext<LambdaFunctionJsonSerializerCont
 var lambda = builder.Build();
 
 lambda.MapHandler(([FromEvent] GreetingRequest request) =>
-    new GreetingResponse($"Hello {request.Name}!"));
+new GreetingResponse($"Hello {request.Name}!"));
 
 await lambda.RunAsync();
 
