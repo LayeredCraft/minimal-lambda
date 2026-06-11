@@ -32,7 +32,7 @@ For Native AOT:
 dotnet new mlambda-aot -n MyFirstAotLambda
 ```
 
-See [Project Templates](templates.md) for template options and generated layout.
+See [Project Templates](templates.md) for template options, generated layout, and the `-o .` command for adding a function to an existing solution folder.
 
 ## Installing the NuGet Package
 

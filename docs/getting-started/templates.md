@@ -22,7 +22,7 @@ Create a standard MinimalLambda function and an integration test project:
 dotnet new mlambda -n MyLambda
 ```
 
-Generated layout:
+When run from a parent folder, the template creates a new `MyLambda` folder:
 
 ```text
 MyLambda/
@@ -42,12 +42,30 @@ Run tests:
 dotnet test MyLambda/test/MyLambda.Tests/MyLambda.Tests.csproj
 ```
 
+To add a function to an existing repository or solution folder, generate into the current directory:
+
+```bash
+dotnet new mlambda -n MyLambda -o .
+dotnet sln add src/MyLambda/MyLambda.csproj
+dotnet sln add test/MyLambda.Tests/MyLambda.Tests.csproj
+```
+
+This creates `src/MyLambda` and `test/MyLambda.Tests` beside your existing solution instead of nesting them under a new `MyLambda` folder.
+
 ## Native AOT Lambda
 
 Create a Native AOT-ready MinimalLambda function:
 
 ```bash
 dotnet new mlambda-aot -n MyAotLambda
+```
+
+Use `-o .` when adding Native AOT to an existing repository or solution folder:
+
+```bash
+dotnet new mlambda-aot -n MyAotLambda -o .
+dotnet sln add src/MyAotLambda/MyAotLambda.csproj
+dotnet sln add test/MyAotLambda.Tests/MyAotLambda.Tests.csproj
 ```
 
 The AOT template includes a `JsonSerializerContext`, `PublishAot`, `TrimMode=partial`, and `aws-lambda-tools-defaults.json` settings for AWS Lambda deployment.
@@ -57,6 +75,13 @@ Run tests:
 ```bash
 dotnet test MyAotLambda/test/MyAotLambda.Tests/MyAotLambda.Tests.csproj
 ```
+
+## Available templates
+
+| Template          | Short name    | Use when                                     |
+| ----------------- | ------------- | -------------------------------------------- |
+| Standard Lambda   | `mlambda`     | Starting a standard MinimalLambda function   |
+| Native AOT Lambda | `mlambda-aot` | Starting a Native AOT MinimalLambda function |
 
 ## AWS profile and region
 
@@ -80,3 +105,5 @@ Deploy from the generated project directory:
 cd MyLambda/src/MyLambda
 dotnet lambda deploy-function
 ```
+
+If you generated into an existing repository with `-o .`, use `cd src/MyLambda` instead.
