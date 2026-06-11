@@ -11,16 +11,13 @@ using Xunit;
 public class LambdaTests
 {
     [Fact]
-    public async Task Handler_ReturnsGreeting()
+    public async Task Handler_ReturnsUppercaseInput()
     {
         await using var factory = new LambdaApplicationFactory<Program>();
 
-        var response =
-            await factory.TestServer.InvokeAsync<GreetingRequest, GreetingResponse>(
-                new GreetingRequest("Lambda"));
+        var response = await factory.TestServer.InvokeAsync<string, string>("hello world");
 
         Assert.True(response.WasSuccess);
-        Assert.NotNull(response.Response);
-        Assert.Equal("Hello Lambda!", response.Response.Message);
+        Assert.Equal("HELLO WORLD", response.Response);
     }
 }

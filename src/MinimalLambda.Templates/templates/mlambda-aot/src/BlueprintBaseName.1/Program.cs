@@ -9,17 +9,11 @@ builder.Services.AddLambdaSerializerWithContext<LambdaFunctionJsonSerializerCont
 
 var lambda = builder.Build();
 
-lambda.MapHandler(([FromEvent] GreetingRequest request) =>
-new GreetingResponse($"Hello {request.Name}!"));
+lambda.MapHandler(([FromEvent] string input) => input.ToUpperInvariant());
 
 await lambda.RunAsync();
 
-public sealed record GreetingRequest(string Name);
-
-public sealed record GreetingResponse(string Message);
-
-[JsonSerializable(typeof(GreetingRequest))]
-[JsonSerializable(typeof(GreetingResponse))]
+[JsonSerializable(typeof(string))]
 public partial class LambdaFunctionJsonSerializerContext : JsonSerializerContext;
 
 public partial class Program;
