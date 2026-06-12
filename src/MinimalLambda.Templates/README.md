@@ -141,6 +141,24 @@ dotnet new mlambda -n MyLambda -o . --profile default --region us-east-1
 dotnet new mlambda-aot -n MyAotLambda -o . --profile prod --region eu-west-1
 ```
 
+## Central Package Management
+
+Like the built-in .NET and AWS Lambda templates, MinimalLambda templates emit versioned `PackageReference` items. If your repository uses Central Package Management, move those versions into `Directory.Packages.props` after generation.
+
+Add or update these package versions at the repository root:
+
+```xml
+<ItemGroup>
+  <PackageVersion Include="MinimalLambda" Version="2.2.0-beta.1" />
+  <PackageVersion Include="MinimalLambda.Testing" Version="2.2.0-beta.1" />
+  <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
+  <PackageVersion Include="xunit" Version="2.9.3" />
+  <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+</ItemGroup>
+```
+
+Then remove `Version="..."` from the generated `PackageReference` items in the app and test `.csproj` files.
+
 ## Native AOT
 
 Create a new Native AOT Lambda folder:

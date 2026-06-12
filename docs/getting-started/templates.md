@@ -91,6 +91,22 @@ Both templates accept `--profile` and `--region`. These values replace placehold
 dotnet new mlambda -n MyLambda --profile default --region us-east-1
 ```
 
+## Central Package Management
+
+The templates emit versioned `PackageReference` items, matching built-in .NET and AWS Lambda template behavior. In a repository that uses Central Package Management, move those versions into `Directory.Packages.props` after generation:
+
+```xml
+<ItemGroup>
+  <PackageVersion Include="MinimalLambda" Version="2.2.0-beta.1" />
+  <PackageVersion Include="MinimalLambda.Testing" Version="2.2.0-beta.1" />
+  <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
+  <PackageVersion Include="xunit" Version="2.9.3" />
+  <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+</ItemGroup>
+```
+
+Then remove `Version="..."` from generated `PackageReference` items.
+
 ## Deploy
 
 Install the AWS Lambda .NET CLI tool if needed:

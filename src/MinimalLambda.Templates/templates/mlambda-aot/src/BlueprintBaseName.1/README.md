@@ -87,6 +87,22 @@ Trimming removes code the compiler cannot see. Libraries that depend on reflecti
 
 For more trimming details, see <https://learn.microsoft.com/dotnet/core/deploying/trimming/trim-self-contained>.
 
+## Central Package Management
+
+This template emits versioned `PackageReference` items. If your repository uses Central Package Management, move those versions into `Directory.Packages.props` and remove `Version="..."` from the generated app and test project references.
+
+Add or update these entries at the repository root:
+
+```xml
+<ItemGroup>
+  <PackageVersion Include="MinimalLambda" Version="2.2.0-beta.1" />
+  <PackageVersion Include="MinimalLambda.Testing" Version="2.2.0-beta.1" />
+  <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
+  <PackageVersion Include="xunit" Version="2.9.3" />
+  <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+</ItemGroup>
+```
+
 ## Configure AWS deployment defaults
 
 `aws-lambda-tools-defaults.json` contains deployment defaults for `dotnet lambda` and the AWS Toolkit for Visual Studio:
