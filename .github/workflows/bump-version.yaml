@@ -33,7 +33,7 @@ jobs:
       - name: Get current version
         id: current_version
         run: |
-          VERSION=$(grep -oP '(?<=<VersionPrefix>)[^<]+' Directory.Build.props)
+          VERSION=$(grep -oP '(?<=<Version>)[^<]+' Directory.Build.props)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Current version: $VERSION"
 
@@ -66,7 +66,9 @@ jobs:
               ;;
             prerelease)
               PATCH=$((PATCH + 1))
-              echo "NEW_VERSION=$MAJOR.$MINOR.$PATCH-alpha.1" >> $GITHUB_OUTPUT
+              NEW_VERSION="$MAJOR.$MINOR.$PATCH-alpha.1"
+              echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+              echo "New version: $NEW_VERSION"
               exit 0
               ;;
           esac
@@ -78,8 +80,8 @@ jobs:
       - name: Update version in Directory.Build.props
         run: |
           NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
-          sed -i "s/<VersionPrefix>[^<]*<\/VersionPrefix>/<VersionPrefix>$NEW_VERSION<\/VersionPrefix>/" Directory.Build.props
-          cat Directory.Build.props | grep -A1 -B1 "VersionPrefix"
+          sed -i "s/<Version>[^<]*<\/Version>/<Version>$NEW_VERSION<\/Version>/" Directory.Build.props
+          cat Directory.Build.props | grep -A1 -B1 "Version"
 
       - name: Commit version bump
         run: |

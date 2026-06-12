@@ -43,8 +43,8 @@ Required central versions for the generated app and test projects:
 
 ```xml
 <ItemGroup>
-  <PackageVersion Include="MinimalLambda" Version="2.2.0-beta.1" />
-  <PackageVersion Include="MinimalLambda.Testing" Version="2.2.0-beta.1" />
+  <PackageVersion Include="MinimalLambda" Version="2.6.0-beta.1" />
+  <PackageVersion Include="MinimalLambda.Testing" Version="2.6.0-beta.1" />
   <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
   <PackageVersion Include="xunit" Version="2.9.3" />
   <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
