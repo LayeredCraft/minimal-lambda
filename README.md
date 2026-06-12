@@ -55,11 +55,12 @@ The core packages provide the fundamental hosting framework, abstractions, and o
 for building AWS Lambda functions.
 
 | Package                                                                        | NuGet                                                                                                                                  | Downloads                                                                                                                                    |
-|--------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | [**MinimalLambda**](./src/MinimalLambda/README.md)                             | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.svg)](https://www.nuget.org/packages/MinimalLambda)                             | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.svg)](https://www.nuget.org/packages/MinimalLambda/)                             |
 | [**MinimalLambda.Abstractions**](./src/MinimalLambda.Abstractions/README.md)   | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.Abstractions.svg)](https://www.nuget.org/packages/MinimalLambda.Abstractions)   | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.Abstractions.svg)](https://www.nuget.org/packages/MinimalLambda.Abstractions/)   |
 | [**MinimalLambda.OpenTelemetry**](./src/MinimalLambda.OpenTelemetry/README.md) | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.OpenTelemetry.svg)](https://www.nuget.org/packages/MinimalLambda.OpenTelemetry) | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.OpenTelemetry.svg)](https://www.nuget.org/packages/MinimalLambda.OpenTelemetry/) |
 | [**MinimalLambda.Testing**](./src/MinimalLambda.Testing/README.md)             | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.Testing.svg)](https://www.nuget.org/packages/MinimalLambda.Testing)             | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.Testing.svg)](https://www.nuget.org/packages/MinimalLambda.Testing/)             |
+| [**MinimalLambda.Templates**](./src/MinimalLambda.Templates/README.md)         | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.Templates.svg)](https://www.nuget.org/packages/MinimalLambda.Templates)         | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.Templates.svg)](https://www.nuget.org/packages/MinimalLambda.Templates/)         |
 
 ### Envelopes Packages
 
@@ -67,7 +68,7 @@ Envelope packages provide specialized support for handling different AWS Lambda 
 including SQS, SNS, API Gateway, Kinesis, and more.
 
 | Package                                                                                            | NuGet                                                                                                                                                          | Downloads                                                                                                                                                            |
-|----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [**MinimalLambda.Envelopes**](./src/Envelopes/MinimalLambda.Envelopes/README.md)                   | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.Envelopes.svg)](https://www.nuget.org/packages/MinimalLambda.Envelopes)                                 | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.Envelopes.svg)](https://www.nuget.org/packages/MinimalLambda.Envelopes/)                                 |
 | [**MinimalLambda.Envelopes.Sqs**](./MinimalLambda.Envelopes.Sqs/README.md)                         | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.Envelopes.Sqs.svg)](https://www.nuget.org/packages/MinimalLambda.Envelopes.Sqs)                         | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.Envelopes.Sqs.svg)](https://www.nuget.org/packages/MinimalLambda.Envelopes.Sqs/)                         |
 | [**MinimalLambda.Envelopes.ApiGateway**](./MinimalLambda.Envelopes.ApiGateway/README.md)           | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.Envelopes.ApiGateway.svg)](https://www.nuget.org/packages/MinimalLambda.Envelopes.ApiGateway)           | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.Envelopes.ApiGateway.svg)](https://www.nuget.org/packages/MinimalLambda.Envelopes.ApiGateway/)           |
@@ -82,7 +83,28 @@ Each package has detailed documentation in its own README file.
 
 ## Quick Start
 
-Install the NuGet package:
+Create a new Lambda project from the templates:
+
+```bash
+dotnet new install MinimalLambda.Templates
+dotnet new mlambda -n MyLambda
+```
+
+For Native AOT:
+
+```bash
+dotnet new mlambda-aot -n MyAotLambda
+```
+
+Adding a function to an existing solution folder? Generate into the current directory:
+
+```bash
+dotnet new mlambda -n MyLambda -o .
+dotnet sln add src/MyLambda/MyLambda.csproj
+dotnet sln add test/MyLambda.Tests/MyLambda.Tests.csproj
+```
+
+Or add the NuGet package to an existing project:
 
 ```bash
 dotnet add package MinimalLambda

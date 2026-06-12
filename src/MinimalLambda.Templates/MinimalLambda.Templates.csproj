@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <PackageId>MinimalLambda.Templates</PackageId>
+    <Title>MinimalLambda Templates</Title>
+    <Description>dotnet new templates for MinimalLambda AWS Lambda projects.</Description>
+    <PackageType>Template</PackageType>
+    <PackageTags>dotnet-new;templates;minimal-lambda;aws;lambda</PackageTags>
+    <IncludeContentInPack>true</IncludeContentInPack>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <ContentTargetFolders>content</ContentTargetFolders>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IncludeSymbols>false</IncludeSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="templates\**\*.cs" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <Content Include="templates\**\*"
+             Exclude="templates\**\bin\**;templates\**\obj\**;templates\Directory.Build.props;templates\Directory.Build.targets;templates\Directory.Packages.props" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AWSProjectType>Lambda</AWSProjectType>
+    <!-- This property makes the build directory similar to a publish directory and helps AWS Lambda tooling find project dependencies. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <!-- Generate a Native AOT image during publishing to improve cold start time. -->
+    <PublishAot>true</PublishAot>
+    <PublishTrimmed>true</PublishTrimmed>
+    <!-- Strip symbols from the final executable on Linux to reduce package size. -->
+    <StripSymbols>true</StripSymbols>
+    <!-- TrimMode partial only trims assemblies marked as trimmable. Use full only after resolving trim warnings for all dependencies. -->
+    <TrimMode>partial</TrimMode>
+    <!-- Disable reflection-based JSON serialization so missing source-generated metadata fails early. -->
+    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MinimalLambda" Version="2.6.0-beta.1" />
+  </ItemGroup>
+</Project>

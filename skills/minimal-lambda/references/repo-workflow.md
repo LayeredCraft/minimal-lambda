@@ -86,6 +86,45 @@ Generator responsibilities include:
 - `src/MinimalLambda/Runtime/` hosted service/bootstrap integration
 - `src/MinimalLambda.Abstractions/` public contracts
 
+## Template package landmarks
+
+- package project: `src/MinimalLambda.Templates/MinimalLambda.Templates.csproj`
+- standard template: `src/MinimalLambda.Templates/templates/mlambda/`
+- Native AOT template: `src/MinimalLambda.Templates/templates/mlambda-aot/`
+- template metadata: `.template.config/template.json`
+- generated app project: `src/BlueprintBaseName.1/BlueprintBaseName.1.csproj`
+- generated tests: `test/BlueprintBaseName.1.Tests/`
+
+Template behavior should stay aligned with AWS Lambda .NET templates:
+
+- keep `preferNameDirectory=true`
+- use `-o .` in docs/tests for adding to an existing solution folder
+- do not add separate `*-add` templates
+- keep versioned `PackageReference` items; document manual Central Package Management cleanup instead of adding a `--use-cpm` option
+- keep Lambda project settings such as `AWSProjectType`, `CopyLocalLockFileAssemblies`, `PublishReadyToRun` for standard templates, and `PublishAot`, `StripSymbols`, `TrimMode=partial` for AOT templates
+
+Template smoke test from repo root:
+
+```bash
+DOTNET_NOLOGO=1 dotnet pack src/MinimalLambda.Templates/MinimalLambda.Templates.csproj -c Release
+DOTNET_NOLOGO=1 dotnet new install ./src/MinimalLambda.Templates --force
+```
+
+Then in a clean folder:
+
+```bash
+dotnet new sln -n TemplateSmoke
+dotnet new mlambda -n SmokeFunction -o . --profile default --region us-east-1
+dotnet sln add src/SmokeFunction/SmokeFunction.csproj
+dotnet sln add test/SmokeFunction.Tests/SmokeFunction.Tests.csproj --include-references false
+dotnet test
+
+dotnet new mlambda-aot -n SmokeAotFunction -o . --profile default --region us-east-1
+dotnet sln add src/SmokeAotFunction/SmokeAotFunction.csproj
+dotnet sln add test/SmokeAotFunction.Tests/SmokeAotFunction.Tests.csproj --include-references false
+dotnet test
+```
+
 ## Test strategy
 
 - Unit tests for isolated runtime/generator behavior.

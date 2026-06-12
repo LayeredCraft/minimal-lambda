@@ -1,0 +1,4 @@
+<Project>
+  <!-- Template projects are restored in-repo by dependency scanning, but should not
+       inherit repository build settings. Generated projects should stay standalone. -->
+</Project>

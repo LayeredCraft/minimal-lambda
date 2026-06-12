@@ -17,6 +17,23 @@ Before you begin, ensure your development environment meets these requirements:
 
     C# 11 or later is required for source generators and interceptors that power the framework's compile-time optimizations.
 
+## Starting from a template
+
+For new functions, install the templates and generate a ready-to-build project with tests and AWS Lambda deployment defaults:
+
+```bash
+dotnet new install MinimalLambda.Templates
+dotnet new mlambda -n MyFirstLambda
+```
+
+For Native AOT:
+
+```bash
+dotnet new mlambda-aot -n MyFirstAotLambda
+```
+
+See [Project Templates](templates.md) for template options, generated layout, and the `-o .` command for adding a function to an existing solution folder.
+
 ## Installing the NuGet Package
 
 Choose your preferred installation method:

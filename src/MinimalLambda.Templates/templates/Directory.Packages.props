@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <!-- Template projects are restored in-repo by dependency scanning,
+         but generated projects must keep explicit PackageReference versions. -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>

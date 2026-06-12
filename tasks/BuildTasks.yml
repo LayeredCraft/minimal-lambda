@@ -54,6 +54,20 @@ tasks:
       - dotnet nuget push ./nupkg/*.nupkg --source https://api.nuget.org/v3/index.json --api-key $NUGET_API_KEY --skip-duplicate
       - echo "✨ Published"
 
+  publish-local:
+    desc: Package and publish to local NuGet source for use in other solutions
+    silent: true
+    deps: [ pack ]
+    vars:
+      LOCAL_NUGET_SOURCE: '{{.LOCAL_NUGET_SOURCE | default "~/LocalNuGetPackages"}}'
+    cmds:
+      - echo "📦 Publishing to local NuGet source"
+      - mkdir -p {{.LOCAL_NUGET_SOURCE}}
+      - cp -f ./nupkg/*.nupkg {{.LOCAL_NUGET_SOURCE}}/
+      - echo "✅ Published to {{.LOCAL_NUGET_SOURCE}}"
+      - echo "💡 Add this source to your other solution with:"
+      - echo "   dotnet nuget add source {{.LOCAL_NUGET_SOURCE}} --name local"
+
   aot-check:
     desc: Validates the AOT compatibility of the libraries
     silent: true

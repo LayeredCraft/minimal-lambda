@@ -2,6 +2,57 @@
 
 Read when creating or modifying a consumer project that uses MinimalLambda packages.
 
+## Project templates
+
+For new consumer projects, prefer the templates when they fit:
+
+```bash
+dotnet new install MinimalLambda.Templates
+dotnet new mlambda -n MyLambda
+dotnet new mlambda-aot -n MyAotLambda
+```
+
+Templates create `src/` and `test/` projects, include `aws-lambda-tools-defaults.json`, use inline handlers, and test through `MinimalLambda.Testing`.
+
+When adding a function to an existing repository or solution folder, create the solution first if needed and generate into the current directory with `-o .`:
+
+```bash
+dotnet new sln -n MySolution
+dotnet new mlambda -n MyLambda -o . --profile default --region us-east-1
+dotnet sln add src/MyLambda/MyLambda.csproj
+dotnet sln add test/MyLambda.Tests/MyLambda.Tests.csproj --include-references false
+dotnet test
+```
+
+Use the AOT template the same way:
+
+```bash
+dotnet new mlambda-aot -n MyAotLambda -o . --profile default --region us-east-1
+dotnet sln add src/MyAotLambda/MyAotLambda.csproj
+dotnet sln add test/MyAotLambda.Tests/MyAotLambda.Tests.csproj --include-references false
+dotnet test
+```
+
+`--include-references false` avoids duplicate-add behavior on newer SDKs when adding the test project after the app project.
+
+### Central Package Management
+
+Templates follow built-in .NET and AWS template behavior: generated projects contain versioned `PackageReference` items. In repositories using Central Package Management, move versions to `Directory.Packages.props` and remove `Version="..."` from generated `PackageReference` items.
+
+Required central versions for the generated app and test projects:
+
+```xml
+<ItemGroup>
+  <PackageVersion Include="MinimalLambda" Version="2.6.0-beta.1" />
+  <PackageVersion Include="MinimalLambda.Testing" Version="2.6.0-beta.1" />
+  <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
+  <PackageVersion Include="xunit" Version="2.9.3" />
+  <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+</ItemGroup>
+```
+
+Do not invent a `--use-cpm` flag; current published template guidance is manual CPM cleanup.
+
 ## Minimal packages
 
 Plain Lambda handler:

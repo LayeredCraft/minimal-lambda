@@ -27,6 +27,7 @@ Before you begin, ensure you have:
 ## Start Here
 
 - **[Installation](installation.md)** – Add the NuGet packages and configure your csproj.
+- **[Project Templates](templates.md)** – Start from `dotnet new mlambda` or `dotnet new mlambda-aot`.
 - **[Your First Lambda](first-lambda.md)** – Walk through a handler, DI setup, and local testing.
 - **[Core Concepts](core-concepts.md)** – Learn about the host lifecycle, middleware, and source generation.
 - **Testing** – For in-memory, `WebApplicationFactory`-style integration tests, see

@@ -11,6 +11,7 @@ Code under `src/` runs on AWS Lambda or generates code that will.
 - Prefer AOT/trimming-friendly code.
 - Avoid reflection-heavy/dynamic approaches unless required and guarded.
 - Run formatting and relevant tests before handoff.
+- If a change affects how users use the project, update docs and affected skills in the same change.
 
 ## Common commands
 
