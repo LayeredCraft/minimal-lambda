@@ -1,0 +1,9 @@
+<Project>
+  <!-- Dependency submission restores template .csproj files in-repo. Remove package
+       references here so unpublished template package versions do not break restore.
+       This file is outside template roots, so generated projects keep references. -->
+  <ItemGroup>
+    <PackageReference Remove="MinimalLambda" />
+    <PackageReference Remove="MinimalLambda.Testing" />
+  </ItemGroup>
+</Project>

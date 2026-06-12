@@ -20,6 +20,7 @@
   <ItemGroup>
     <Compile Remove="templates\**\*.cs" />
     <None Include="README.md" Pack="true" PackagePath="\" />
-    <Content Include="templates\**\*" Exclude="templates\**\bin\**;templates\**\obj\**" />
+    <Content Include="templates\**\*"
+             Exclude="templates\**\bin\**;templates\**\obj\**;templates\Directory.Build.props;templates\Directory.Build.targets;templates\Directory.Packages.props" />
   </ItemGroup>
 </Project>
