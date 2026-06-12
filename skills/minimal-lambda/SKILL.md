@@ -1,6 +1,6 @@
 ---
 name: minimal-lambda
-description: Work effectively with MinimalLambda, the Lambda-first .NET hosting framework in this repo and in client projects. Use this skill whenever the user asks to build, debug, migrate, test, document, or review code using MinimalLambda APIs, envelopes, middleware, lifecycle hooks, source-generated handlers, AOT/trimming, OpenTelemetry, or MinimalLambda.Testing. Trigger even when the user only mentions AWS Lambda with Minimal API-style .NET patterns, MapHandler, FromEvent, LambdaApplication, or MinimalLambda package names.
+description: Work effectively with MinimalLambda, the Lambda-first .NET hosting framework in this repo and in client projects. Use this skill whenever the user asks to build, debug, migrate, test, document, scaffold, template, package, or review code using MinimalLambda APIs, `dotnet new mlambda` templates, envelopes, middleware, lifecycle hooks, source-generated handlers, AOT/trimming, OpenTelemetry, or MinimalLambda.Testing. Trigger even when the user only mentions AWS Lambda with Minimal API-style .NET patterns, MapHandler, FromEvent, LambdaApplication, MinimalLambda package names, MinimalLambda.Templates, or adding a Lambda to an existing solution.
 ---
 
 # MinimalLambda skill
@@ -10,7 +10,7 @@ Use this skill to give agents enough MinimalLambda project context without loadi
 ## First move
 
 1. Identify task area:
-   - client project setup/package/config template → read `references/client-project-setup.md`
+   - client project setup/package/config/template usage or `dotnet new mlambda` → read `references/client-project-setup.md`
    - app setup/handler/DI/lifecycle → read `references/core-hosting.md` and `references/best-practices.md`
    - handler shape/unit-testable handlers → read `references/patterns/handler-patterns.md`
    - middleware/features/context → read `references/core-hosting.md` and `references/patterns/middleware-patterns.md`
@@ -21,7 +21,7 @@ Use this skill to give agents enough MinimalLambda project context without loadi
    - integration tests/client project tests → read `references/testing.md` and `references/patterns/testing-patterns.md`
    - tracing/metrics/shutdown flush → read `references/opentelemetry.md`
    - compile/runtime/test failure → read `references/troubleshooting.md`
-   - repo contribution/source generator/AOT work → read `references/repo-workflow.md`
+   - repo contribution/source generator/AOT/template package work → read `references/repo-workflow.md`
 2. Use bundled references as the primary source. They are included so the skill works in client projects and global installs without assuming the MinimalLambda repository is present.
 3. Only inspect local MinimalLambda source paths after confirming the current workspace is this repository; for repo contributions, read `references/repo-workflow.md` first.
 4. Keep Lambda-first constraints in mind: source generation, AOT friendliness, scoped per-invocation services, one handler per runtime execution.
