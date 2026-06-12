@@ -77,16 +77,17 @@ jobs:
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "New version: $NEW_VERSION"
 
-      - name: Update version in Directory.Build.props
+      - name: Update package versions
         run: |
           NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
           sed -i "s/<Version>[^<]*<\/Version>/<Version>$NEW_VERSION<\/Version>/" Directory.Build.props
+          ./scripts/set-template-package-version.sh "$NEW_VERSION"
           cat Directory.Build.props | grep -A1 -B1 "Version"
 
       - name: Commit version bump
         run: |
           NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
-          git add Directory.Build.props
+          git add Directory.Build.props src/MinimalLambda.Templates
           git commit -m "chore(build): bump version to $NEW_VERSION"
           git tag "v$NEW_VERSION"
 

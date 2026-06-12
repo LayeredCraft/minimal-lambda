@@ -44,6 +44,9 @@ jobs:
             exit 1
           fi
 
+      - name: Set template package references
+        run: ./scripts/set-template-package-version.sh "${{ steps.version.outputs.version }}"
+
       - name: Pack NuGet packages
         run: dotnet pack --configuration Release --no-build --output ./nupkg /p:Version=${{ steps.version.outputs.version }}
 
