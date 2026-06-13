@@ -61,7 +61,7 @@ jobs:
         run: task build:aot-check
 
       - name: Upload coverage reports
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           files: ./coverage/**/*.cobertura.xml
           disable_search: true
