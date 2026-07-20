@@ -2,7 +2,7 @@
 
 In-memory Lambda runtime for end-to-end and integration testing with the MinimalLambda framework.
 
-> 📚 **[View Full Documentation](https://j-d-ha.github.io/minimal-lambda/)**
+> 📚 **[View Full Documentation](https://layeredcraft.github.io/minimal-lambda/)**
 
 ## Overview
 

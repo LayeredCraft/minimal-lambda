@@ -1,13 +1,13 @@
 # MinimalLambda
 
-[![Main Build](https://github.com/j-d-ha/minimal-lambda/actions/workflows/main-build.yaml/badge.svg)](https://github.com/j-d-ha/minimal-lambda/actions/workflows/main-build.yaml)
-[![codecov](https://codecov.io/gh/j-d-ha/minimal-lambda/graph/badge.svg?token=BWORPTQ0UK)](https://codecov.io/gh/j-d-ha/minimal-lambda)
+[![PR Build](https://github.com/LayeredCraft/minimal-lambda/actions/workflows/pr-build.yaml/badge.svg)](https://github.com/LayeredCraft/minimal-lambda/actions/workflows/pr-build.yaml)
+[![codecov](https://codecov.io/gh/LayeredCraft/minimal-lambda/graph/badge.svg?token=BWORPTQ0UK)](https://codecov.io/gh/LayeredCraft/minimal-lambda)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **Lambda-first hosting with Minimal API-inspired patterns** – Familiar .NET ergonomics with
 handlers, DI, and middleware, purpose-built for AWS Lambda triggers.
 
-> 📚 **[View Full Documentation](https://j-d-ha.github.io/minimal-lambda/)**
+> 📚 **[View Full Documentation](https://layeredcraft.github.io/minimal-lambda/)**
 
 ## Overview
 
@@ -154,13 +154,13 @@ context.
 Install it with [skills.sh](https://skills.sh):
 
 ```bash
-npx skills add j-d-ha/minimal-lambda --skill minimal-lambda
+npx skills add LayeredCraft/minimal-lambda --skill minimal-lambda
 ```
 
 Install globally for Claude Code:
 
 ```bash
-npx skills add j-d-ha/minimal-lambda --skill minimal-lambda --global --agent claude-code
+npx skills add LayeredCraft/minimal-lambda --skill minimal-lambda --global --agent claude-code
 ```
 
 Update later with:

@@ -518,7 +518,7 @@ public async Task ColdStart_InitCompletesWithinTimeout()
 
 ## Complete Examples
 
-For comprehensive examples covering all scenarios, see the **[MinimalLambda.Testing test suite](https://github.com/j-d-ha/minimal-lambda/tree/main/tests/MinimalLambda.Testing.UnitTests)**:
+For comprehensive examples covering all scenarios, see the **[MinimalLambda.Testing test suite](https://github.com/LayeredCraft/minimal-lambda/tree/main/tests/MinimalLambda.Testing.UnitTests)**:
 
 - `SimpleLambdaTests.cs` – Basic invocation patterns and concurrent invocations
 - `DiLambdaTests.cs` – DI container replacement and lifecycle testing

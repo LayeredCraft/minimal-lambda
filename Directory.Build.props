@@ -4,11 +4,12 @@
     <!-- SPDX license identifier for MIT -->
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <!-- Other useful metadata -->
-    <Authors>Jonas Ha</Authors>
+    <Authors>LayeredCraft</Authors>
+    <Company>LayeredCraft</Company>
     <PackageTags>csharp;library;utility;aws;lambda</PackageTags>
-    <RepositoryUrl>https://github.com/j-d-ha/minimal-lambda</RepositoryUrl>
-    <Copyright>Copyright © 2025 Jonas Ha</Copyright>
-    <PackageProjectUrl>https://github.com/j-d-ha/minimal-lambda</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/LayeredCraft/minimal-lambda</RepositoryUrl>
+    <Copyright>Copyright © 2025 LayeredCraft</Copyright>
+    <PackageProjectUrl>https://github.com/LayeredCraft/minimal-lambda</PackageProjectUrl>
     <!-- NuGet.org specific -->
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <IsPackable>true</IsPackable>
@@ -23,8 +24,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
-  <PropertyGroup
-    Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0')) And !$(MSBuildProjectDirectory.Contains('tests'))">
+  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0')) And !$(MSBuildProjectDirectory.Contains('tests'))">
     <IsAotCompatible>true</IsAotCompatible>
     <EnableAotAnalyzer>true</EnableAotAnalyzer>
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>

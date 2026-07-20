@@ -53,7 +53,7 @@ Prefer to explore? Head directly to **[Guides](../guides/index.md)** or **[Examp
 
 If you run into issues or have questions:
 
-- **[GitHub Issues](https://github.com/j-d-ha/minimal-lambda/issues)** – Report bugs or request features
-- **[GitHub Discussions](https://github.com/j-d-ha/minimal-lambda/discussions)** – Ask questions and share ideas
+- **[GitHub Issues](https://github.com/LayeredCraft/minimal-lambda/issues)** – Report bugs or request features
+- **[GitHub Discussions](https://github.com/LayeredCraft/minimal-lambda/discussions)** – Ask questions and share ideas
 
 Continue with **[Installation](installation.md)** to configure your project.

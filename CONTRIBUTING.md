@@ -42,7 +42,7 @@ respectful and constructive in all interactions.
    ```
 3. **Add the upstream remote**:
    ```bash
-   git remote add upstream https://github.com/j-d-ha/minimal-lambda.git
+   git remote add upstream https://github.com/LayeredCraft/minimal-lambda.git
    ```
 4. **Create a feature branch** (see [Branching Strategy](#branching-strategy))
 

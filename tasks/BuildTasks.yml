@@ -45,15 +45,6 @@ tasks:
       - dotnet pack --configuration Release --no-build --output ./nupkg
       - echo "✅ Packed"
   
-  publish:
-    desc: Publish the NuGet package to NuGet.org
-    silent: true
-    deps: [ pack ]
-    cmds:
-      - echo "🚀 Publishing"
-      - dotnet nuget push ./nupkg/*.nupkg --source https://api.nuget.org/v3/index.json --api-key $NUGET_API_KEY --skip-duplicate
-      - echo "✨ Published"
-
   publish-local:
     desc: Package and publish to local NuGet source for use in other solutions
     silent: true

@@ -1,12 +1,9 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
 name: PR Build
 
 on:
   pull_request:
-    types: [ opened, synchronize, reopened, ready_for_review ]
-    branches: [ "main" ]
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
     paths-ignore:
       - 'docs/**'
       - 'mkdocs.yml'
@@ -15,72 +12,23 @@ on:
       - 'uv.lock'
       - '**.md'
 
+permissions:
+  id-token: write
+  contents: write
+
 concurrency:
   group: pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
-    if: github.event.pull_request.draft == false
-
-    runs-on: ubuntu-latest
-    
-    timeout-minutes: 10
-
-    steps:
-      - name: Act Workaround # https://github.com/nektos/act/issues/973
-        if: ${{ env.ACT }}
-        run: curl -fsSL https://deb.nodesource.com/setup_22.x | bash && apt install -y nodejs
-
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: 11.0.x
-
-      - name: Restore dependencies
-        run: dotnet restore
-
-      - name: Install dotnet tools
-        run: dotnet tool restore
-
-      - name: Install Task
-        uses: go-task/setup-task@v2
-
-      - name: Build
-        run: dotnet build --no-restore --configuration Release /p:TreatWarningsAsErrors=true
-
-      - name: Run tests
-        timeout-minutes: 3
-        run: task test:ci
-
-      - name: Validate AOT Compatability
-        run: task build:aot-check
-
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v6
-        with:
-          files: ./coverage/**/*.cobertura.xml
-          disable_search: true
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: true
-
-      - name: Run formatting
-        run: task format:cleanupcode
-
-      - name: Check for formatting changes
-        run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "❌ Code formatting issues detected!"
-            echo "The following files need formatting:"
-            git status --porcelain
-            echo ""
-            echo "Run the following commands locally to fix:"
-            echo "  task format:all"
-            exit 1
-          else
-            echo "✅ All code is properly formatted!"
-          fi
+  pr-build:
+    uses: LayeredCraft/devops-templates/.github/workflows/pr-build.yaml@v10.1
+    with:
+      solution: MinimalLambda.sln
+      dotnetVersion: 11.0.x
+      buildConfiguration: Release
+      hasTests: false
+      useMtpRunner: true
+      enableCodeCoverage: false
+      runCdk: false
+    secrets: inherit

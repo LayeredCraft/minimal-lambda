@@ -194,7 +194,7 @@ ______________________________________________________________________
 
     This code is not specific to `MinimalLambda.OpenTelemetry` and follows the guidlines provided by Microsoft's [.NET distributed tracing documetation](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/distributed-tracing).
 
-A full working example of an instrumented Lambda application can be found [on GitHub](https://github.com/j-d-ha/minimal-lambda/tree/main/examples/MinimalLambda.Example.OpenTelemetry).
+A full working example of an instrumented Lambda application can be found [on GitHub](https://github.com/LayeredCraft/minimal-lambda/tree/main/examples/MinimalLambda.Example.OpenTelemetry).
 
 ### Custom Instrumentation Class
 

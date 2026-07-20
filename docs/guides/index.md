@@ -136,8 +136,8 @@ After mastering the guides, explore [Advanced Topics](../advanced/index.md) for 
 
 If you encounter issues not covered in these guides:
 
-- Search or ask in [GitHub Discussions](https://github.com/j-d-ha/minimal-lambda/discussions)
-- Report bugs in [GitHub Issues](https://github.com/j-d-ha/minimal-lambda/issues)
+- Search or ask in [GitHub Discussions](https://github.com/LayeredCraft/minimal-lambda/discussions)
+- Report bugs in [GitHub Issues](https://github.com/LayeredCraft/minimal-lambda/issues)
 
 ______________________________________________________________________
 

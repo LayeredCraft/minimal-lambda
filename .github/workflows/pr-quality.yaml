@@ -1,0 +1,81 @@
+name: PR Quality Gates
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - '.github/workflows/docs.yaml'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '**.md'
+
+concurrency:
+  group: pr-quality-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 11.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore MinimalLambda.sln
+
+      - name: Install dotnet tools
+        run: dotnet tool restore
+
+      - name: Install Task
+        uses: go-task/setup-task@v2
+
+      - name: Build
+        run: dotnet build MinimalLambda.sln --no-restore --configuration Release /p:TreatWarningsAsErrors=true
+
+      - name: Validate AOT compatibility
+        run: task build:aot-check
+
+      - name: Run coverage
+        timeout-minutes: 10
+        run: |
+          dotnet test tests/MinimalLambda.UnitTests/MinimalLambda.UnitTests.csproj --framework net8.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
+          dotnet test tests/MinimalLambda.Envelopes.UnitTests/MinimalLambda.Envelopes.UnitTests.csproj --framework net8.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
+          dotnet test tests/MinimalLambda.SourceGenerators.UnitTests/MinimalLambda.SourceGenerators.UnitTests.csproj --framework net8.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
+          dotnet test tests/MinimalLambda.OpenTelemetry.UnitTests/MinimalLambda.OpenTelemetry.UnitTests.csproj --framework net9.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v6
+        with:
+          files: ./coverage/**/*.cobertura.xml
+          disable_search: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+
+      - name: Run formatting
+        run: task format:cleanupcode
+
+      - name: Check for formatting changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "❌ Code formatting issues detected!"
+            echo "The following files need formatting:"
+            git status --porcelain
+            echo ""
+            echo "Run the following commands locally to fix:"
+            echo "  task format:all"
+            exit 1
+          else
+            echo "✅ All code is properly formatted!"
+          fi
