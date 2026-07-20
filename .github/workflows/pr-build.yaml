@@ -12,6 +12,10 @@ on:
       - 'uv.lock'
       - '**.md'
 
+permissions:
+  id-token: write
+  contents: write
+
 concurrency:
   group: pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
