@@ -1,8 +1,10 @@
 name: Publish Preview
 
 on:
+  workflow_dispatch:
   push:
-    branches: [main]
+    branches:
+      - main
     paths-ignore:
       - 'docs/**'
       - 'mkdocs.yml'
@@ -10,18 +12,15 @@ on:
       - 'pyproject.toml'
       - 'uv.lock'
       - '**.md'
-  workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
-
-concurrency:
-  group: publish-preview-${{ github.ref }}
-  cancel-in-progress: true
+  contents: read
 
 jobs:
   build:
+    permissions:
+      contents: write
+      pull-requests: write
     uses: LayeredCraft/devops-templates/.github/workflows/publish-preview.yml@v10.1
     with:
       solution: MinimalLambda.sln
@@ -29,8 +28,6 @@ jobs:
       prereleaseIdentifier: preview
       hasTests: false
       buildConfiguration: Release
-      artifact_name: nuget-packages
-    secrets: inherit
 
   push:
     needs: build
@@ -42,4 +39,3 @@ jobs:
       - uses: LayeredCraft/devops-templates/.github/actions/nuget-push@v10.1
         with:
           nuget_user: ${{ secrets.NUGET_USER }}
-          artifact_name: nuget-packages
