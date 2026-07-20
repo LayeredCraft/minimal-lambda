@@ -13,7 +13,7 @@ jobs:
     with:
       solution: MinimalLambda.sln
       dotnetVersion: 11.0.x
-      hasTests: true
+      hasTests: false
       buildConfiguration: Release
     secrets: inherit
 

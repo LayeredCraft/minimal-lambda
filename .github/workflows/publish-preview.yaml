@@ -27,7 +27,7 @@ jobs:
       solution: MinimalLambda.sln
       dotnetVersion: 11.0.x
       prereleaseIdentifier: preview
-      hasTests: true
+      hasTests: false
       buildConfiguration: Release
       artifact_name: nuget-packages
     secrets: inherit

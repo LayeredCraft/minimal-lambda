@@ -15,8 +15,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  release-drafter:
+  release-drafter-push:
+    if: github.event_name == 'push'
     uses: LayeredCraft/devops-templates/.github/workflows/release-drafter.yml@v10.1
     with:
       event_name: ${{ github.event_name }}
-      pr_draft: ${{ github.event.pull_request.draft || false }}
+      pr_draft: false
+
+  release-drafter-pr:
+    if: github.event_name == 'pull_request'
+    uses: LayeredCraft/devops-templates/.github/workflows/release-drafter.yml@v10.1
+    with:
+      event_name: ${{ github.event_name }}
+      pr_draft: ${{ github.event.pull_request.draft }}
