@@ -31,46 +31,68 @@ autolabeler:
       - '/^(feat|fix|docs|refactor|test|chore|ci|revert)(\([^)]*\))?!:/i'
 
 categories:
+  - type: 'pre-include'
+    when:
+      labels:
+        - 'type: feat'
+        - 'type: fix'
+        - 'type: docs'
+        - 'type: refactor'
+        - 'type: test'
+        - 'type: chore'
+        - 'type: ci'
+        - 'type: revert'
+        - 'breaking-change'
+  - type: 'pre-exclude'
+    when:
+      labels:
+        - 'skip-changelog'
+        - 'internal'
   - title: '⚠️ Breaking Changes'
-    labels:
-      - 'breaking-change'
+    when:
+      label: 'breaking-change'
   - title: '🚀 Features'
-    labels:
-      - 'type: feat'
+    when:
+      label: 'type: feat'
   - title: '🐛 Bug Fixes'
-    labels:
-      - 'type: fix'
+    when:
+      label: 'type: fix'
   - title: '📚 Documentation'
-    labels:
-      - 'type: docs'
+    when:
+      label: 'type: docs'
   - title: '🔄 Refactoring'
-    labels:
-      - 'type: refactor'
+    when:
+      label: 'type: refactor'
   - title: '✅ Tests'
-    labels:
-      - 'type: test'
+    when:
+      label: 'type: test'
   - title: '🔧 Maintenance'
-    labels:
-      - 'type: chore'
-      - 'type: ci'
-      - 'type: revert'
-version-resolver:
-  major:
-    labels:
-      - 'breaking-change'
-  minor:
-    labels:
-      - 'type: feat'
-  patch:
-    labels:
-      - 'type: fix'
-      - 'type: docs'
-      - 'type: refactor'
-      - 'type: test'
-      - 'type: chore'
-      - 'type: ci'
-      - 'type: revert'
-  default: patch
+    when:
+      labels:
+        - 'type: chore'
+        - 'type: ci'
+        - 'type: revert'
+  - type: 'version-resolver'
+    semver-increment: 'major'
+    when:
+      label: 'breaking-change'
+  - type: 'version-resolver'
+    semver-increment: 'minor'
+    when:
+      label: 'type: feat'
+  - type: 'version-resolver'
+    semver-increment: 'patch'
+    when:
+      labels:
+        - 'type: fix'
+        - 'type: docs'
+        - 'type: refactor'
+        - 'type: test'
+        - 'type: chore'
+        - 'type: ci'
+        - 'type: revert'
+  - type: 'version-resolver'
+    semver-increment: 'patch'
 
 template: |
   ## Summary
@@ -81,20 +103,6 @@ template: |
 
   $CHANGES
 
-include-labels:
-  - 'type: feat'
-  - 'type: fix'
-  - 'type: docs'
-  - 'type: refactor'
-  - 'type: test'
-  - 'type: chore'
-  - 'type: ci'
-  - 'type: revert'
-  - 'breaking-change'
-
-exclude-labels:
-  - 'skip-changelog'
-  - 'internal'
-
+prerelease: true
 prerelease-identifier: 'preview'
 commitish: 'main'

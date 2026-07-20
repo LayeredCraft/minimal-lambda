@@ -15,16 +15,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  release-drafter-push:
-    if: github.event_name == 'push'
-    uses: LayeredCraft/devops-templates/.github/workflows/release-drafter.yml@v10.1
-    with:
-      event_name: ${{ github.event_name }}
-      pr_draft: false
+  autolabel:
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: release-drafter/release-drafter/autolabeler@v7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  release-drafter-pr:
-    if: github.event_name == 'pull_request'
-    uses: LayeredCraft/devops-templates/.github/workflows/release-drafter.yml@v10.1
-    with:
-      event_name: ${{ github.event_name }}
-      pr_draft: ${{ github.event.pull_request.draft }}
+  draft:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: release-drafter/release-drafter@v7
+        with:
+          config-name: release-drafter.yml
+          disable_autolabeler: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
