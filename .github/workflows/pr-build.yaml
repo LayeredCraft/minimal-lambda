@@ -29,7 +29,6 @@ jobs:
       buildConfiguration: Release
       hasTests: true
       useMtpRunner: true
-      enableCodeCoverage: true
-      coverageThreshold: 0
+      enableCodeCoverage: false
       runCdk: false
     secrets: inherit
