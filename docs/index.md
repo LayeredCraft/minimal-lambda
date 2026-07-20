@@ -4,9 +4,9 @@ title: ''
 
 # MinimalLambda: ASP.NET Core Patterns for AWS Lambda
 
-[![Main Build](https://github.com/j-d-ha/minimal-lambda/actions/workflows/main-build.yaml/badge.svg)](https://github.com/j-d-ha/minimal-lambda/actions/workflows/main-build.yaml)
-[![codecov](https://codecov.io/gh/j-d-ha/minimal-lambda/graph/badge.svg?token=BWORPTQ0UK)](https://codecov.io/gh/j-d-ha/minimal-lambda)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/j-d-ha/minimal-lambda/blob/main/LICENSE)
+[![PR Build](https://github.com/LayeredCraft/minimal-lambda/actions/workflows/pr-build.yaml/badge.svg)](https://github.com/LayeredCraft/minimal-lambda/actions/workflows/pr-build.yaml)
+[![codecov](https://codecov.io/gh/LayeredCraft/minimal-lambda/graph/badge.svg?token=BWORPTQ0UK)](https://codecov.io/gh/LayeredCraft/minimal-lambda)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/LayeredCraft/minimal-lambda/blob/main/LICENSE)
 
 **Minimal API-inspired, Lambda-first hosting.**
 
@@ -191,13 +191,13 @@ for handlers, envelopes, middleware, AOT, testing, and repo workflow.
 Install it with [skills.sh](https://skills.sh):
 
 ```bash
-npx skills add j-d-ha/minimal-lambda --skill minimal-lambda
+npx skills add LayeredCraft/minimal-lambda --skill minimal-lambda
 ```
 
 For a global Claude Code install:
 
 ```bash
-npx skills add j-d-ha/minimal-lambda --skill minimal-lambda --global --agent claude-code
+npx skills add LayeredCraft/minimal-lambda --skill minimal-lambda --global --agent claude-code
 ```
 
 ______________________________________________________________________
@@ -209,11 +209,11 @@ ______________________________________________________________________
 The core packages provide the fundamental hosting framework, abstractions, and observability support
 for building AWS Lambda functions.
 
-| Package                                                                                                             | Description                                   | NuGet                                                                                                                                  | Downloads                                                                                                                                    |
-| ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| [**MinimalLambda**](https://github.com/j-d-ha/minimal-lambda/tree/main/src/MinimalLambda)                           | Core hosting framework with middleware and DI | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.svg)](https://www.nuget.org/packages/MinimalLambda)                             | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.svg)](https://www.nuget.org/packages/MinimalLambda/)                             |
-| [**MinimalLambda.Abstractions**](https://github.com/j-d-ha/minimal-lambda/tree/main/src/MinimalLambda.Abstractions) | Core interfaces and contracts                 | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.Abstractions.svg)](https://www.nuget.org/packages/MinimalLambda.Abstractions)   | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.Abstractions.svg)](https://www.nuget.org/packages/MinimalLambda.Abstractions/)   |
-| [**MinimalLambda.OpenTelemetry**](features/open_telemetry.md)                                                       | Distributed tracing and observability         | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.OpenTelemetry.svg)](https://www.nuget.org/packages/MinimalLambda.OpenTelemetry) | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.OpenTelemetry.svg)](https://www.nuget.org/packages/MinimalLambda.OpenTelemetry/) |
+| Package                                                                                                                   | Description                                   | NuGet                                                                                                                                  | Downloads                                                                                                                                    |
+| ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| [**MinimalLambda**](https://github.com/LayeredCraft/minimal-lambda/tree/main/src/MinimalLambda)                           | Core hosting framework with middleware and DI | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.svg)](https://www.nuget.org/packages/MinimalLambda)                             | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.svg)](https://www.nuget.org/packages/MinimalLambda/)                             |
+| [**MinimalLambda.Abstractions**](https://github.com/LayeredCraft/minimal-lambda/tree/main/src/MinimalLambda.Abstractions) | Core interfaces and contracts                 | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.Abstractions.svg)](https://www.nuget.org/packages/MinimalLambda.Abstractions)   | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.Abstractions.svg)](https://www.nuget.org/packages/MinimalLambda.Abstractions/)   |
+| [**MinimalLambda.OpenTelemetry**](features/open_telemetry.md)                                                             | Distributed tracing and observability         | [![NuGet](https://img.shields.io/nuget/v/MinimalLambda.OpenTelemetry.svg)](https://www.nuget.org/packages/MinimalLambda.OpenTelemetry) | [![Downloads](https://img.shields.io/nuget/dt/MinimalLambda.OpenTelemetry.svg)](https://www.nuget.org/packages/MinimalLambda.OpenTelemetry/) |
 
 ### Envelope Packages
 
@@ -258,9 +258,9 @@ ______________________________________________________________________
 
 ### Get Involved
 
-- **[GitHub Repository](https://github.com/j-d-ha/minimal-lambda)** – Source code, issues, and
+- **[GitHub Repository](https://github.com/LayeredCraft/minimal-lambda)** – Source code, issues, and
     discussions.
-- **[License](https://github.com/j-d-ha/minimal-lambda/blob/main/LICENSE)** – MIT License.
+- **[License](https://github.com/LayeredCraft/minimal-lambda/blob/main/LICENSE)** – MIT License.
 
 ### Documentation
 
@@ -273,9 +273,9 @@ ______________________________________________________________________
 
 ### Support
 
-- Ask or search in [GitHub Discussions](https://github.com/j-d-ha/minimal-lambda/discussions).
+- Ask or search in [GitHub Discussions](https://github.com/LayeredCraft/minimal-lambda/discussions).
 - File bugs or feature requests
-    via [GitHub Issues](https://github.com/j-d-ha/minimal-lambda/issues).
+    via [GitHub Issues](https://github.com/LayeredCraft/minimal-lambda/issues).
 
 ______________________________________________________________________
 

@@ -27,7 +27,7 @@ These packages have been automatically published to [NuGet.org](https://www.nuge
 
 ---
 
-**Full Changelog:** [\`${variables.previousTag}...${variables.currentTag}\`](https://github.com/j-d-ha/minimal-lambda/compare/${variables.previousTag}...${variables.currentTag})
+**Full Changelog:** [\`${variables.previousTag}...${variables.currentTag}\`](https://github.com/LayeredCraft/minimal-lambda/compare/${variables.previousTag}...${variables.currentTag})
 `;
     },
     group: (variables) => {

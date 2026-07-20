@@ -2,34 +2,21 @@ name: Release Drafter
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 concurrency:
   group: release-drafter-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  update-release-draft:
-    if: github.event.pull_request.draft == false
-    
-    permissions:
-      contents: write
-      pull-requests: write
-      
-    runs-on: ubuntu-latest
-    
-    steps:
-      - uses: release-drafter/release-drafter@3f0f87098bd6b5c5b9a36d49c41d998ea58f9348 # https://github.com/release-drafter/release-drafter/commit/3f0f87098bd6b5c5b9a36d49c41d998ea58f9348
-        with:
-          config-name: release-drafter.yml
-          disable-autolabeler: false
-          include-pre-releases: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  release-drafter:
+    uses: LayeredCraft/devops-templates/.github/workflows/release-drafter.yml@v10.1
+    with:
+      event_name: ${{ github.event_name }}
+      pr_draft: ${{ github.event.pull_request.draft || false }}

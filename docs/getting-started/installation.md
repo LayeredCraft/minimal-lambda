@@ -64,7 +64,7 @@ Choose your preferred installation method:
 
     ```xml
     <ItemGroup>
-      <PackageReference Include="MinimalLambda" Version="1.2.1-beta.1" />
+      <PackageReference Include="MinimalLambda" Version="2.6.0-beta.1" />
     </ItemGroup>
     ```
 
@@ -136,7 +136,7 @@ Here's a complete, minimal `.csproj` file for a Lambda function:
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MinimalLambda" Version="1.2.0" />
+    <PackageReference Include="MinimalLambda" Version="2.6.0-beta.1" />
   </ItemGroup>
 </Project>
 ```
@@ -254,8 +254,8 @@ Envelope packages provide type-safe, strongly-typed event handling for specific 
 
 If you encounter issues not covered here:
 
-- Search or ask in [GitHub Discussions](https://github.com/j-d-ha/minimal-lambda/discussions)
-- Report bugs in [GitHub Issues](https://github.com/j-d-ha/minimal-lambda/issues)
+- Search or ask in [GitHub Discussions](https://github.com/LayeredCraft/minimal-lambda/discussions)
+- Report bugs in [GitHub Issues](https://github.com/LayeredCraft/minimal-lambda/issues)
 
 ## Next Steps
 

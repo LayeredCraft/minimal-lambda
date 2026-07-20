@@ -38,11 +38,19 @@ Examples:
 - `fix(abstractions): resolve dependency issue`
 - `docs: update README examples`
 
+## Workflows
+
+- PR build, PR title check, release drafter, preview publishing, and release publishing use `LayeredCraft/devops-templates` reusable workflows.
+- `pr-quality.yaml` is intentionally local: it preserves MinimalLambda-specific AOT, CleanupCode formatting, and Codecov gates.
+- `docs.yaml` is intentionally local: it builds/deploys the Zensical docs site with `uv` and GitHub Pages.
+
 ## Releases
 
 - Release Drafter creates draft releases from PR titles.
+- Merges to `main` publish preview packages through NuGet trusted publishing.
 - User manually publishes GitHub release.
-- Publishing release triggers NuGet package publishing.
+- Publishing release triggers release NuGet package publishing through NuGet trusted publishing.
+- Do not use NuGet API keys for publishing.
 - Do not manually bump `Directory.Build.props` for routine releases.
 - Do not publish NuGet packages manually.
 - Do not create GitHub releases directly.
@@ -51,4 +59,15 @@ Packages version synchronously:
 
 - `MinimalLambda`
 - `MinimalLambda.Abstractions`
+- `MinimalLambda.Envelopes`
+- `MinimalLambda.Envelopes.Alb`
+- `MinimalLambda.Envelopes.ApiGateway`
+- `MinimalLambda.Envelopes.CloudWatchLogs`
+- `MinimalLambda.Envelopes.Kafka`
+- `MinimalLambda.Envelopes.Kinesis`
+- `MinimalLambda.Envelopes.KinesisFirehose`
+- `MinimalLambda.Envelopes.Sns`
+- `MinimalLambda.Envelopes.Sqs`
 - `MinimalLambda.OpenTelemetry`
+- `MinimalLambda.Templates`
+- `MinimalLambda.Testing`

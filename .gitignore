@@ -84,3 +84,8 @@ nunit-*.xml
 /codecov*
 **/.venv
 /AGENTS.local.md
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key

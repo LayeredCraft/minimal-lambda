@@ -20,7 +20,54 @@
   <ItemGroup>
     <Compile Remove="templates\**\*.cs" />
     <None Include="README.md" Pack="true" PackagePath="\" />
-    <Content Include="templates\**\*"
-             Exclude="templates\**\bin\**;templates\**\obj\**;templates\Directory.Build.props;templates\Directory.Build.targets;templates\Directory.Packages.props" />
+    <Content
+      Include="templates\**\*"
+      Exclude="templates\**\bin\**;templates\**\obj\**;templates\Directory.Build.props;templates\Directory.Build.targets;templates\Directory.Packages.props" />
   </ItemGroup>
+
+  <UsingTask
+    TaskName="StampTemplatePackageReferencesTask"
+    TaskFactory="RoslynCodeTaskFactory"
+    AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Files ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <Version ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Text.RegularExpressions" />
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        var pattern = "(<(?:PackageReference|PackageVersion) Include=\"MinimalLambda(?:\\.Testing)?\" Version=\")[^\"]+(\")";
+        foreach (var item in Files)
+        {
+            var path = item.ItemSpec;
+            var text = File.ReadAllText(path);
+            var updated = Regex.Replace(text, pattern, match => match.Groups[1].Value + Version + match.Groups[2].Value);
+            if (!string.Equals(text, updated, StringComparison.Ordinal))
+            {
+                File.WriteAllText(path, updated);
+            }
+        }
+      ]]></Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="StampTemplatePackageReferences" BeforeTargets="GenerateNuspec">
+    <ItemGroup>
+      <TemplatePackageReferenceFile Include="README.md" />
+      <TemplatePackageReferenceFile
+        Include="templates/mlambda/src/BlueprintBaseName.1/BlueprintBaseName.1.csproj" />
+      <TemplatePackageReferenceFile Include="templates/mlambda/src/BlueprintBaseName.1/README.md" />
+      <TemplatePackageReferenceFile
+        Include="templates/mlambda/test/BlueprintBaseName.1.Tests/BlueprintBaseName.1.Tests.csproj" />
+      <TemplatePackageReferenceFile
+        Include="templates/mlambda-aot/src/BlueprintBaseName.1/BlueprintBaseName.1.csproj" />
+      <TemplatePackageReferenceFile
+        Include="templates/mlambda-aot/src/BlueprintBaseName.1/README.md" />
+      <TemplatePackageReferenceFile
+        Include="templates/mlambda-aot/test/BlueprintBaseName.1.Tests/BlueprintBaseName.1.Tests.csproj" />
+    </ItemGroup>
+    <StampTemplatePackageReferencesTask Files="@(TemplatePackageReferenceFile)"
+                                        Version="$(Version)" />
+  </Target>
 </Project>

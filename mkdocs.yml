@@ -4,11 +4,11 @@
 
 site_name: MinimalLambda
 site_description: A modern .NET framework for building AWS Lambda functions using familiar .NET patterns.
-site_url: https://j-d-ha.github.io/minimal-lambda/
+site_url: https://layeredcraft.github.io/minimal-lambda/
 site_author: Jonas Ha
 
-repo_name: j-d-ha/minimal-lambda
-repo_url: https://github.com/j-d-ha/minimal-lambda
+repo_name: LayeredCraft/minimal-lambda
+repo_url: https://github.com/LayeredCraft/minimal-lambda
 edit_uri: edit/main/docs/
 
 theme:

@@ -2,7 +2,7 @@
 
 OpenTelemetry integration for distributed tracing and observability in AWS Lambda functions.
 
-> 📚 **[View Full Documentation](https://j-d-ha.github.io/minimal-lambda/)**
+> 📚 **[View Full Documentation](https://layeredcraft.github.io/minimal-lambda/)**
 
 ## Overview
 
@@ -238,7 +238,7 @@ The example demonstrates:
 - [OpenTelemetry Instrumentation AWSLambda](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/tree/main/src/OpenTelemetry.Instrumentation.AWSLambda)
   – Source for the AWSLambda instrumentation
 
-- [Full Project Documentation](https://github.com/j-d-ha/minimal-lambda/wiki) – Comprehensive
+- [Full Project Documentation](https://github.com/LayeredCraft/minimal-lambda/wiki) – Comprehensive
   guides and patterns
 
 ## Other Packages

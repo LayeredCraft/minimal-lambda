@@ -31,6 +31,9 @@ autolabeler:
       - '/^(feat|fix|docs|refactor|test|chore|ci|revert)(\([^)]*\))?!:/i'
 
 categories:
+  - title: '⚠️ Breaking Changes'
+    labels:
+      - 'breaking-change'
   - title: '🚀 Features'
     labels:
       - 'type: feat'
@@ -51,10 +54,6 @@ categories:
       - 'type: chore'
       - 'type: ci'
       - 'type: revert'
-  - title: '⚠️ Breaking Changes'
-    labels:
-      - 'breaking-change'
-
 version-resolver:
   major:
     labels:
@@ -97,5 +96,5 @@ exclude-labels:
   - 'skip-changelog'
   - 'internal'
 
-prerelease-identifier: 'alpha'
+prerelease-identifier: 'preview'
 commitish: 'main'

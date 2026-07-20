@@ -7,7 +7,6 @@ tasks:
     cmds:
       - echo "📝 Formatting C# code and applying style conventions..."
       - task format:cleanupcode
-      - task format:csharpier
       - echo "✅ All formatting complete!"
 
   cleanupcode:

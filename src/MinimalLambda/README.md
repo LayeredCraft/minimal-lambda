@@ -3,7 +3,7 @@
 **Minimal API-style ergonomics, Lambda-first runtime** – Build Lambda functions for any trigger
 using familiar .NET patterns without sacrificing Lambda-specific capabilities.
 
-> 📚 **[View Full Documentation](https://j-d-ha.github.io/minimal-lambda/)**
+> 📚 **[View Full Documentation](https://layeredcraft.github.io/minimal-lambda/)**
 
 ## Overview
 
@@ -271,7 +271,7 @@ builder.Services.ConfigureLambdaHostOptions(options =>
 Available options include timeout control, shutdown duration, output formatting, and JSON
 serialization customization. The framework automatically registers `DefaultLambdaHostJsonSerializer`
 which uses `JsonSerializerOptions` and `JsonWriterOptions` for all Lambda serialization. See
-the [configuration guide](https://github.com/j-d-ha/minimal-lambda/wiki/Configuration) for details.
+the [configuration guide](https://github.com/LayeredCraft/minimal-lambda/wiki/Configuration) for details.
 
 ## Other Packages
 
