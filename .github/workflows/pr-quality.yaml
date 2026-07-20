@@ -48,8 +48,12 @@ jobs:
         run: task build:aot-check
 
       - name: Run coverage
-        timeout-minutes: 5
-        run: task test:ci
+        timeout-minutes: 10
+        run: |
+          dotnet test tests/MinimalLambda.UnitTests/MinimalLambda.UnitTests.csproj --framework net8.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
+          dotnet test tests/MinimalLambda.Envelopes.UnitTests/MinimalLambda.Envelopes.UnitTests.csproj --framework net8.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
+          dotnet test tests/MinimalLambda.SourceGenerators.UnitTests/MinimalLambda.SourceGenerators.UnitTests.csproj --framework net8.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
+          dotnet test tests/MinimalLambda.OpenTelemetry.UnitTests/MinimalLambda.OpenTelemetry.UnitTests.csproj --framework net9.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v6
