@@ -1,7 +1,6 @@
 name: Publish Preview
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
@@ -12,6 +11,7 @@ on:
       - 'pyproject.toml'
       - 'uv.lock'
       - '**.md'
+  workflow_dispatch:
 
 permissions:
   contents: read
