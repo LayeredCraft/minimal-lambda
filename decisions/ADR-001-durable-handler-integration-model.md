@@ -1,13 +1,14 @@
+---
+adr: 1
+status: accepted
+date: '2026-07-29'
+deciders:
+  - MinimalLambda maintainers
+supersedes: []
+superseded_by:
+---
+
 # ADR-001: Durable handler integration model
-
-## Status
-
-- Accepted
-- **Date:** 2026-07-29
-- **Deciders:** MinimalLambda maintainers
-- **Supersedes:** none
-
-______________________________________________________________________
 
 ## Context
 
@@ -43,7 +44,7 @@ The AWS durable SDK creates its own internal `IDurableContext` implementation. I
 Lambda context contract and can therefore serve as the underlying context when it also exposes the
 registered serializer.
 
-## Decision Drivers
+## Decision drivers
 
 - Follow existing `MapHandler`-style MinimalLambda ergonomics.
 - Make durable intent visible at registration.
@@ -55,7 +56,7 @@ registered serializer.
 - Remain reflection-free and compatible with source-generated JSON serialization.
 - Preserve a lower-level path for custom AWS client or unsupported integration scenarios.
 
-## Options Considered
+## Options considered
 
 ### Option A: Dedicated `MapDurableHandler` backed by AWS durable execution
 
@@ -174,7 +175,7 @@ that plumbing the default experience.
 
 ## Consequences
 
-**Positive:**
+### Positive
 
 - Durable workflows use familiar MinimalLambda registration and DI.
 - Public durable intent is explicit.
@@ -184,14 +185,14 @@ that plumbing the default experience.
 - Source generation can produce AOT-safe outer-envelope adapters.
 - Advanced users retain direct access to AWS wrapper APIs.
 
-**Negative / Trade-offs:**
+### Negative / trade-offs
 
 - `MapDurableHandler` requires dedicated source-generator modeling and diagnostics.
 - Users must understand that scoped services are recreated on each replay invocation.
 - Normal workflow input is not the raw Lambda event, requiring durable-specific generated binding.
 - MinimalLambda must keep its context and serializer integration compatible with AWS durable SDK.
 
-**Neutral / Follow-on work:**
+## Follow-up actions
 
 - Define exact supported delegate return shapes.
 - Choose final typed context extension method name.
