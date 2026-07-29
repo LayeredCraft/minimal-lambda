@@ -158,6 +158,66 @@ Applications continue to reference `MinimalLambda` directly, as normal MinimalLa
 do, and add `MinimalLambda.DurableExecution` for durable support. The direct core reference ensures
 its embedded source generator participates in compilation.
 
+### Consumer package example
+
+A durable application references both public packages directly:
+
+```xml
+<ItemGroup>
+  <PackageReference Include="MinimalLambda" Version="X.Y.Z" />
+  <PackageReference Include="MinimalLambda.DurableExecution" Version="A.B.C" />
+</ItemGroup>
+```
+
+The resulting ownership and dependency flow is:
+
+```text
+Application
+├── MinimalLambda
+│   ├── MinimalLambda runtime
+│   └── MinimalLambda.SourceGenerators
+└── MinimalLambda.DurableExecution
+    ├── MapDurableHandler public target
+    ├── durable context extensions
+    ├── Amazon.Lambda.DurableExecution
+    └── compatible MinimalLambda minimum version
+```
+
+The application does not install a second MinimalLambda generator. The generator embedded in the
+core `MinimalLambda` package recognizes `MapDurableHandler` from the durable integration assembly.
+
+### Release compatibility examples
+
+A durable-package-only runtime fix can release independently:
+
+```text
+MinimalLambda                       2.4.0  (unchanged)
+MinimalLambda.DurableExecution      1.0.1  (runtime fix)
+```
+
+A change to generated `MapDurableHandler` binding requires coordinated compatibility:
+
+```text
+MinimalLambda                       2.5.0  (updated generator)
+MinimalLambda.DurableExecution      1.1.0  (new public/runtime contract)
+                                      └── requires MinimalLambda >= 2.5.0
+```
+
+Version numbers above illustrate the relationship only; they do not prescribe initial package
+versions.
+
+### Repository ownership example
+
+```text
+src/
+├── MinimalLambda/
+├── MinimalLambda.SourceGenerators/
+└── MinimalLambda.DurableExecution/
+```
+
+`MinimalLambda.DurableExecution` owns runtime integration and its public interception target. Core
+source generator owns generated binding for both ordinary and durable handlers.
+
 ## Rationale
 
 Option A keeps durable dependencies and versioning outside core while preserving one source of truth

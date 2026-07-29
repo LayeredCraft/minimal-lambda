@@ -158,6 +158,92 @@ MinimalLambda will not reimplement AWS replay, checkpoint, operation, or durable
 It will own handler registration, generated binding, serializer/context integration, DI,
 diagnostics, templates, and documentation around that engine.
 
+### Basic usage example
+
+A normal typed workflow should look like a MinimalLambda handler with an additional durable context:
+
+```csharp
+var builder = LambdaApplication.CreateBuilder();
+
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddLambdaSerializerWithContext<LambdaJsonContext>();
+
+var lambda = builder.Build();
+
+lambda.MapDurableHandler(async (
+    [FromEvent] OrderRequest request,
+    IDurableContext durable,
+    IOrderService orders) =>
+{
+    var receipt = await durable.StepAsync(
+        (_, cancellationToken) => orders.ChargeAsync(request, cancellationToken),
+        name: "charge-order");
+
+    await durable.WaitAsync(
+        TimeSpan.FromMinutes(5),
+        name: "settlement-window");
+
+    return new OrderResult(request.OrderId, receipt.Id);
+});
+
+await lambda.RunAsync();
+```
+
+The user works with `OrderRequest`; generated code handles `DurableExecutionInvocationInput`, calls
+`DurableFunction.WrapAsync`, and returns `DurableExecutionInvocationOutput`.
+
+A workflow can request both context models when it needs MinimalLambda invocation facilities:
+
+```csharp
+static async Task<OrderResult> ProcessOrderAsync(
+    [FromEvent] OrderRequest request,
+    IDurableContext durable,
+    ILambdaInvocationContext invocation,
+    IOrderService orders)
+{
+    durable.Logger.LogInformation(
+        "Processing {OrderId} for request {RequestId}",
+        request.OrderId,
+        invocation.AwsRequestId);
+
+    var receipt = await durable.StepAsync(
+        (_, cancellationToken) => orders.ChargeAsync(request, cancellationToken),
+        name: "charge-order");
+
+    return new OrderResult(request.OrderId, receipt.Id);
+}
+```
+
+Code deeper in the workflow call graph can retrieve the MinimalLambda context from the durable
+context through the integration package's typed extension:
+
+```csharp
+var invocation = durable.GetInvocationContext();
+```
+
+### Lower-level escape hatch example
+
+Users needing direct AWS control can map the service envelope explicitly:
+
+```csharp
+lambda.MapHandler((
+    [FromEvent] DurableExecutionInvocationInput envelope,
+    ILambdaInvocationContext invocation,
+    IAmazonLambda lambdaClient,
+    IOrderService orders) =>
+    DurableFunction.WrapAsync<OrderRequest, OrderResult>(
+        (request, durable) => ProcessOrderAsync(
+            request,
+            durable,
+            invocation,
+            orders),
+        envelope,
+        invocation,
+        lambdaClient));
+```
+
+This remains supported, but it is not the default authoring experience.
+
 ## Rationale
 
 Option A best preserves MinimalLambda's defining API style while making the durable protocol boundary
