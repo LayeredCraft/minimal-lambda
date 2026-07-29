@@ -1,13 +1,14 @@
+---
+adr: 2
+status: accepted
+date: '2026-07-29'
+deciders:
+  - MinimalLambda maintainers
+supersedes: []
+superseded_by:
+---
+
 # ADR-002: Durable package and source-generation ownership
-
-## Status
-
-- Accepted
-- **Date:** 2026-07-29
-- **Deciders:** MinimalLambda maintainers
-- **Supersedes:** none
-
-______________________________________________________________________
 
 ## Context
 
@@ -41,7 +42,7 @@ consumer to receive AWS durable runtime dependencies and ties durable fixes to c
 The repository currently versions and publishes its packages synchronously. Independent durable
 versioning therefore also requires an explicit release-lane and compatibility policy.
 
-## Decision Drivers
+## Decision drivers
 
 - Keep durable dependencies optional for ordinary MinimalLambda users.
 - Allow durable runtime/integration fixes to release independently.
@@ -53,7 +54,7 @@ versioning therefore also requires an explicit release-lane and compatibility po
 - Avoid direct runtime references from the generator to optional AWS assemblies.
 - Maintain NativeAOT/trimming and compile-time generation guarantees.
 
-## Options Considered
+## Options considered
 
 ### Option A: Separate durable runtime package with core generator support
 
@@ -174,7 +175,7 @@ more opportunities for ordinary and durable handlers to diverge.
 
 ## Consequences
 
-**Positive:**
+### Positive
 
 - Ordinary MinimalLambda users do not receive AWS durable dependencies.
 - Durable runtime package can release independently for runtime-only changes.
@@ -183,7 +184,7 @@ more opportunities for ordinary and durable handlers to diverge.
 - Package and generator remain developed and tested in one repository.
 - Public durable package boundary remains clear.
 
-**Negative / Trade-offs:**
+### Negative / trade-offs
 
 - Durable package cannot evolve generated API independently of core generator releases.
 - Minimum core-version compatibility must be maintained and documented.
@@ -192,7 +193,7 @@ more opportunities for ordinary and durable handlers to diverge.
 - Analyzer transitivity may require direct consumer references or build-target work depending on
   actual AWS package behavior.
 
-**Neutral / Follow-on work:**
+## Follow-up actions
 
 - Add `src/MinimalLambda.DurableExecution` project and package metadata.
 - Extend core generator's symbol matching for external durable target.
