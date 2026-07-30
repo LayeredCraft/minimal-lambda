@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   build:
-    uses: LayeredCraft/devops-templates/.github/workflows/pr-build.yaml@v10.1
+    uses: LayeredCraft/devops-templates/.github/workflows/pr-build.yaml@v10.3
     with:
       solution: MinimalLambda.sln
       dotnetVersion: 11.0.x
