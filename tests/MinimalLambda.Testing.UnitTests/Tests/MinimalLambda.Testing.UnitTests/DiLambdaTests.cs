@@ -80,7 +80,9 @@ public class DiLambdaTests
         initResult.InitStatus.Should().Be(InitStatus.InitError);
         initResult.Error.Should().NotBeNull();
         initResult
-            .Error.ErrorMessage.Should()
+            .Error
+            .ErrorMessage
+            .Should()
             .Be("Encountered errors while running OnInit handlers: (Test init error)");
     }
 

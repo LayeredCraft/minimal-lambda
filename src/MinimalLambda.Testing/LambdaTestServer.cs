@@ -341,16 +341,16 @@ public class LambdaTestServer : IAsyncDisposable
 
         var response = wasSuccess && !noResponse
             ? await (responseMessage.Content?.ReadFromJsonAsync<TResponse>(
-                         _jsonSerializerOptions,
-                         cts.Token)
-                     ?? Task.FromResult<TResponse?>(default))
+                    _jsonSerializerOptions,
+                    cts.Token)
+                ?? Task.FromResult<TResponse?>(default))
             : default;
 
         var error = !wasSuccess
             ? await (responseMessage.Content?.ReadFromJsonAsync<ErrorResponse>(
-                         _jsonSerializerOptions,
-                         cts.Token)
-                     ?? Task.FromResult<ErrorResponse?>(null))
+                    _jsonSerializerOptions,
+                    cts.Token)
+                ?? Task.FromResult<ErrorResponse?>(null))
             : null;
 
         _pendingInvocations.TryRemove(requestId, out _);
@@ -417,12 +417,12 @@ public class LambdaTestServer : IAsyncDisposable
         try
         {
             await foreach (var transaction in _transactionChannel.Reader.ReadAllAsync(
-                               _shutdownCts.Token))
+                _shutdownCts.Token))
             {
                 if (!LambdaRuntimeRouteManager.TryMatch(
-                        transaction.Request,
-                        out var requestType,
-                        out var routeValues))
+                    transaction.Request,
+                    out var requestType,
+                    out var routeValues))
                     throw new InvalidOperationException(
                         $"Unexpected request received from the Lambda HTTP handler: {transaction.Request.Method} {transaction.Request.RequestUri}");
 
@@ -505,8 +505,8 @@ public class LambdaTestServer : IAsyncDisposable
                 {
                     Error =
                         await (transaction.Request.Content?.ReadFromJsonAsync<ErrorResponse>(
-                                   _jsonSerializerOptions)
-                               ?? Task.FromResult<ErrorResponse?>(null)),
+                                _jsonSerializerOptions)
+                            ?? Task.FromResult<ErrorResponse?>(null)),
                     InitStatus = InitStatus.InitError,
                 });
             return;
@@ -536,7 +536,8 @@ public class LambdaTestServer : IAsyncDisposable
 
         // Add custom Lambda runtime headers
         var deadlineMs = DateTimeOffset
-            .UtcNow.Add(_serverOptions.FunctionTimeout)
+            .UtcNow
+            .Add(_serverOptions.FunctionTimeout)
             .ToUnixTimeMilliseconds();
         response.Headers.Add("Lambda-Runtime-Deadline-Ms", deadlineMs.ToString());
         response.Headers.Add("Lambda-Runtime-Aws-Request-Id", requestId);

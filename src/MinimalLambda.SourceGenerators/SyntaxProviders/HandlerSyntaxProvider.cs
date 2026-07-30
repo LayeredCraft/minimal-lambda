@@ -137,7 +137,8 @@ internal static class HandlerSyntaxProvider
         ISymbol symbol,
         SemanticModel? semanticModel) =>
         symbol
-            .DeclaringSyntaxReferences.Select(syntaxReference => syntaxReference.GetSyntax())
+            .DeclaringSyntaxReferences
+            .Select(syntaxReference => syntaxReference.GetSyntax())
             .OfType<VariableDeclaratorSyntax>()
             .Where(syn => syn.Initializer?.Value is not null)
             .Select(syn =>

@@ -74,7 +74,7 @@ internal sealed class LambdaHandlerComposer : ILambdaHandlerFactory
                 await handler.Invoke(lambdaInvocationContext).ConfigureAwait(false);
 
                 if (lambdaInvocationContext.Features.TryGet<IResponseFeature>(
-                        out var responseFeature))
+                    out var responseFeature))
                     responseFeature.SerializeToStream(lambdaInvocationContext);
 
                 // If no serializer is provided, return an empty stream.

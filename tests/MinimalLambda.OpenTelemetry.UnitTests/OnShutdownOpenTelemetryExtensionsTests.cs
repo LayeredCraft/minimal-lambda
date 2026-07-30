@@ -83,7 +83,8 @@ public class OnShutdownOpenTelemetryExtensionsTests
         result.Should().Be(mockApp);
         mockApp.Received(1).OnShutdown(Arg.Any<LambdaShutdownDelegate>());
         mockApp
-            .Services.GetFakeLogCollector()
+            .Services
+            .GetFakeLogCollector()
             .GetSnapshot()
             .Should()
             .ContainEquivalentOf(
@@ -116,7 +117,8 @@ public class OnShutdownOpenTelemetryExtensionsTests
         result.Should().Be(mockApp);
         mockApp.Received(1).OnShutdown(Arg.Any<LambdaShutdownDelegate>());
         mockApp
-            .Services.GetFakeLogCollector()
+            .Services
+            .GetFakeLogCollector()
             .GetSnapshot()
             .Should()
             .ContainEquivalentOf(
@@ -150,7 +152,8 @@ public class OnShutdownOpenTelemetryExtensionsTests
         result.Should().Be(mockApp);
         mockApp.Received(1).OnShutdown(Arg.Any<LambdaShutdownDelegate>());
         mockApp
-            .Services.GetFakeLogCollector()
+            .Services
+            .GetFakeLogCollector()
             .GetSnapshot()
             .Should()
             .ContainEquivalentOf(
@@ -238,7 +241,8 @@ public class OnShutdownOpenTelemetryExtensionsTests
         result.Should().Be(mockApp);
         mockApp.Received(1).OnShutdown(Arg.Any<LambdaShutdownDelegate>());
         mockApp
-            .Services.GetFakeLogCollector()
+            .Services
+            .GetFakeLogCollector()
             .GetSnapshot()
             .Should()
             .ContainEquivalentOf(
@@ -270,7 +274,8 @@ public class OnShutdownOpenTelemetryExtensionsTests
         result.Should().Be(mockApp);
         mockApp.Received(1).OnShutdown(Arg.Any<LambdaShutdownDelegate>());
         mockApp
-            .Services.GetFakeLogCollector()
+            .Services
+            .GetFakeLogCollector()
             .GetSnapshot()
             .Should()
             .ContainEquivalentOf(
@@ -304,7 +309,8 @@ public class OnShutdownOpenTelemetryExtensionsTests
         result.Should().Be(mockApp);
         mockApp.Received(1).OnShutdown(Arg.Any<LambdaShutdownDelegate>());
         mockApp
-            .Services.GetFakeLogCollector()
+            .Services
+            .GetFakeLogCollector()
             .GetSnapshot()
             .Should()
             .ContainEquivalentOf(
@@ -394,7 +400,8 @@ public class OnShutdownOpenTelemetryExtensionsTests
         // Assert
         result.Should().Be(mockApp);
         mockApp
-            .Services.GetFakeLogCollector()
+            .Services
+            .GetFakeLogCollector()
             .GetSnapshot()
             .Should()
             .ContainEquivalentOf(
@@ -404,7 +411,8 @@ public class OnShutdownOpenTelemetryExtensionsTests
                     Category = "MinimalLambda.OpenTelemetry",
                     Message = "OpenTelemetry meter provider force flush succeeded",
                 })
-            .And.ContainEquivalentOf(
+            .And
+            .ContainEquivalentOf(
                 new
                 {
                     Level = LogLevel.Information,
@@ -434,7 +442,8 @@ public class OnShutdownOpenTelemetryExtensionsTests
         // Assert
         result.Should().Be(mockApp);
         mockApp
-            .Services.GetFakeLogCollector()
+            .Services
+            .GetFakeLogCollector()
             .GetSnapshot()
             .Should()
             .ContainEquivalentOf(
@@ -444,7 +453,8 @@ public class OnShutdownOpenTelemetryExtensionsTests
                     Category = "MinimalLambda.OpenTelemetry",
                     Message = "OpenTelemetry meter provider force flush succeeded",
                 })
-            .And.ContainEquivalentOf(
+            .And
+            .ContainEquivalentOf(
                 new
                 {
                     Level = LogLevel.Information,
@@ -474,7 +484,8 @@ public class OnShutdownOpenTelemetryExtensionsTests
         // Assert
         result.Should().Be(mockApp);
         mockApp
-            .Services.GetFakeLogCollector()
+            .Services
+            .GetFakeLogCollector()
             .GetSnapshot()
             .Should()
             .ContainEquivalentOf(
@@ -484,7 +495,8 @@ public class OnShutdownOpenTelemetryExtensionsTests
                     Category = "MinimalLambda.OpenTelemetry",
                     Message = "OpenTelemetry meter provider force flush failed",
                 })
-            .And.ContainEquivalentOf(
+            .And
+            .ContainEquivalentOf(
                 new
                 {
                     Level = LogLevel.Information,
@@ -519,7 +531,8 @@ public class OnShutdownOpenTelemetryExtensionsTests
         // Assert
         result.Should().Be(mockApp);
         mockApp
-            .Services.GetFakeLogCollector()
+            .Services
+            .GetFakeLogCollector()
             .GetSnapshot()
             .Should()
             .ContainEquivalentOf(
@@ -530,7 +543,8 @@ public class OnShutdownOpenTelemetryExtensionsTests
                     Message =
                         "OpenTelemetry meter provider force flush failed to complete within allocated time",
                 })
-            .And.ContainEquivalentOf(
+            .And
+            .ContainEquivalentOf(
                 new
                 {
                     Level = LogLevel.Warning,

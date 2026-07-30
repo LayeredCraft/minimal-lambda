@@ -31,18 +31,20 @@ internal static class UseMiddlewareTInfoExtensions
 
             var interceptableLocation =
                 (context.SemanticModel.GetInterceptableLocation(
-                     invocationExpressionSyntax,
-                     context.CancellationToken)
-                 ?? throw new InvalidOperationException(
-                     "Interceptable location is null (Should not happen)"))
+                        invocationExpressionSyntax,
+                        context.CancellationToken)
+                    ?? throw new InvalidOperationException(
+                        "Interceptable location is null (Should not happen)"))
                 .ToInterceptableLocationInfo()
                 .Attribute;
 
             var middlewareClassType = invocationOperation
-                .TargetMethod.TypeArguments.FirstOrDefault()
+                .TargetMethod
+                .TypeArguments
+                .FirstOrDefault()
                 .Map(typeSymbol => typeSymbol as INamedTypeSymbol
-                                   ?? throw new InvalidOperationException(
-                                       "Middleware class type is not INamedTypeSymbol (Should not happen)"));
+                    ?? throw new InvalidOperationException(
+                        "Middleware class type is not INamedTypeSymbol (Should not happen)"));
 
             TryGetLocationInfo(invocationExpressionSyntax, out var typeArgumentLocation);
 

@@ -135,8 +135,8 @@ public sealed class LambdaApplicationBuilder : IHostApplicationBuilder
             logging.Configure(options =>
             {
                 options.ActivityTrackingOptions = ActivityTrackingOptions.SpanId
-                                                  | ActivityTrackingOptions.TraceId
-                                                  | ActivityTrackingOptions.ParentId;
+                    | ActivityTrackingOptions.TraceId
+                    | ActivityTrackingOptions.ParentId;
             });
         });
 
