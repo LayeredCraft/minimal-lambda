@@ -1,14 +1,15 @@
----
-adr: NNN
-status: proposed # proposed | accepted | deprecated | superseded
-date: YYYY-MM-DD
-deciders:
-  - Name or role
-supersedes: []
-superseded_by:
----
-
 # ADR-NNN: <Short noun-phrase title>
+
+## Status
+
+<!-- Proposed | Accepted | Deprecated | Superseded by [ADR-NNN](./ADR-NNN.md) -->
+
+- Proposed
+- **Date:** YYYY-MM-DD
+- **Deciders:** <!-- comma-separated names or roles -->
+- **Supersedes:** <!-- ADR-NNN, or "none" -->
+
+______________________________________________________________________
 
 ## Context
 
@@ -17,7 +18,7 @@ superseded_by:
      NativeAOT/trimming, source generation) are in play?
      Keep to facts; save opinions for the Decision/Rationale sections. -->
 
-## Decision drivers
+## Decision Drivers
 
 <!-- Bullet list of key criteria that matter for this decision. Example:
      - Preserve MinimalLambda minimal-API ergonomics
@@ -25,17 +26,17 @@ superseded_by:
      - Avoid duplicating AWS-owned durable execution behavior
      - Keep package/version compatibility understandable -->
 
-## Options considered
+## Options Considered
 
 ### Option A: <Name>
 
 <!-- One-sentence description -->
 
-**Pros**
+**Pros:**
 
 -
 
-**Cons**
+**Cons:**
 
 -
 
@@ -43,11 +44,11 @@ superseded_by:
 
 <!-- One-sentence description -->
 
-**Pros**
+**Pros:**
 
 -
 
-**Cons**
+**Cons:**
 
 -
 
@@ -73,10 +74,6 @@ superseded_by:
 ### Negative / trade-offs
 
 -
-
-## Follow-up actions
-
-- [ ] Action or linked issue
 
 ## References
 

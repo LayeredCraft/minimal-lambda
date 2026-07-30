@@ -18,11 +18,8 @@ Create ADRs from [`ADR_TEMPLATE.md`](./ADR_TEMPLATE.md). Number them sequentiall
 ADR-001-durable-handler-integration-model.md
 ```
 
-ADR metadata lives in YAML front matter. Use lowercase status values: `proposed`, `accepted`,
-`deprecated`, or `superseded`. Keep relationship fields machine-readable: use YAML lists for
-`supersedes` and `null` when `superseded_by` does not apply.
-
 ## Records
 
 - [ADR-001: Durable handler integration model](./ADR-001-durable-handler-integration-model.md)
 - [ADR-002: Durable package and source-generation ownership](./ADR-002-durable-package-and-source-generation-ownership.md)
+- [ADR-003: Durable pipeline and adapter ownership](./ADR-003-durable-pipeline-and-adapter-ownership.md)
