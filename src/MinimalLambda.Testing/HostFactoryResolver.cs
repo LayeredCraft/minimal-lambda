@@ -41,8 +41,8 @@ internal sealed class HostFactoryResolver
             return Timeout.InfiniteTimeSpan;
 
         if (uint.TryParse(
-                Environment.GetEnvironmentVariable(TimeoutEnvironmentKey),
-                out var timeoutInSeconds))
+            Environment.GetEnvironmentVariable(TimeoutEnvironmentKey),
+            out var timeoutInSeconds))
             return TimeSpan.FromSeconds((int)timeoutInSeconds);
 
         return TimeSpan.FromMinutes(5);
@@ -281,7 +281,7 @@ internal sealed class HostFactoryResolver
                             "The entry point exited without ever building an IHost."));
                 }
                 catch (TargetInvocationException tie) when (tie.InnerException?.GetType().Name
-                                                            == "HostAbortedException")
+                    == "HostAbortedException")
                 {
                     // The host was stopped by our own logic
                 }

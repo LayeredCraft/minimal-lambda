@@ -25,7 +25,8 @@ internal static class GeneratorTestHelpers
         var result = driver.GetRunResult();
 
         result
-            .Diagnostics.Should()
+            .Diagnostics
+            .Should()
             .BeEmpty(
                 "code should be generated without errors, but found:\n"
                 + string.Join(
@@ -37,9 +38,9 @@ internal static class GeneratorTestHelpers
         // to ensure consistent syntax tree features (e.g., InterceptorsNamespaces)
         var parseOptions = originalCompilation.SyntaxTrees.First().Options;
         var reparsedTrees = result
-            .GeneratedTrees.Select(tree => CSharpSyntaxTree.ParseText(
-                tree.GetText(),
-                (CSharpParseOptions)parseOptions))
+            .GeneratedTrees
+            .Select(tree
+                => CSharpSyntaxTree.ParseText(tree.GetText(), (CSharpParseOptions)parseOptions))
             .ToArray();
 
         // Add generated trees to original compilation
@@ -71,8 +72,8 @@ internal static class GeneratorTestHelpers
                 // [global::System.CodeDom.Compiler.GeneratedCode("MinimalLambda.SourceGenerators",
                 // "0.0.0")]
                 if (line.Contains(
-                        "global::System.CodeDom.Compiler.GeneratedCode",
-                        StringComparison.Ordinal))
+                    "global::System.CodeDom.Compiler.GeneratedCode",
+                    StringComparison.Ordinal))
                     return RegexHelper.GeneratedCodeAttributeRegex().Replace(line, "REPLACED");
 
                 // replace [InterceptsLocation(1, "")]
@@ -95,7 +96,8 @@ internal static class GeneratorTestHelpers
         ];
 
         var parseOptions = CSharpParseOptions
-            .Default.WithLanguageVersion(languageVersion)
+            .Default
+            .WithLanguageVersion(languageVersion)
             .WithFeatures(features);
 
         var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions, "InputFile.cs");

@@ -52,9 +52,9 @@ internal static class MapHandlerParameterInfoExtensions
 
             // context
             if (context.WellKnownTypes.IsType(
-                    parameter.Type,
-                    WellKnownType.Amazon_Lambda_Core_ILambdaContext,
-                    WellKnownType.MinimalLambda_ILambdaInvocationContext))
+                parameter.Type,
+                WellKnownType.Amazon_Lambda_Core_ILambdaContext,
+                WellKnownType.MinimalLambda_ILambdaInvocationContext))
                 return DiagnosticResult<MapHandlerParameterInfo>.Success(
                     parameterInfo with
                     {
@@ -63,8 +63,8 @@ internal static class MapHandlerParameterInfoExtensions
 
             // cancellation token
             if (context.WellKnownTypes.IsType(
-                    parameter.Type,
-                    WellKnownType.System_Threading_CancellationToken))
+                parameter.Type,
+                WellKnownType.System_Threading_CancellationToken))
                 return DiagnosticResult<MapHandlerParameterInfo>.Success(
                     parameterInfo with
                     {

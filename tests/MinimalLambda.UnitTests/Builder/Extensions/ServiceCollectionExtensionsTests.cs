@@ -71,8 +71,9 @@ public class ServiceCollectionExtensionsTests
         serviceCollection.AddLambdaHostCoreServices();
 
         // Assert
-        var descriptor = serviceCollection.FirstOrDefault(d =>
-            d.ServiceType == typeof(ILambdaOnInitBuilderFactory));
+        var descriptor =
+            serviceCollection.FirstOrDefault(d
+                => d.ServiceType == typeof(ILambdaOnInitBuilderFactory));
         descriptor.Should().NotBeNull();
         descriptor.ImplementationType.Should().Be<DefaultLambdaOnInitBuilderFactory>();
         descriptor.Lifetime.Should().Be(ServiceLifetime.Singleton);
@@ -105,8 +106,9 @@ public class ServiceCollectionExtensionsTests
         serviceCollection.AddLambdaHostCoreServices();
 
         // Assert
-        var descriptor = serviceCollection.FirstOrDefault(d =>
-            d.ServiceType == typeof(IFeatureCollectionFactory));
+        var descriptor =
+            serviceCollection.FirstOrDefault(d
+                => d.ServiceType == typeof(IFeatureCollectionFactory));
         descriptor.Should().NotBeNull();
         descriptor.ImplementationType.Should().Be<DefaultFeatureCollectionFactory>();
         descriptor.Lifetime.Should().Be(ServiceLifetime.Singleton);
@@ -122,8 +124,8 @@ public class ServiceCollectionExtensionsTests
         serviceCollection.AddLambdaHostCoreServices();
 
         // Assert
-        var descriptor = serviceCollection.FirstOrDefault(d =>
-            d.ServiceType == typeof(ILambdaHandlerFactory));
+        var descriptor =
+            serviceCollection.FirstOrDefault(d => d.ServiceType == typeof(ILambdaHandlerFactory));
         descriptor.Should().NotBeNull();
         descriptor.ImplementationType.Should().Be<LambdaHandlerComposer>();
         descriptor.Lifetime.Should().Be(ServiceLifetime.Singleton);
@@ -241,8 +243,8 @@ public class ServiceCollectionExtensionsTests
         serviceCollection.TryAddLambdaHostDefaultServices();
 
         // Assert
-        var descriptor = serviceCollection.FirstOrDefault(d =>
-            d.ServiceType == typeof(ILambdaSerializer));
+        var descriptor =
+            serviceCollection.FirstOrDefault(d => d.ServiceType == typeof(ILambdaSerializer));
         descriptor.Should().NotBeNull();
         descriptor.Lifetime.Should().Be(ServiceLifetime.Singleton);
     }
@@ -257,8 +259,9 @@ public class ServiceCollectionExtensionsTests
         serviceCollection.TryAddLambdaHostDefaultServices();
 
         // Assert
-        var descriptor = serviceCollection.FirstOrDefault(d =>
-            d.ServiceType == typeof(ILambdaCancellationFactory));
+        var descriptor =
+            serviceCollection.FirstOrDefault(d
+                => d.ServiceType == typeof(ILambdaCancellationFactory));
         descriptor.Should().NotBeNull();
         descriptor.ImplementationType.Should().Be<DefaultLambdaCancellationFactory>();
         descriptor.Lifetime.Should().Be(ServiceLifetime.Singleton);

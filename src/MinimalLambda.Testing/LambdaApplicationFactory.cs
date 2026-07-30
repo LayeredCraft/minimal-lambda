@@ -166,8 +166,8 @@ public class LambdaApplicationFactory<TEntryPoint> : IDisposable, IAsyncDisposab
     ///     <see cref="IHostBuilder" />.
     /// </param>
     /// <returns>A new <see cref="LambdaApplicationFactory{TEntryPoint}" />.</returns>
-    public LambdaApplicationFactory<TEntryPoint> WithHostBuilder(
-        Action<IHostBuilder> configuration) =>
+    public LambdaApplicationFactory<TEntryPoint> WithHostBuilder(Action<IHostBuilder> configuration)
+        =>
         WithHostBuilderCore(configuration);
 
     /// <summary>
@@ -412,11 +412,8 @@ public class LambdaApplicationFactory<TEntryPoint> : IDisposable, IAsyncDisposab
             var entryPointAssemblyName = typeof(TEntryPoint).Assembly.GetName().Name;
 
             // Find the list of projects referencing TEntryPoint.
-            var candidates = context.CompileLibraries.Where(library =>
-                library.Dependencies.Any(d => string.Equals(
-                    d.Name,
-                    entryPointAssemblyName,
-                    StringComparison.Ordinal)));
+            var candidates = context.CompileLibraries.Where(library => library.Dependencies.Any(d
+                => string.Equals(d.Name, entryPointAssemblyName, StringComparison.Ordinal)));
 
             var testAssemblies = new List<Assembly>();
             foreach (var candidate in candidates)

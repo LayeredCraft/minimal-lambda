@@ -56,10 +56,8 @@ public static class RequestEnvelopeMiddleware
 
             return application;
 
-            EnvelopeOptions GetOptions() =>
-                envelopeOptions ??= application.Services
-                    .GetRequiredService<IOptions<EnvelopeOptions>>()
-                    .Value;
+            EnvelopeOptions GetOptions() => envelopeOptions ??=
+                application.Services.GetRequiredService<IOptions<EnvelopeOptions>>().Value;
         }
     }
 }

@@ -17,7 +17,7 @@ internal class HostOptionsPostConfiguration : IPostConfigureOptions<HostOptions>
     public void PostConfigure(string? name, HostOptions options)
     {
         var shutdownTimeout = _lambdaHostOptions.ShutdownDuration
-                              - _lambdaHostOptions.ShutdownDurationBuffer;
+            - _lambdaHostOptions.ShutdownDurationBuffer;
 
         options.ShutdownTimeout =
             shutdownTimeout >= TimeSpan.Zero ? shutdownTimeout : TimeSpan.Zero;

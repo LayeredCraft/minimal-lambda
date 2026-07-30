@@ -67,9 +67,9 @@ internal static class MapHandlerMethodInfoExtensions
                 out var unwrappedReturnType);
 
             var isReturnTypeStream = hasResponse
-                                     && context.WellKnownTypes.IsType(
-                                         methodSymbol.ReturnType,
-                                         WellKnownType.System_IO_Stream);
+                && context.WellKnownTypes.IsType(
+                    methodSymbol.ReturnType,
+                    WellKnownType.System_IO_Stream);
 
             var hasEvent = assignments.Any(a => a.IsEvent);
 

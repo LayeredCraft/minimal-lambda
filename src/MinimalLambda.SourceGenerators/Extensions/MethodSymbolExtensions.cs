@@ -14,7 +14,8 @@ internal static class MethodSymbolExtensions
         {
             var returnType = methodSymbol.ReturnType.QualifiedNullableName;
             var parameters = methodSymbol
-                .Parameters.Select((p, i) =>
+                .Parameters
+                .Select((p, i) =>
                 {
                     var type = p.Type.QualifiedNullableName;
                     var defaultValue = p.IsOptional ? " = default" : "";
@@ -101,7 +102,7 @@ internal static class MethodSymbolExtensions
             var originalDef = namedReturnType.OriginalDefinition;
 
             if ((originalDef.Equals(taskOfT, SymbolEqualityComparer.Default)
-                 || originalDef.Equals(valueTaskOfT, SymbolEqualityComparer.Default))
+                    || originalDef.Equals(valueTaskOfT, SymbolEqualityComparer.Default))
                 && namedReturnType.TypeArguments.Length > 0)
                 return namedReturnType.TypeArguments[0];
 

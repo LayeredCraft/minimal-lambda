@@ -29,8 +29,8 @@ internal static class LifecycleHandlerParameterInfoExtensions
 
             // context
             if (context.WellKnownTypes.IsType(
-                    parameter.Type,
-                    WellKnownType.MinimalLambda_ILambdaLifecycleContext))
+                parameter.Type,
+                WellKnownType.MinimalLambda_ILambdaLifecycleContext))
                 return DiagnosticResult<LifecycleHandlerParameterInfo>.Success(
                     parameterInfo with
                     {
@@ -39,8 +39,8 @@ internal static class LifecycleHandlerParameterInfoExtensions
 
             // cancellation token
             if (context.WellKnownTypes.IsType(
-                    parameter.Type,
-                    WellKnownType.System_Threading_CancellationToken))
+                parameter.Type,
+                WellKnownType.System_Threading_CancellationToken))
                 return DiagnosticResult<LifecycleHandlerParameterInfo>.Success(
                     parameterInfo with
                     {
