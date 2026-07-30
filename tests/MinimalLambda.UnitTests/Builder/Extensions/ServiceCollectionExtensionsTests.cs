@@ -72,8 +72,8 @@ public class ServiceCollectionExtensionsTests
 
         // Assert
         var descriptor =
-            serviceCollection.FirstOrDefault(d
-                => d.ServiceType == typeof(ILambdaOnInitBuilderFactory));
+            serviceCollection.FirstOrDefault(d =>
+                d.ServiceType == typeof(ILambdaOnInitBuilderFactory));
         descriptor.Should().NotBeNull();
         descriptor.ImplementationType.Should().Be<DefaultLambdaOnInitBuilderFactory>();
         descriptor.Lifetime.Should().Be(ServiceLifetime.Singleton);
@@ -107,8 +107,8 @@ public class ServiceCollectionExtensionsTests
 
         // Assert
         var descriptor =
-            serviceCollection.FirstOrDefault(d
-                => d.ServiceType == typeof(IFeatureCollectionFactory));
+            serviceCollection.FirstOrDefault(d =>
+                d.ServiceType == typeof(IFeatureCollectionFactory));
         descriptor.Should().NotBeNull();
         descriptor.ImplementationType.Should().Be<DefaultFeatureCollectionFactory>();
         descriptor.Lifetime.Should().Be(ServiceLifetime.Singleton);
@@ -260,8 +260,8 @@ public class ServiceCollectionExtensionsTests
 
         // Assert
         var descriptor =
-            serviceCollection.FirstOrDefault(d
-                => d.ServiceType == typeof(ILambdaCancellationFactory));
+            serviceCollection.FirstOrDefault(d =>
+                d.ServiceType == typeof(ILambdaCancellationFactory));
         descriptor.Should().NotBeNull();
         descriptor.ImplementationType.Should().Be<DefaultLambdaCancellationFactory>();
         descriptor.Lifetime.Should().Be(ServiceLifetime.Singleton);

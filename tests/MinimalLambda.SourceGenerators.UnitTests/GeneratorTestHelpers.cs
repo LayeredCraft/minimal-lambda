@@ -39,8 +39,8 @@ internal static class GeneratorTestHelpers
         var parseOptions = originalCompilation.SyntaxTrees.First().Options;
         var reparsedTrees = result
             .GeneratedTrees
-            .Select(tree
-                => CSharpSyntaxTree.ParseText(tree.GetText(), (CSharpParseOptions)parseOptions))
+            .Select(tree =>
+                CSharpSyntaxTree.ParseText(tree.GetText(), (CSharpParseOptions)parseOptions))
             .ToArray();
 
         // Add generated trees to original compilation
