@@ -2,7 +2,7 @@
 
 ## Status
 
-- Accepted
+- Proposed
 - **Date:** 2026-07-29
 - **Deciders:** MinimalLambda maintainers
 - **Supersedes:** none
@@ -24,9 +24,11 @@ which adapter work is generated.
 ## Decision Drivers
 
 - Let AWS own durable execution and inner serialization.
-- Preserve the existing middleware and feature pipeline.
+- Preserve the existing middleware and feature pipeline where durable replay semantics permit it.
 - Generate only code requiring compile-time handler types.
 - Avoid reflection, duplicate serialization, and a second pipeline.
+- Prevent invocation timeout cancellation from becoming an accidental terminal workflow failure.
+- Ensure the durable terminal runs exactly once per physical invocation.
 - Preserve a manual escape hatch.
 
 ## Options Considered
@@ -96,8 +98,10 @@ async Task InvokeDurable(ILambdaInvocationContext invocation)
 - Outer durable input and output feature registration.
 - Typed or void `WrapAsync` overload selection.
 - Binding of workflow input, `IDurableContext`, MinimalLambda context, and DI services.
-- Durable terminal required/completed markers.
-- Handler-shape and serializer-metadata diagnostics.
+- Declaration that the mapped handler requires a durable terminal.
+- Handler-shape diagnostics.
+- Serializer-metadata diagnostics for types statically inferable from the handler signature.
+- A diagnostic rejecting automatic `CancellationToken` binding in durable handler signatures.
 
 ### MinimalLambda runtime
 
@@ -106,7 +110,18 @@ async Task InvokeDurable(ILambdaInvocationContext invocation)
 - Outer durable input deserialization and output serialization through existing features.
 - Exposure of the configured `ILambdaSerializer` through
   `ILambdaInvocationContext.Serializer`.
-- Validation that the durable terminal completed.
+- Per-invocation durable-terminal lifecycle tracking and validation.
+
+The terminal lifecycle is atomic:
+
+```text
+NotStarted -> Running -> Completed
+```
+
+The runtime rejects a second terminal invocation, whether sequential or concurrent. If middleware
+returns while the terminal is `NotStarted` or `Running`, the runtime throws an invocation error.
+This prevents empty responses, swallowed terminal failures, duplicate workflow execution, and
+conflicting checkpoint use.
 
 ### AWS runtime
 
@@ -118,14 +133,36 @@ async Task InvokeDurable(ILambdaInvocationContext invocation)
 The same serializer instance handles outer envelopes in MinimalLambda and inner values through AWS.
 MinimalLambda does not create a durable envelope abstraction or parse the inner payload.
 
+Serializer diagnostics are necessarily limited. The generator can infer the durable envelope,
+workflow input, and workflow output types, but cannot reliably discover serialization types hidden
+inside workflow methods or referenced libraries. Users remain responsible for registering metadata
+for step results, callback results, invoke and child-workflow payloads, wait-condition state, and
+map or parallel results.
+
+### Cancellation
+
+MinimalLambda does not automatically bind its invocation `CancellationToken` into durable handler
+signatures. Near-timeout cancellation can fault the root workflow task, which AWS maps to a terminal
+`FAILED` durable result instead of allowing the physical invocation to time out and retry.
+
+A durable handler declaring a `CancellationToken` receives a generator diagnostic. Advanced users
+can still access `ILambdaInvocationContext.CancellationToken`, but then own the resulting durable
+failure and retry semantics.
+
 ### Middleware
 
 Middleware wraps one physical Lambda invocation and runs again on replay. It can inspect the outer
 input and output through existing features. Typed workflow input remains a handler concern.
 
-Middleware must call the durable terminal. If the pipeline completes without the generated terminal
-completing, MinimalLambda throws an invocation error instead of returning an empty or fabricated
-durable response.
+Durable-compatible middleware must call `next` exactly once. It must not short-circuit with an
+ordinary typed response, fabricate a durable response, or swallow an exception from the terminal.
+If the pipeline completes without the generated terminal completing, MinimalLambda throws an
+invocation error instead of returning an empty or fabricated durable response. This preserves host
+retry behavior for transient checkpoint and state-hydration failures.
+
+Existing middleware that only observes, logs, measures, or adds invocation-scoped behavior remains
+reusable. Response caching, ordinary typed-response short-circuiting, and exception-to-response
+translation middleware is not reusable unchanged with `MapDurableHandler`.
 
 ### Escape hatch
 
@@ -149,12 +186,29 @@ This supports custom AWS clients and new AWS overloads without expanding generat
 
 The generated terminal is the narrow point where all required static type information is available.
 Type-independent pipeline behavior stays in MinimalLambda runtime; durable behavior stays in AWS.
+Atomic lifecycle enforcement belongs to the runtime because it does not depend on handler types.
+
+## Validation requirements
+
+Implementation must cover:
+
+- Missing terminal invocation.
+- A swallowed terminal exception.
+- Sequential and concurrent double invocation of `next`.
+- Successful, failed, and suspended AWS durable outputs.
+- Middleware execution before and after a suspended physical invocation.
+- Serializer identity across outer MinimalLambda and inner AWS serialization.
+- Generator rejection of durable `CancellationToken` parameters.
+- Diagnostics for inferable serializer roots without claiming coverage of nested workflow types.
+
+Full host-plus-replay testing may require separate MinimalLambda host tests and AWS durable SDK tests
+because the AWS in-memory durable service-client overload is not public.
 
 ## Consequences
 
 ### Positive
 
-- Existing middleware, features, and DI remain reusable.
+- Existing features, DI, and replay-safe middleware remain reusable.
 - Inner serialization remains entirely AWS-owned.
 - Generated code stays small and AOT friendly.
 - Manual AWS integration remains available.
@@ -163,7 +217,10 @@ Type-independent pipeline behavior stays in MinimalLambda runtime; durable behav
 
 - Middleware cannot inspect typed workflow input before the terminal runs.
 - Middleware executes on every physical replay.
-- Core runtime needs serializer exposure and terminal-completion validation.
+- Middleware that short-circuits or translates exceptions into ordinary responses is incompatible.
+- Durable handlers cannot receive an automatically bound invocation `CancellationToken`.
+- Serializer diagnostics cannot cover types hidden inside workflow implementations or libraries.
+- Core runtime needs serializer exposure and atomic terminal-lifecycle validation.
 
 ## References
 
