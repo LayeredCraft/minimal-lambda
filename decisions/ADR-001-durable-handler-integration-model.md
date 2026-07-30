@@ -65,7 +65,7 @@ lambda.MapHandler(ProcessAsync);
 
 ```csharp
 lambda.MapHandler((
-    DurableExecutionInvocationInput envelope,
+    [FromEvent] DurableExecutionInvocationInput envelope,
     ILambdaInvocationContext context) =>
     DurableFunction.WrapAsync<OrderRequest, OrderResult>(
         Workflow,
@@ -94,8 +94,17 @@ static Task<OrderResult> Workflow(
 We will use **Option A: dedicated `MapDurableHandler` backed by
 `Amazon.Lambda.DurableExecution`**.
 
+- `[FromEvent] TInput` binds the deserialized workflow input supplied by AWS, not the outer durable
+  service envelope.
 - AWS `IDurableContext` is injected unchanged.
-- `ILambdaInvocationContext` can also be injected when needed.
+- Safe execution metadata comes from `IDurableContext`, for example:
+
+```csharp
+var executionArn = durable.ExecutionContext.DurableExecutionArn;
+```
+
+- `ILambdaInvocationContext` can also be injected when MinimalLambda or Lambda invocation facilities
+  are needed.
 - MinimalLambda passes its invocation context to `DurableFunction.WrapAsync`, making it available
   through `IDurableContext.LambdaContext`.
 - A typed extension provides convenient access when direct injection is not practical:
@@ -104,13 +113,19 @@ We will use **Option A: dedicated `MapDurableHandler` backed by
 var invocation = durable.GetInvocationContext();
 ```
 
-- Option C remains available as the advanced escape hatch.
+- The outer `DurableExecutionInvocationInput`, checkpoint token, and replay history are not exposed
+  as normal `MapDurableHandler` parameters. MinimalLambda does not add a public durable envelope.
+- Option C remains the explicit low-level escape hatch for raw envelope access.
 
 ## Rationale
 
 `MapDurableHandler` makes durable behavior visible while keeping the normal MinimalLambda authoring
 model. Reusing AWS `IDurableContext` avoids API duplication and keeps AWS responsible for replay and
 checkpoint semantics.
+
+This matches AWS TypeScript, Python, and Java durable SDKs: user workflows receive typed input and a
+durable context while the SDK wrapper hides checkpoint transport. The explicit outer method in the
+AWS .NET SDK is an adapter requirement, not the desired MinimalLambda workflow API.
 
 ## Consequences
 
@@ -119,15 +134,18 @@ checkpoint semantics.
 - Familiar MinimalLambda API and DI.
 - AWS durable behavior remains authoritative.
 - Users can access both durable and MinimalLambda contexts.
-- Outer service-envelope plumbing stays generated.
+- Outer service-envelope plumbing stays generated and hidden from normal workflow code.
+- Checkpoint tokens and replay history remain AWS-owned protocol state.
 
 ### Negative / trade-offs
 
 - Requires durable-specific generator support.
 - Scoped services are recreated for every replay invocation.
 - MinimalLambda must keep serializer/context integration compatible with the AWS SDK.
+- Raw envelope access requires the explicit low-level mapping path.
 
 ## References
 
 - [`ADR-002: Durable package and source-generation ownership`](./ADR-002-durable-package-and-source-generation-ownership.md)
 - Durable research context: `.agents/docs/durable-execution-context.md`
+- [AWS durable execution key concepts](https://docs.aws.amazon.com/durable-execution/getting-started/key-concepts/)

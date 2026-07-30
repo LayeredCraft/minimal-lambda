@@ -21,6 +21,10 @@ Workflow: TInput -> TOutput
 `DurableFunction.WrapAsync` connects them. MinimalLambda must decide where this wrapper runs and
 which adapter work is generated.
 
+AWS TypeScript, Python, and Java durable SDKs hide the service envelope: workflows receive typed
+input and durable context while the SDK owns checkpoint transport. AWS .NET exposes the outer types
+only at its required Lambda adapter boundary.
+
 ## Decision Drivers
 
 - Let AWS own durable execution and inner serialization.
@@ -29,6 +33,7 @@ which adapter work is generated.
 - Avoid reflection, duplicate serialization, and a second pipeline.
 - Prevent invocation timeout cancellation from becoming an accidental terminal workflow failure.
 - Ensure the durable terminal runs exactly once per physical invocation.
+- Keep checkpoint tokens and replay history out of the normal workflow API.
 - Preserve a manual escape hatch.
 
 ## Options Considered
@@ -66,6 +71,8 @@ typed HandlerWrapper -> durable pipeline -> WrapAsync
 ## Decision
 
 We will use **Option A: a generated terminal adapter inside the existing MinimalLambda pipeline**.
+The outer AWS envelope exists only inside generated transport plumbing; the mapped workflow receives
+typed input and `IDurableContext`.
 
 Conceptually, the generator emits:
 
@@ -95,7 +102,7 @@ async Task InvokeDurable(ILambdaInvocationContext invocation)
 ### Generated
 
 - Exact user-delegate cast.
-- Outer durable input and output feature registration.
+- Internal outer durable input and output feature registration.
 - Typed or void `WrapAsync` overload selection.
 - Binding of workflow input, `IDurableContext`, MinimalLambda context, and DI services.
 - Declaration that the mapped handler requires a durable terminal.
@@ -131,7 +138,16 @@ conflicting checkpoint use.
 - Durable status and result mapping.
 
 The same serializer instance handles outer envelopes in MinimalLambda and inner values through AWS.
-MinimalLambda does not create a durable envelope abstraction or parse the inner payload.
+MinimalLambda does not create a public durable envelope abstraction or parse the inner payload.
+
+For `MapDurableHandler`, `[FromEvent] TInput` always means workflow input. The outer
+`DurableExecutionInvocationInput`, checkpoint token, and replay history are not bindable handler
+parameters. Execution identity and Lambda metadata remain available through `IDurableContext`:
+
+```csharp
+var executionArn = durable.ExecutionContext.DurableExecutionArn;
+var requestId = durable.LambdaContext.AwsRequestId;
+```
 
 Serializer diagnostics are necessarily limited. The generator can infer the durable envelope,
 workflow input, and workflow output types, but cannot reliably discover serialization types hidden
@@ -151,8 +167,12 @@ failure and retry semantics.
 
 ### Middleware
 
-Middleware wraps one physical Lambda invocation and runs again on replay. It can inspect the outer
-input and output through existing features. Typed workflow input remains a handler concern.
+Middleware wraps one physical Lambda invocation and runs again on replay. Neither raw checkpoint
+transport nor typed workflow input is part of the durable middleware contract. Existing outer
+features are framework transport plumbing, not a supported application abstraction.
+
+If a concrete middleware use case emerges, MinimalLambda may expose read-only semantic metadata,
+such as execution ARN. It will not expose checkpoint token or replay history through that API.
 
 Durable-compatible middleware must call `next` exactly once. It must not short-circuit with an
 ordinary typed response, fabricate a durable response, or swallow an exception from the terminal.
@@ -180,7 +200,8 @@ lambda.MapHandler((
         client));
 ```
 
-This supports custom AWS clients and new AWS overloads without expanding generated policy.
+This supports custom AWS clients, protocol diagnostics, and new AWS overloads without expanding the
+normal workflow API. It is the only supported path for raw envelope access.
 
 ## Rationale
 
@@ -210,12 +231,15 @@ because the AWS in-memory durable service-client overload is not public.
 
 - Existing features, DI, and replay-safe middleware remain reusable.
 - Inner serialization remains entirely AWS-owned.
+- Normal workflows match the typed-input-and-context model used by other AWS language SDKs.
+- Checkpoint tokens and replay history remain transport details.
 - Generated code stays small and AOT friendly.
 - Manual AWS integration remains available.
 
 ### Negative / trade-offs
 
 - Middleware cannot inspect typed workflow input before the terminal runs.
+- Raw envelope access requires the explicit low-level mapping path.
 - Middleware executes on every physical replay.
 - Middleware that short-circuits or translates exceptions into ordinary responses is incompatible.
 - Durable handlers cannot receive an automatically bound invocation `CancellationToken`.
@@ -227,3 +251,4 @@ because the AWS in-memory durable service-client overload is not public.
 - [`ADR-001: Durable handler integration model`](./ADR-001-durable-handler-integration-model.md)
 - [`ADR-002: Durable package and source-generation ownership`](./ADR-002-durable-package-and-source-generation-ownership.md)
 - Durable research context: `.agents/docs/durable-execution-context.md`
+- [AWS durable execution key concepts](https://docs.aws.amazon.com/durable-execution/getting-started/key-concepts/)
