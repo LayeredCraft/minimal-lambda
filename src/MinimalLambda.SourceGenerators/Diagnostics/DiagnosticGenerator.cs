@@ -13,22 +13,26 @@ internal static class DiagnosticGenerator
 
         diagnostics.AddRange(
             compilationInfo
-                .MapHandlerInvocationInfos.SelectMany(m => m.DiagnosticInfos)
+                .MapHandlerInvocationInfos
+                .SelectMany(m => m.DiagnosticInfos)
                 .Select(d => d.ToDiagnostic()));
 
         diagnostics.AddRange(
             compilationInfo
-                .OnInitInvocationInfos.SelectMany(m => m.DiagnosticInfos)
+                .OnInitInvocationInfos
+                .SelectMany(m => m.DiagnosticInfos)
                 .Select(d => d.ToDiagnostic()));
 
         diagnostics.AddRange(
             compilationInfo
-                .OnShutdownInvocationInfos.SelectMany(m => m.DiagnosticInfos)
+                .OnShutdownInvocationInfos
+                .SelectMany(m => m.DiagnosticInfos)
                 .Select(d => d.ToDiagnostic()));
 
         diagnostics.AddRange(
             compilationInfo
-                .UseMiddlewareTInfos.SelectMany(m => m.DiagnosticInfos)
+                .UseMiddlewareTInfos
+                .SelectMany(m => m.DiagnosticInfos)
                 .Select(d => d.ToDiagnostic()));
 
         return diagnostics;

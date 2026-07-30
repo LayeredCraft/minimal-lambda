@@ -41,11 +41,11 @@ internal static class MiddlewareParameterInfoExtensions
 
             // determine if it has a `[FromServices]` attribute
             var fromServices = !fromArguments
-                               && parameterSymbol.IsDecoratedWithAttribute(
-                                   context,
-                                   WellKnownType.MinimalLambda_Builder_FromServicesAttribute,
-                                   WellKnownType
-                                       .Microsoft_Extensions_DependencyInjection_FromKeyedServicesAttribute);
+                && parameterSymbol.IsDecoratedWithAttribute(
+                    context,
+                    WellKnownType.MinimalLambda_Builder_FromServicesAttribute,
+                    WellKnownType
+                        .Microsoft_Extensions_DependencyInjection_FromKeyedServicesAttribute);
 
             // assignment from services
             return parameterSymbol

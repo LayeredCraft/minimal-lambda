@@ -57,7 +57,8 @@ internal static class MiddlewareExtensions
             // get constructor parameters
             var parameterInfos = constructor is not null
                 ? constructor
-                    .Parameters.CollectDiagnosticResults(parameter =>
+                    .Parameters
+                    .CollectDiagnosticResults(parameter =>
                         MiddlewareParameterInfo.Create(parameter, context))
                     .Map(results =>
                     {
@@ -94,14 +95,13 @@ internal static class MiddlewareExtensions
     {
         // 1. Get constructors annotated with `[MiddlewareConstructor]`
         var constructors = namedTypeSymbol
-            .InstanceConstructors.Where(c =>
-                c
-                    .GetAttributes()
-                    .Any(a => a.AttributeClass is not null
-                              && context.WellKnownTypes.IsType(
-                                  a.AttributeClass,
-                                  WellKnownType
-                                      .MinimalLambda_Builder_MiddlewareConstructorAttribute)))
+            .InstanceConstructors
+            .Where(c => c
+                .GetAttributes()
+                .Any(a => a.AttributeClass is not null
+                    && context.WellKnownTypes.IsType(
+                        a.AttributeClass,
+                        WellKnownType.MinimalLambda_Builder_MiddlewareConstructorAttribute)))
             .ToArray();
 
         return constructors.Length switch
@@ -122,7 +122,8 @@ internal static class MiddlewareExtensions
             // 2. default to constructor with most parameters
             _ => (
                 MethodSymbol: namedTypeSymbol
-                    .InstanceConstructors.OrderByDescending(c => c.Parameters.Length)
+                    .InstanceConstructors
+                    .OrderByDescending(c => c.Parameters.Length)
                     .First(), DiagnosticInfos: []),
         };
     }

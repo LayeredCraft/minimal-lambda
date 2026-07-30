@@ -52,9 +52,10 @@ public sealed class LambdaApplication
     /// <summary>Gets the application's logger.</summary>
     public ILogger Logger =>
         field ??= _host
-                      .Services.GetService<ILoggerFactory>()
-                      ?.CreateLogger(Environment.ApplicationName)
-                  ?? NullLogger.Instance;
+                .Services
+                .GetService<ILoggerFactory>()
+                ?.CreateLogger(Environment.ApplicationName)
+            ?? NullLogger.Instance;
 
     /// <inheritdoc />
     public ValueTask DisposeAsync() => ((IAsyncDisposable)_host).DisposeAsync();

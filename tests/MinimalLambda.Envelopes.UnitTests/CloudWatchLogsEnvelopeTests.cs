@@ -59,10 +59,12 @@ public class CloudWatchLogsEnvelopeTests
         {
             envelope.AwslogsContent.LogEvents[i].MessageContent.Should().NotBeNull();
             envelope.AwslogsContent.LogEvents[i].MessageContent!
-                .Content.Should()
+                .Content
+                .Should()
                 .Be(payloads[i].Content);
             envelope.AwslogsContent.LogEvents[i].MessageContent!
-                .Priority.Should()
+                .Priority
+                .Should()
                 .Be(payloads[i].Priority);
         }
     }

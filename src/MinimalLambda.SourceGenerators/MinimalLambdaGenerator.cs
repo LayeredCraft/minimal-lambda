@@ -29,14 +29,16 @@ public class MinimalLambdaGenerator : IIncrementalGenerator
 
         // handler registration calls
         var registrationCalls = context
-            .SyntaxProvider.CreateSyntaxProvider(
+            .SyntaxProvider
+            .CreateSyntaxProvider(
                 HandlerSyntaxProvider.Predicate,
                 HandlerSyntaxProvider.Transformer)
             .WhereNotNull();
 
         // find UseMiddleware<T>() calls
         var useMiddlewareTCalls = context
-            .SyntaxProvider.CreateSyntaxProvider(
+            .SyntaxProvider
+            .CreateSyntaxProvider(
                 UseMiddlewareTSyntaxProvider.Predicate,
                 UseMiddlewareTSyntaxProvider.Transformer)
             .WhereNotNull();

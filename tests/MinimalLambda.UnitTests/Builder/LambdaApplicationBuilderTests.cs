@@ -226,7 +226,8 @@ public class LambdaApplicationBuilderTests
 
         // Act - create a real invocation builder to verify callback applies the handler
         var invocationBuilder = app
-            .Services.GetRequiredService<ILambdaInvocationBuilderFactory>()
+            .Services
+            .GetRequiredService<ILambdaInvocationBuilderFactory>()
             .CreateBuilder();
 
         // The callback will attempt to apply the handler and middlewares
@@ -260,7 +261,8 @@ public class LambdaApplicationBuilderTests
 
         // Act - create invocation builder to verify callback applies all components
         var invocationBuilder = app
-            .Services.GetRequiredService<ILambdaInvocationBuilderFactory>()
+            .Services
+            .GetRequiredService<ILambdaInvocationBuilderFactory>()
             .CreateBuilder();
 
         // The callback should apply middlewares and properties from the app
@@ -308,7 +310,8 @@ public class LambdaApplicationBuilderTests
 
         // Act - create onInit builder to verify callback applies handlers
         var onInitBuilder = app
-            .Services.GetRequiredService<ILambdaOnInitBuilderFactory>()
+            .Services
+            .GetRequiredService<ILambdaOnInitBuilderFactory>()
             .CreateBuilder();
 
         callbackDelegate?.Invoke(onInitBuilder);
@@ -334,7 +337,8 @@ public class LambdaApplicationBuilderTests
 
         // Act - create onInit builder and invoke callback
         var onInitBuilder = app
-            .Services.GetRequiredService<ILambdaOnInitBuilderFactory>()
+            .Services
+            .GetRequiredService<ILambdaOnInitBuilderFactory>()
             .CreateBuilder();
 
         callbackDelegate?.Invoke(onInitBuilder);
@@ -356,7 +360,8 @@ public class LambdaApplicationBuilderTests
 
         // Act - create onInit builder without registering init handlers
         var onInitBuilder = app
-            .Services.GetRequiredService<ILambdaOnInitBuilderFactory>()
+            .Services
+            .GetRequiredService<ILambdaOnInitBuilderFactory>()
             .CreateBuilder();
 
         callbackDelegate?.Invoke(onInitBuilder);
@@ -398,7 +403,8 @@ public class LambdaApplicationBuilderTests
 
         // Act - create onShutdown builder to verify callback applies handlers
         var onShutdownBuilder = app
-            .Services.GetRequiredService<ILambdaOnShutdownBuilderFactory>()
+            .Services
+            .GetRequiredService<ILambdaOnShutdownBuilderFactory>()
             .CreateBuilder();
 
         callbackDelegate?.Invoke(onShutdownBuilder);
@@ -420,7 +426,8 @@ public class LambdaApplicationBuilderTests
 
         // Act - create onShutdown builder without registering shutdown handlers
         var onShutdownBuilder = app
-            .Services.GetRequiredService<ILambdaOnShutdownBuilderFactory>()
+            .Services
+            .GetRequiredService<ILambdaOnShutdownBuilderFactory>()
             .CreateBuilder();
 
         callbackDelegate?.Invoke(onShutdownBuilder);
@@ -449,7 +456,8 @@ public class LambdaApplicationBuilderTests
 
         // Act - create onShutdown builder and apply handlers
         var onShutdownBuilder = app
-            .Services.GetRequiredService<ILambdaOnShutdownBuilderFactory>()
+            .Services
+            .GetRequiredService<ILambdaOnShutdownBuilderFactory>()
             .CreateBuilder();
 
         callbackDelegate?.Invoke(onShutdownBuilder);

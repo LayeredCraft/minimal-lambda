@@ -36,7 +36,7 @@ public class HostOptionsPostConfigurationTests
         var postConfig = new HostOptionsPostConfiguration(lambdaHostOptions);
         var hostOptions = new HostOptions();
         var expectedTimeout = lambdaHostOptions.Value.ShutdownDuration
-                              - lambdaHostOptions.Value.ShutdownDurationBuffer;
+            - lambdaHostOptions.Value.ShutdownDurationBuffer;
 
         // Act
         postConfig.PostConfigure(null, hostOptions);
@@ -136,7 +136,7 @@ public class HostOptionsPostConfigurationTests
         var hostOptions1 = new HostOptions();
         var hostOptions2 = new HostOptions();
         var expectedTimeout = lambdaHostOptions.Value.ShutdownDuration
-                              - lambdaHostOptions.Value.ShutdownDurationBuffer;
+            - lambdaHostOptions.Value.ShutdownDurationBuffer;
 
         // Act
         postConfig.PostConfigure(null, hostOptions1);
@@ -156,7 +156,7 @@ public class HostOptionsPostConfigurationTests
         var postConfig = new HostOptionsPostConfiguration(lambdaHostOptions);
         var hostOptions = new HostOptions();
         var expectedTimeout = lambdaHostOptions.Value.ShutdownDuration
-                              - lambdaHostOptions.Value.ShutdownDurationBuffer;
+            - lambdaHostOptions.Value.ShutdownDurationBuffer;
 
         // Act
         postConfig.PostConfigure("anyName", hostOptions);

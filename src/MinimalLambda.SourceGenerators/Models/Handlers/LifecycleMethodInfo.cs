@@ -44,9 +44,9 @@ internal static class LifecycleMethodInfoExtensions
                 out var unwrappedReturnType);
 
             var unwrappedReturnIsBool = hasResponse
-                                        && context.WellKnownTypes.IsType(
-                                            unwrappedReturnType!,
-                                            WellKnownTypeData.WellKnownType.System_Boolean);
+                && context.WellKnownTypes.IsType(
+                    unwrappedReturnType!,
+                    WellKnownTypeData.WellKnownType.System_Boolean);
 
             /*
              * Return rules:
@@ -57,11 +57,10 @@ internal static class LifecycleMethodInfoExtensions
              */
 
             var returnIsTaskBool = methodSymbol.ReturnType is INamedTypeSymbol namedTypeSymbol
-                                   && context.WellKnownTypes.IsType(
-                                       namedTypeSymbol.ConstructedFrom,
-                                       WellKnownTypeData.WellKnownType
-                                           .System_Threading_Tasks_Task_T)
-                                   && unwrappedReturnIsBool;
+                && context.WellKnownTypes.IsType(
+                    namedTypeSymbol.ConstructedFrom,
+                    WellKnownTypeData.WellKnownType.System_Threading_Tasks_Task_T)
+                && unwrappedReturnIsBool;
 
             var shouldAwait = isAwaitable && !returnIsTaskBool;
 

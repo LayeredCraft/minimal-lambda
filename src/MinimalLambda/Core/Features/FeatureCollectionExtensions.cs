@@ -40,8 +40,8 @@ public static class FeatureCollectionExtensions
             ArgumentNullException.ThrowIfNull(featureCollection);
 
             return featureCollection.Get<T>()
-                   ?? throw new InvalidOperationException(
-                       $"Feature of type '{typeof(T).FullName}' is not available in the collection.");
+                ?? throw new InvalidOperationException(
+                    $"Feature of type '{typeof(T).FullName}' is not available in the collection.");
         }
     }
 }

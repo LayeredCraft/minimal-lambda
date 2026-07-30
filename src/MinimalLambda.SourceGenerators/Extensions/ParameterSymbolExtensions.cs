@@ -16,7 +16,7 @@ internal static class ParameterSymbolExtensions
         parameterSymbol
             .GetAttributes()
             .Any(a => a.AttributeClass is not null
-                      && context.WellKnownTypes.IsType(a.AttributeClass, attributeType));
+                && context.WellKnownTypes.IsType(a.AttributeClass, attributeType));
 
     extension(IParameterSymbol parameterSymbol)
     {
@@ -24,10 +24,10 @@ internal static class ParameterSymbolExtensions
             parameterSymbol
                 .GetAttributes()
                 .Any(attribute => attribute.AttributeClass is not null
-                                  && context.WellKnownTypes.IsType(
-                                      attribute.AttributeClass,
-                                      WellKnownType.MinimalLambda_Builder_EventAttribute,
-                                      WellKnownType.MinimalLambda_Builder_FromEventAttribute));
+                    && context.WellKnownTypes.IsType(
+                        attribute.AttributeClass,
+                        WellKnownType.MinimalLambda_Builder_EventAttribute,
+                        WellKnownType.MinimalLambda_Builder_FromEventAttribute));
 
         internal DiagnosticResult<(string Assignment, string? Key)> GetDiParameterAssignment(
             GeneratorContext context)
@@ -35,7 +35,7 @@ internal static class ParameterSymbolExtensions
             var paramType = parameterSymbol.Type.QualifiedNullableName;
 
             var isRequired = parameterSymbol.IsOptional
-                             || parameterSymbol.NullableAnnotation == NullableAnnotation.Annotated;
+                || parameterSymbol.NullableAnnotation == NullableAnnotation.Annotated;
 
             return parameterSymbol
                 .IsFromKeyedService(context)
@@ -58,10 +58,10 @@ internal static class ParameterSymbolExtensions
             parameterSymbol
                 .GetAttributes()
                 .FirstOrDefault(attribute => attribute is { AttributeClass: not null }
-                                             && context.WellKnownTypes.IsType(
-                                                 attribute.AttributeClass,
-                                                 WellKnownType
-                                                     .Microsoft_Extensions_DependencyInjection_FromKeyedServicesAttribute))
+                    && context.WellKnownTypes.IsType(
+                        attribute.AttributeClass,
+                        WellKnownType
+                            .Microsoft_Extensions_DependencyInjection_FromKeyedServicesAttribute))
                 ?.ExtractKeyedServiceKey()
                 .Bind<(bool, string?)>(key => (true, key))
             ?? (false, null);
@@ -119,8 +119,10 @@ internal static class ParameterSymbolExtensions
                 ArgumentList: { } argumentList,
             }
                 ? argumentList
-                    .Arguments.ElementAtOrDefault(index)
-                    ?.Expression.GetLocation()
+                    .Arguments
+                    .ElementAtOrDefault(index)
+                    ?.Expression
+                    .GetLocation()
                     .ToLocationInfo()
                 : null;
     }
