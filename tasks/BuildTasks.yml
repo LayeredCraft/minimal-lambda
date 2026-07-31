@@ -64,3 +64,8 @@ tasks:
     silent: true
     cmds:
       - dotnet publish src/AotCompatibility.TestApp/AotCompatibility.TestApp.csproj /p:TreatWarningsAsErrors=true
+  package-compat:
+    desc: Validates independently versioned packages with external consumers
+    silent: true
+    cmds:
+      - bash scripts/test-package-compatibility.sh
