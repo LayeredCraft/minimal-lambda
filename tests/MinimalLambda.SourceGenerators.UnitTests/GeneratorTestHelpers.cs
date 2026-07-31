@@ -116,7 +116,8 @@ internal static class GeneratorTestHelpers
         Dictionary<string, ReportDiagnostic>? diagnosticsToSuppress = null,
         LanguageVersion languageVersion = LanguageVersion.CSharp14,
         bool includeDurableReferences = false,
-        IReadOnlyList<(string FilePath, string Source)>? additionalSources = null)
+        IReadOnlyList<(string FilePath, string Source)>? additionalSources = null,
+        bool treatWarningsAsErrors = false)
     {
         IEnumerable<KeyValuePair<string, string>> features =
         [
@@ -171,7 +172,10 @@ internal static class GeneratorTestHelpers
 
         var compilationOptions = new CSharpCompilationOptions(
             OutputKind.ConsoleApplication,
-            nullableContextOptions: NullableContextOptions.Enable);
+            nullableContextOptions: NullableContextOptions.Enable,
+            generalDiagnosticOption: treatWarningsAsErrors
+                ? ReportDiagnostic.Error
+                : ReportDiagnostic.Default);
 
         if (diagnosticsToSuppress is not null)
             compilationOptions =

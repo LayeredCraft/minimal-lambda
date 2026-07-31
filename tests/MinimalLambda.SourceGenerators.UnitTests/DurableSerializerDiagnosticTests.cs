@@ -39,6 +39,28 @@ public class DurableSerializerDiagnosticTests
     }
 
     [Fact]
+    public void MissingExplicitRootFailsWhenWarningsAreErrors()
+    {
+        var source = ContextDeclaration(
+            """
+            [JsonSerializable(typeof(DurableExecutionInvocationInput))]
+            [JsonSerializable(typeof(DurableExecutionInvocationOutput))]
+            [JsonSerializable(typeof(Input))]
+            """);
+
+        var (driver, _) = GeneratorTestHelpers.GenerateFromSource(
+            source,
+            includeDurableReferences: true,
+            treatWarningsAsErrors: true);
+
+        var diagnostic =
+            driver.GetRunResult().Diagnostics.Single(diagnostic => diagnostic.Id == "LH0011");
+        diagnostic.Severity.Should().Be(Microsoft.CodeAnalysis.DiagnosticSeverity.Error);
+        diagnostic.IsWarningAsError.Should().BeTrue();
+        diagnostic.GetMessage().Should().Contain("global::Output");
+    }
+
+    [Fact]
     public void CompleteExplicitContextIsSilent()
     {
         var diagnostics = Generate(
