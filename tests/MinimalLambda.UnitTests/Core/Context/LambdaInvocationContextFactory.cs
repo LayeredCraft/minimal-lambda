@@ -13,7 +13,8 @@ public class LambdaInvocationContextFactoryTests
         {
             _ = new LambdaInvocationContextFactory(
                 null!,
-                Substitute.For<IFeatureCollectionFactory>());
+                Substitute.For<IFeatureCollectionFactory>(),
+                Substitute.For<ILambdaSerializer>());
         };
         act.Should().Throw<ArgumentNullException>();
     }
@@ -24,7 +25,24 @@ public class LambdaInvocationContextFactoryTests
         // Arrange & Act & Assert
         var act = () =>
         {
-            _ = new LambdaInvocationContextFactory(Substitute.For<IServiceScopeFactory>(), null!);
+            _ = new LambdaInvocationContextFactory(
+                Substitute.For<IServiceScopeFactory>(),
+                null!,
+                Substitute.For<ILambdaSerializer>());
+        };
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void Constructor_WithNullLambdaSerializer_ThrowsArgumentNullException()
+    {
+        // Arrange & Act & Assert
+        var act = () =>
+        {
+            _ = new LambdaInvocationContextFactory(
+                Substitute.For<IServiceScopeFactory>(),
+                Substitute.For<IFeatureCollectionFactory>(),
+                null!);
         };
         act.Should().Throw<ArgumentNullException>();
     }
@@ -33,12 +51,14 @@ public class LambdaInvocationContextFactoryTests
     [AutoNSubstituteData]
     internal void Constructor_WithValidDependencies_SuccessfullyConstructs(
         IServiceScopeFactory serviceScopeFactory,
-        IFeatureCollectionFactory featureCollectionFactory)
+        IFeatureCollectionFactory featureCollectionFactory,
+        ILambdaSerializer lambdaSerializer)
     {
         // Act
         var factory = new LambdaInvocationContextFactory(
             serviceScopeFactory,
-            featureCollectionFactory);
+            featureCollectionFactory,
+            lambdaSerializer);
 
         // Assert
         factory.Should().NotBeNull();
@@ -50,7 +70,8 @@ public class LambdaInvocationContextFactoryTests
         // Act
         var factory = new LambdaInvocationContextFactory(
             Substitute.For<IServiceScopeFactory>(),
-            Substitute.For<IFeatureCollectionFactory>());
+            Substitute.For<IFeatureCollectionFactory>(),
+            Substitute.For<ILambdaSerializer>());
 
         // Assert
         factory.Should().NotBeNull();
@@ -61,13 +82,15 @@ public class LambdaInvocationContextFactoryTests
     internal void Create_CallsFeatureCollectionFactoryCreate(
         [Frozen] IFeatureCollectionFactory featureCollectionFactory,
         IServiceScopeFactory serviceScopeFactory,
+        ILambdaSerializer lambdaSerializer,
         ILambdaContext lambdaContext,
         IDictionary<string, object?> properties)
     {
         // Arrange
         var factory = new LambdaInvocationContextFactory(
             serviceScopeFactory,
-            featureCollectionFactory);
+            featureCollectionFactory,
+            lambdaSerializer);
 
         // Act
         _ = factory.Create(lambdaContext, properties, CancellationToken.None);
@@ -78,10 +101,39 @@ public class LambdaInvocationContextFactoryTests
 
     [Theory]
     [AutoNSubstituteData]
+    internal void Create_UsesExactLambdaSerializer(
+        [Frozen] IFeatureCollectionFactory featureCollectionFactory,
+        [Frozen] ILambdaSerializer lambdaSerializer,
+        IServiceScopeFactory serviceScopeFactory,
+        IFeatureCollection featuresCollection,
+        ILambdaContext lambdaContext)
+    {
+        // Arrange
+        featureCollectionFactory
+            .Create(Arg.Any<IEnumerable<IFeatureProvider>>())
+            .Returns(featuresCollection);
+        var factory = new LambdaInvocationContextFactory(
+            serviceScopeFactory,
+            featureCollectionFactory,
+            lambdaSerializer);
+
+        // Act
+        var context = factory.Create(
+            lambdaContext,
+            new Dictionary<string, object?>(),
+            CancellationToken.None);
+
+        // Assert
+        context.Serializer.Should().BeSameAs(lambdaSerializer);
+    }
+
+    [Theory]
+    [AutoNSubstituteData]
     internal void Create_WithContextAccessor_SetsContextOnAccessor(
         [Frozen] ILambdaInvocationContextAccessor? contextAccessor,
         IServiceScopeFactory serviceScopeFactory,
         IFeatureCollectionFactory featureCollectionFactory,
+        ILambdaSerializer lambdaSerializer,
         ILambdaContext lambdaContext,
         IDictionary<string, object?> properties)
     {
@@ -89,6 +141,7 @@ public class LambdaInvocationContextFactoryTests
         var factory = new LambdaInvocationContextFactory(
             serviceScopeFactory,
             featureCollectionFactory,
+            lambdaSerializer,
             contextAccessor);
 
         // Act

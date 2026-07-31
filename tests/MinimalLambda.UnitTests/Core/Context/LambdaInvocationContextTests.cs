@@ -17,6 +17,7 @@ public class LambdaInvocationContextTests
         var act = () => new LambdaInvocationContext(
             null!,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             properties,
             featuresCollection,
             cancellationToken);
@@ -34,6 +35,27 @@ public class LambdaInvocationContextTests
         // Act & Assert
         var act = () => new LambdaInvocationContext(
             lambdaContext,
+            null!,
+            Substitute.For<ILambdaSerializer>(),
+            properties,
+            featuresCollection,
+            cancellationToken);
+        act.Should().ThrowExactly<ArgumentNullException>();
+    }
+
+    [Theory]
+    [AutoNSubstituteData]
+    internal void Constructor_WithNullLambdaSerializer_ThrowsArgumentNullException(
+        Dictionary<string, object?> properties,
+        ILambdaContext lambdaContext,
+        IServiceScopeFactory serviceScopeFactory,
+        IFeatureCollection featuresCollection,
+        CancellationToken cancellationToken)
+    {
+        // Act & Assert
+        var act = () => new LambdaInvocationContext(
+            lambdaContext,
+            serviceScopeFactory,
             null!,
             properties,
             featuresCollection,
@@ -53,6 +75,7 @@ public class LambdaInvocationContextTests
         var act = () => new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             null!,
             featuresCollection,
             cancellationToken);
@@ -71,6 +94,7 @@ public class LambdaInvocationContextTests
         var act = () => new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             properties,
             null!,
             cancellationToken);
@@ -90,12 +114,39 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             properties,
             featuresCollection,
             cancellationToken);
 
         // Assert
         context.Should().NotBeNull();
+    }
+
+    [Theory]
+    [AutoNSubstituteData]
+    internal void Serializer_ReturnsConstructorInstance(
+        Dictionary<string, object?> properties,
+        ILambdaContext lambdaContext,
+        IServiceScopeFactory serviceScopeFactory,
+        ILambdaSerializer lambdaSerializer,
+        IFeatureCollection featuresCollection,
+        CancellationToken cancellationToken)
+    {
+        // Arrange
+        var context = new LambdaInvocationContext(
+            lambdaContext,
+            serviceScopeFactory,
+            lambdaSerializer,
+            properties,
+            featuresCollection,
+            cancellationToken);
+
+        // Act
+        var result = context.Serializer;
+
+        // Assert
+        result.Should().BeSameAs(lambdaSerializer);
     }
 
     [Theory]
@@ -111,6 +162,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -135,6 +187,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -159,6 +212,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -183,6 +237,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -207,6 +262,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -231,6 +287,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -255,6 +312,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -279,6 +337,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -303,6 +362,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -327,6 +387,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -351,6 +412,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -375,6 +437,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             propertiesDict,
             featuresCollection,
             CancellationToken.None);
@@ -398,6 +461,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -418,6 +482,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -443,6 +508,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -468,6 +534,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             expectedToken);
@@ -490,6 +557,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -518,6 +586,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -548,6 +617,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -577,6 +647,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -602,6 +673,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -628,6 +700,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -651,6 +724,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -681,6 +755,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -705,6 +780,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -731,6 +807,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -750,6 +827,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -769,6 +847,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -789,12 +868,14 @@ public class LambdaInvocationContextTests
         var context1 = new LambdaInvocationContext(
             lambdaContext1,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
         var context2 = new LambdaInvocationContext(
             lambdaContext2,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -818,6 +899,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             new Dictionary<string, object?>(),
             featuresCollection,
             CancellationToken.None);
@@ -844,6 +926,7 @@ public class LambdaInvocationContextTests
         var context = new LambdaInvocationContext(
             lambdaContext,
             serviceScopeFactory,
+            Substitute.For<ILambdaSerializer>(),
             properties,
             featuresCollection,
             CancellationToken.None);

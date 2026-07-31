@@ -30,6 +30,25 @@ public class ServiceCollectionExtensionsTests
         result.Should().BeSameAs(serviceCollection);
     }
 
+    [Fact]
+    public void
+        AddLambdaHostCoreServices_WithoutLambdaSerializer_ThrowsWhenResolvingContextFactory()
+    {
+        // Arrange
+        using var serviceProvider = new ServiceCollection()
+            .AddLambdaHostCoreServices()
+            .BuildServiceProvider();
+
+        // Act
+        var act = () => serviceProvider.GetRequiredService<ILambdaInvocationContextFactory>();
+
+        // Assert
+        act
+            .Should()
+            .ThrowExactly<InvalidOperationException>()
+            .WithMessage("*Amazon.Lambda.Core.ILambdaSerializer*");
+    }
+
     [Theory]
     [InlineData(14)]
     public void AddLambdaHostCoreServices_RegistersExactlyNServices(int servicesCount)
