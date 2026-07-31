@@ -1,3 +1,4 @@
+using Amazon.Lambda.DurableExecution;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -450,6 +451,107 @@ public class LambdaHandlerComposerTests
     }
 
     [Fact]
+    public async Task
+        RequestHandler_ConcurrentDoubleTerminal_InvokesBodyOnceAndFailsBeforeSerialization()
+    {
+        // Arrange
+        _fixture.RegisterDurableTerminal();
+        var bodyEntered = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseBody = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var bodyInvocationCount = 0;
+        Exception? duplicateException = null;
+
+        LambdaInvocationDelegate terminalNext = async context =>
+        {
+            DurableTerminalInfrastructure.Enter(context);
+            Interlocked.Increment(ref bodyInvocationCount);
+            bodyEntered.TrySetResult(true);
+            await releaseBody.Task;
+            DurableTerminalInfrastructure.Complete(context);
+        };
+        _fixture.SetInvocationHandler(async context =>
+        {
+            var firstExecution = terminalNext(context);
+            await bodyEntered.Task;
+
+            var duplicateExecution = CaptureExceptionAsync(terminalNext(context));
+            try
+            {
+                duplicateException = await duplicateExecution.WaitAsync(TimeSpan.FromSeconds(5));
+            }
+            finally
+            {
+                releaseBody.TrySetResult(true);
+            }
+
+            await firstExecution;
+        });
+        var composer = _fixture.CreateComposer();
+        var handler = composer.CreateHandler(CancellationToken.None);
+
+        // Act
+        var act = () => handler(new MemoryStream(), _fixture.LambdaContext);
+
+        // Assert
+        await act
+            .Should()
+            .ThrowExactlyAsync<InvalidOperationException>()
+            .WithMessage(DurableTerminalState.LifecycleViolationMessage);
+        duplicateException
+            .Should()
+            .BeOfType<InvalidOperationException>()
+            .Which
+            .Message
+            .Should()
+            .Be(DurableTerminalState.DuplicateExecutionMessage);
+        bodyInvocationCount.Should().Be(1);
+        _fixture
+            .ResponseFeature
+            .DidNotReceive()
+            .SerializeToStream(Arg.Any<ILambdaInvocationContext>());
+    }
+
+    [Theory]
+    [InlineData(InvocationStatus.Succeeded)]
+    [InlineData(InvocationStatus.Failed)]
+    [InlineData(InvocationStatus.Pending)]
+    public async Task RequestHandler_DurableEnvelope_PreservesTypedResponseAndSerializes(
+        InvocationStatus status)
+    {
+        // Arrange
+        _fixture.RegisterDurableTerminal();
+        var serializer = Substitute.For<ILambdaSerializer>();
+        var responseFeature =
+            new DefaultResponseFeature<DurableExecutionInvocationOutput>(serializer);
+        _fixture.Features.Get<IResponseFeature>().Returns(responseFeature);
+        _fixture.Features.Get<IInvocationDataFeature>().Returns(_fixture.InvocationDataFeature);
+        var expected = new DurableExecutionInvocationOutput { Status = status };
+        _fixture.SetInvocationHandler(context =>
+        {
+            DurableTerminalInfrastructure.Enter(context);
+            responseFeature.SetResponse(expected);
+            DurableTerminalInfrastructure.Complete(context);
+            return Task.CompletedTask;
+        });
+        var composer = _fixture.CreateComposer();
+        var handler = composer.CreateHandler(CancellationToken.None);
+
+        // Act
+        await handler(new MemoryStream(), _fixture.LambdaContext);
+
+        // Assert
+        responseFeature.GetResponse().Should().BeSameAs(expected);
+        serializer
+            .Received(1)
+            .Serialize(
+                Arg.Is<DurableExecutionInvocationOutput>(output =>
+                    ReferenceEquals(output, expected)),
+                _fixture.InvocationDataFeature.ResponseStream);
+    }
+
+    [Fact]
     public async Task RequestHandler_SwallowedTerminalBodyFailure_FailsBeforeSerialization()
     {
         // Arrange
@@ -514,4 +616,17 @@ public class LambdaHandlerComposerTests
     }
 
     #endregion
+
+    private static async Task<Exception?> CaptureExceptionAsync(Task task)
+    {
+        try
+        {
+            await task;
+            return null;
+        }
+        catch (Exception exception)
+        {
+            return exception;
+        }
+    }
 }

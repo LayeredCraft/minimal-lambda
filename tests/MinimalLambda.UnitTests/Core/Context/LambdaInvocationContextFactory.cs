@@ -201,6 +201,57 @@ public class LambdaInvocationContextFactoryTests
         }
     }
 
+    [Fact]
+    public void Create_WithRealEventAndResponseProviders_UsesOneSerializerInstanceEndToEnd()
+    {
+        // Arrange
+        var serializer = Substitute.For<ILambdaSerializer>();
+        var expectedEvent = new SerializerIdentityEvent("event");
+        var expectedResponse = new SerializerIdentityResponse("response");
+        using var eventStream = new MemoryStream([1, 2, 3]);
+        var responseStream = new MemoryStream();
+        serializer.Deserialize<SerializerIdentityEvent>(eventStream).Returns(expectedEvent);
+        var properties = new Dictionary<string, object?>
+        {
+            [LambdaInvocationBuilder.EventFeatureProviderKey] =
+                new DefaultEventFeatureProvider<SerializerIdentityEvent>(serializer),
+            [LambdaInvocationBuilder.ResponseFeatureProviderKey] =
+                new DefaultResponseFeatureProvider<SerializerIdentityResponse>(serializer),
+        };
+        var factory = new LambdaInvocationContextFactory(
+            Substitute.For<IServiceScopeFactory>(),
+            new DefaultFeatureCollectionFactory([]),
+            serializer);
+
+        // Act
+        var context = factory.Create(
+            Substitute.For<ILambdaContext>(),
+            properties,
+            CancellationToken.None);
+        context.Features.Set<IInvocationDataFeature>(
+            new InvocationDataFeature
+            {
+                EventStream = eventStream, ResponseStream = responseStream,
+            });
+        var eventFeature = context.Features.GetRequired<IEventFeature>();
+        var responseFeature = context.Features.GetRequired<IResponseFeature>();
+        var actualEvent = ((IEventFeature<SerializerIdentityEvent>)eventFeature).GetEvent(context);
+        ((IResponseFeature<SerializerIdentityResponse>)responseFeature).SetResponse(
+            expectedResponse);
+        responseFeature.SerializeToStream(context);
+
+        // Assert
+        context.Serializer.Should().BeSameAs(serializer);
+        actualEvent.Should().BeSameAs(expectedEvent);
+        serializer.Received(1).Deserialize<SerializerIdentityEvent>(eventStream);
+        serializer
+            .Received(1)
+            .Serialize(
+                Arg.Is<SerializerIdentityResponse>(response =>
+                    ReferenceEquals(response, expectedResponse)),
+                responseStream);
+    }
+
     [Theory]
     [AutoNSubstituteData]
     internal void Create_WithContextAccessor_SetsContextOnAccessor(
@@ -256,4 +307,8 @@ public class LambdaInvocationContextFactoryTests
                     && providers.Contains(responseFeatureProvider)));
         // ReSharper restore PossibleMultipleEnumeration
     }
+
+    private sealed record SerializerIdentityEvent(string Value);
+
+    private sealed record SerializerIdentityResponse(string Value);
 }
