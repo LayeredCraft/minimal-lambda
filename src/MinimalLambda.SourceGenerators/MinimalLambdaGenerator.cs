@@ -50,11 +50,12 @@ public class MinimalLambdaGenerator : IIncrementalGenerator
             .Select(static (c, _) => (MapHandlerMethodInfo)c)
             .Collect();
 
-        // Kept separate from ordinary handlers. Durable emission attaches to valid models later.
-        var durableHandlerCalls = registrationCalls
+        var durableHandlerModels = registrationCalls
             .Where(static c => c is DurableMethodInfo)
-            .Select(static (c, _) => (DurableMethodInfo)c)
-            .Collect();
+            .Select(static (c, _) => (DurableMethodInfo)c);
+
+        var durableHandlerCalls = durableHandlerModels.Collect();
+        var validDurableHandlerCalls = durableHandlerModels.WhereNoErrors().Collect();
 
         var durableDiagnostics = durableHandlerCalls
             .Combine(context.CompilationProvider)
@@ -89,6 +90,7 @@ public class MinimalLambdaGenerator : IIncrementalGenerator
             (ctx, call) => call.DiagnosticInfos.ForEach(d => d.ReportDiagnostic(ctx)));
 
         context.RegisterSourceOutput(invocationHandlerCalls, InvocationHandlerEmitter.Emit);
+        context.RegisterSourceOutput(validDurableHandlerCalls, DurableHandlerEmitter.Emit);
         context.RegisterSourceOutput(onInitHandlerCalls, LifecycleHandlerEmitter.Emit);
         context.RegisterSourceOutput(onShutdownHandlerCalls, LifecycleHandlerEmitter.Emit);
         context.RegisterSourceOutput(middlewareTCallsCollected, MiddlewareClassEmitter.Emit);

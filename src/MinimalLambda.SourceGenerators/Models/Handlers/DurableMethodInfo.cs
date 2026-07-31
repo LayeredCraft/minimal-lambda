@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using LayeredCraft.SourceGeneratorTools.Types;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -25,6 +26,7 @@ internal sealed record DurableHandlerParameterInfo(
 internal sealed record DurableMethodInfo(
     string InterceptableLocationAttribute,
     string DelegateCastType,
+    string? HandlerDelegateType,
     EquatableArray<DurableHandlerParameterInfo> ParameterAssignments,
     string? InputType,
     string? InputCanonicalType,
@@ -268,6 +270,8 @@ internal static class DurableMethodInfoExtensions
             return new DurableMethodInfo(
                 InterceptableLocationAttribute: interceptableLocation.Attribute,
                 DelegateCastType: methodSymbol.GetCastableSignature(),
+                HandlerDelegateType:
+                GetHandlerDelegateType(handlerArgument, compilation, context.CancellationToken),
                 ParameterAssignments: assignments.ToEquatableArray(),
                 InputType:
                 inputOrdinal < 0 ? null : parameters[inputOrdinal].Type.QualifiedNullableName,
@@ -285,6 +289,90 @@ internal static class DurableMethodInfoExtensions
                 TreeOrdinal: mapTreeOrdinal,
                 DiagnosticInfos: diagnostics.ToEquatableArray());
         }
+    }
+
+    private static string? GetHandlerDelegateType(
+        IArgumentOperation handlerArgument,
+        Compilation compilation,
+        CancellationToken cancellationToken)
+    {
+        var operation = UnwrapHandlerOperation(handlerArgument.Value);
+
+        if (operation is IFieldReferenceOperation field
+            && operation.Type is not INamedTypeSymbol { TypeKind: TypeKind.Delegate, })
+            operation =
+                GetFieldInitializerOperation(field.Field, compilation, cancellationToken) is
+                    { } initializer
+                    ? UnwrapHandlerOperation(initializer)
+                    : operation;
+
+        var hasExplicitDelegateType =
+            operation is IConversionOperation { IsImplicit: false }
+                or IDelegateCreationOperation { IsImplicit: false }
+                or IFieldReferenceOperation;
+
+        return hasExplicitDelegateType
+            && operation.Type is INamedTypeSymbol { TypeKind: TypeKind.Delegate, } delegateType
+            && IsAccessibleDelegateType(delegateType, compilation)
+                ? delegateType.QualifiedNullableName
+                : null;
+    }
+
+    private static IOperation UnwrapHandlerOperation(IOperation operation)
+    {
+        while (operation is IParenthesizedOperation parenthesized)
+            operation = parenthesized.Operand;
+
+        if (operation is IConversionOperation { IsImplicit: true } conversion)
+            operation = conversion.Operand;
+
+        while (operation is IParenthesizedOperation parenthesized)
+            operation = parenthesized.Operand;
+
+        return operation;
+    }
+
+    private static IOperation? GetFieldInitializerOperation(
+        IFieldSymbol field,
+        Compilation compilation,
+        CancellationToken cancellationToken) =>
+        field
+            .DeclaringSyntaxReferences
+            .Select(reference => reference.GetSyntax(cancellationToken))
+            .OfType<VariableDeclaratorSyntax>()
+            .Where(declarator => declarator.Initializer is not null)
+            .Select(declarator =>
+                compilation
+                    .GetSemanticModel(declarator.SyntaxTree)
+                    .GetOperation(declarator.Initializer!.Value, cancellationToken))
+            .FirstOrDefault(operation => operation is not null);
+
+    private static bool IsAccessibleDelegateType(
+        INamedTypeSymbol delegateType,
+        Compilation compilation)
+    {
+        if (delegateType.IsAnonymousType
+            || delegateType.IsFileLocal
+            || ContainsTypeParameter(delegateType))
+            return false;
+
+        for (INamedTypeSymbol? current = delegateType;
+            current is not null;
+            current = current.ContainingType)
+            if (!compilation.IsSymbolAccessibleWithin(current, compilation.Assembly))
+                return false;
+
+        return true;
+    }
+
+    private static bool ContainsTypeParameter(INamedTypeSymbol type)
+    {
+        if (type.ContainingType is { } containingType && ContainsTypeParameter(containingType))
+            return true;
+
+        return type.TypeArguments.Any(argument =>
+            argument is ITypeParameterSymbol
+            || argument is INamedTypeSymbol namedArgument && ContainsTypeParameter(namedArgument));
     }
 
     private static string? GetParameterReason(

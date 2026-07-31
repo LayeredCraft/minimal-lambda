@@ -17,9 +17,16 @@ namespace MinimalLambda.SourceGenerators.UnitTests;
 
 internal static class GeneratorTestHelpers
 {
-    internal static Task Verify(string source, int expectedTrees = -1)
+    internal static Task Verify(
+        string source,
+        int expectedTrees = -1,
+        bool includeDurableReferences = false,
+        IReadOnlyList<(string FilePath, string Source)>? additionalSources = null)
     {
-        var (driver, originalCompilation) = GenerateFromSource(source);
+        var (driver, originalCompilation) = GenerateFromSource(
+            source,
+            includeDurableReferences: includeDurableReferences,
+            additionalSources: additionalSources);
 
         driver.Should().NotBeNull();
 
