@@ -21,7 +21,8 @@ internal static class GeneratorTestHelpers
         string source,
         int expectedTrees = -1,
         bool includeDurableReferences = false,
-        IReadOnlyList<(string FilePath, string Source)>? additionalSources = null)
+        IReadOnlyList<(string FilePath, string Source)>? additionalSources = null,
+        IReadOnlyCollection<string>? expectedDiagnosticIds = null)
     {
         var (driver, originalCompilation) = GenerateFromSource(
             source,
@@ -32,23 +33,40 @@ internal static class GeneratorTestHelpers
 
         var result = driver.GetRunResult();
 
-        result
-            .Diagnostics
-            .Should()
-            .BeEmpty(
-                "code should be generated without errors, but found:\n"
-                + string.Join(
-                    "\n---\n",
-                    result.Diagnostics.Select(e =>
-                        $"  - {e.Id}: {e.GetMessage()} at {e.Location}")));
+        if (expectedDiagnosticIds is null)
+        {
+            result
+                .Diagnostics
+                .Should()
+                .BeEmpty(
+                    "code should be generated without errors, but found:\n"
+                    + string.Join(
+                        "\n---\n",
+                        result.Diagnostics.Select(e =>
+                            $"  - {e.Id}: {e.GetMessage()} at {e.Location}")));
+        }
+        else
+        {
+            result
+                .Diagnostics
+                .Select(diagnostic => diagnostic.Id)
+                .Should()
+                .BeEquivalentTo(expectedDiagnosticIds);
+            result
+                .Diagnostics
+                .Should()
+                .OnlyContain(diagnostic => diagnostic.Severity != DiagnosticSeverity.Error);
+        }
 
         // Reparse generated trees with the same parse options as the original compilation
         // to ensure consistent syntax tree features (e.g., InterceptorsNamespaces)
         var parseOptions = originalCompilation.SyntaxTrees.First().Options;
         var reparsedTrees = result
             .GeneratedTrees
-            .Select(tree =>
-                CSharpSyntaxTree.ParseText(tree.GetText(), (CSharpParseOptions)parseOptions))
+            .Select(tree => CSharpSyntaxTree.ParseText(
+                tree.GetText(),
+                (CSharpParseOptions)parseOptions,
+                tree.FilePath))
             .ToArray();
 
         // Add generated trees to original compilation

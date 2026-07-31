@@ -54,15 +54,137 @@ public class DurableSerializerDiagnosticTests
     }
 
     [Fact]
-    public void SequentialContextsSuppressWarnings()
+    public void TaskHandlerContributesExactlyThreeRoots()
+    {
+        var source = ContextDeclaration("")
+            .Replace("static Task<Output> Handle", "static Task Handle", StringComparison.Ordinal)
+            .Replace(
+                "=>\n    Task.FromResult(new Output());",
+                "=> Task.CompletedTask;",
+                StringComparison.Ordinal);
+
+        var diagnostics = Generate(source);
+
+        diagnostics.Should().HaveCount(3);
+        diagnostics
+            .Select(diagnostic => diagnostic.GetMessage())
+            .Should()
+            .Contain(message =>
+                message.Contains("DurableExecutionInvocationInput", StringComparison.Ordinal));
+        diagnostics
+            .Select(diagnostic => diagnostic.GetMessage())
+            .Should()
+            .Contain(message =>
+                message.Contains("DurableExecutionInvocationOutput", StringComparison.Ordinal));
+        diagnostics
+            .Select(diagnostic => diagnostic.GetMessage())
+            .Should()
+            .Contain(message => message.Contains("global::Input", StringComparison.Ordinal));
+        diagnostics
+            .Should()
+            .NotContain(diagnostic =>
+                diagnostic.GetMessage().Contains("global::Output", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void IndependentBuildersKeepContextsAndRootsIsolated()
+    {
+        var diagnostics = Generate(
+            """
+            using System.Text.Json.Serialization;
+            using System.Threading.Tasks;
+            using Amazon.Lambda.DurableExecution;
+            using Microsoft.Extensions.DependencyInjection;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            var firstBuilder = LambdaApplication.CreateBuilder();
+            firstBuilder.Services.AddLambdaSerializerWithContext<FirstContext>();
+            var first = firstBuilder.Build();
+            first.MapDurableHandler(First);
+
+            var secondBuilder = LambdaApplication.CreateBuilder();
+            secondBuilder.Services.AddLambdaSerializerWithContext<SecondContext>();
+            var second = secondBuilder.Build();
+            second.MapDurableHandler(Second);
+
+            static Task First([FromEvent] FirstInput input, IDurableContext context) => Task.CompletedTask;
+            static Task<SecondOutput> Second([FromEvent] SecondInput input, IDurableContext context) => null!;
+            partial class FirstContext : JsonSerializerContext { }
+            partial class SecondContext : JsonSerializerContext { }
+            sealed class FirstInput { }
+            sealed class SecondInput { }
+            sealed class SecondOutput { }
+            """);
+
+        diagnostics.Should().HaveCount(7);
+        var firstMessages = diagnostics
+            .Select(diagnostic => diagnostic.GetMessage())
+            .Where(message => message.Contains("FirstContext", StringComparison.Ordinal))
+            .ToArray();
+        var secondMessages = diagnostics
+            .Select(diagnostic => diagnostic.GetMessage())
+            .Where(message => message.Contains("SecondContext", StringComparison.Ordinal))
+            .ToArray();
+
+        firstMessages.Should().HaveCount(3);
+        firstMessages
+            .Should()
+            .Contain(message =>
+                message.Contains("DurableExecutionInvocationInput", StringComparison.Ordinal));
+        firstMessages
+            .Should()
+            .Contain(message =>
+                message.Contains("DurableExecutionInvocationOutput", StringComparison.Ordinal));
+        firstMessages
+            .Should()
+            .Contain(message => message.Contains("global::FirstInput", StringComparison.Ordinal));
+        secondMessages.Should().HaveCount(4);
+        secondMessages
+            .Should()
+            .Contain(message =>
+                message.Contains("DurableExecutionInvocationInput", StringComparison.Ordinal));
+        secondMessages
+            .Should()
+            .Contain(message =>
+                message.Contains("DurableExecutionInvocationOutput", StringComparison.Ordinal));
+        secondMessages
+            .Should()
+            .Contain(message => message.Contains("global::SecondInput", StringComparison.Ordinal));
+        secondMessages
+            .Should()
+            .Contain(message => message.Contains("global::SecondOutput", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("AppJsonContext")]
+    [InlineData("OtherJsonContext")]
+    public void SequentialEqualOrDifferentContextsSuppressWarnings(string secondContext)
+    {
+        var source = ContextDeclaration("")
+                .Replace(
+                    "builder.Services.AddLambdaSerializerWithContext<AppJsonContext>();",
+                    $$"""
+                      builder.Services.AddLambdaSerializerWithContext<AppJsonContext>();
+                      builder.Services.AddLambdaSerializerWithContext<{{secondContext}}>();
+                      """,
+                    StringComparison.Ordinal)
+            + "\ninternal partial class OtherJsonContext : JsonSerializerContext { }";
+
+        Generate(source).Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(
+        "builder.Services.AddSingleton<Amazon.Lambda.Core.ILambdaSerializer>(null!);\nbuilder.Services.AddLambdaSerializerWithContext<AppJsonContext>();")]
+    [InlineData(
+        "builder.Services.AddLambdaSerializerWithContext<AppJsonContext>();\nbuilder.Services.AddSingleton<Amazon.Lambda.Core.ILambdaSerializer>(null!);")]
+    public void SerializerOverrideBeforeOrAfterContextSuppressesWarnings(string registrations)
     {
         var source = ContextDeclaration("")
             .Replace(
                 "builder.Services.AddLambdaSerializerWithContext<AppJsonContext>();",
-                """
-                builder.Services.AddLambdaSerializerWithContext<AppJsonContext>();
-                builder.Services.AddLambdaSerializerWithContext<AppJsonContext>();
-                """,
+                registrations,
                 StringComparison.Ordinal);
 
         Generate(source).Should().BeEmpty();

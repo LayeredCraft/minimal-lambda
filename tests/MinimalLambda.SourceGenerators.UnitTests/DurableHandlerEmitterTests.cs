@@ -40,9 +40,8 @@ public class DurableHandlerEmitterTests
             includeDurableReferences: true);
 
     [Fact]
-    public void PreservesCustomDelegateHiddenByReadonlyDelegateField()
-    {
-        var (driver, _) = GeneratorTestHelpers.GenerateFromSource(
+    public Task PreservesCustomDelegateHiddenByReadonlyDelegateField() =>
+        GeneratorTestHelpers.Verify(
             """
             using System;
             using System.Threading.Tasks;
@@ -67,10 +66,58 @@ public class DurableHandlerEmitterTests
             """,
             includeDurableReferences: true);
 
-        var result = driver.GetRunResult();
-        result.Diagnostics.Should().BeEmpty();
-        GetDurableSource(result).Should().Contain("(global::DurableHandler)null!");
-    }
+    [Fact]
+    public Task EmitsLambdaLocalFunctionAndLegacyEventFormsThatCompile() =>
+        GeneratorTestHelpers.Verify(
+            """
+            using System.Threading.Tasks;
+            using Amazon.Lambda.Core;
+            using Amazon.Lambda.DurableExecution;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            var app = LambdaApplication.CreateBuilder().Build();
+            app.MapDurableHandler(async ([FromEvent] string input, IDurableContext durable) => await Task.CompletedTask);
+            app.MapDurableHandler(async ([FromEvent] int input, IDurableContext durable) =>
+            {
+                await Task.Yield();
+            });
+            app.MapDurableHandler(Local);
+            app.MapDurableHandler(Legacy);
+
+            Task Local([FromEvent] long input, IDurableContext durable) => Task.CompletedTask;
+            static Task Legacy(
+                [Event] decimal input,
+                ILambdaContext first,
+                IDurableContext durable,
+                ILambdaInvocationContext second,
+                ILambdaContext third) => Task.CompletedTask;
+            """,
+            includeDurableReferences: true);
+
+    [Fact]
+    public Task EmitsNullableClosedNestedGenericAndConstructedGenericMethodThatCompile() =>
+        GeneratorTestHelpers.Verify(
+            """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using Amazon.Lambda.DurableExecution;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            var app = LambdaApplication.CreateBuilder().Build();
+            app.MapDurableHandler(Handle<Container<string?>.Nested<int?>>);
+
+            static Task<Dictionary<string, T?[]>> Handle<T>(
+                [FromEvent] Container<string?>.Nested<T?> input,
+                IDurableContext durable) where T : class => Task.FromResult(new Dictionary<string, T?[]>());
+
+            internal sealed class Container<T>
+            {
+                internal sealed class Nested<TNested> { }
+            }
+            """,
+            includeDurableReferences: true);
 
     [Fact]
     public Task FallsBackToInferredSignatureForInaccessibleCustomDelegate() =>
@@ -170,9 +217,8 @@ public class DurableHandlerEmitterTests
     }
 
     [Fact]
-    public void WarningOnlyAdapterStillEmits()
-    {
-        var (driver, _) = GeneratorTestHelpers.GenerateFromSource(
+    public Task WarningOnlyAdapterStillEmitsAndCompiles() =>
+        GeneratorTestHelpers.Verify(
             """
             using System.Text.Json.Serialization;
             using System.Threading.Tasks;
@@ -189,13 +235,68 @@ public class DurableHandlerEmitterTests
             static Task Handle([FromEvent] string input, IDurableContext durable) => Task.CompletedTask;
 
             [JsonSerializable(typeof(string))]
-            partial class AppJsonContext : JsonSerializerContext { }
+            abstract partial class AppJsonContext : JsonSerializerContext
+            {
+                protected AppJsonContext() : base(null) { }
+            }
+            """,
+            includeDurableReferences: true,
+            expectedDiagnosticIds: ["LH0011", "LH0011"]);
+
+    [Fact]
+    public Task MultipleDurableRegistrationsCoexistWithOrdinaryHandler() =>
+        GeneratorTestHelpers.Verify(
+            """
+            using System.Threading.Tasks;
+            using Amazon.Lambda.DurableExecution;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            var app = LambdaApplication.CreateBuilder().Build();
+            app.MapHandler(() => "ordinary");
+            app.MapDurableHandler(First);
+            app.MapDurableHandler(Second);
+            app.MapDurableHandler(First);
+
+            static Task First([FromEvent] string input, IDurableContext durable) => Task.CompletedTask;
+            static Task<int> Second([FromEvent] int input, IDurableContext durable) => Task.FromResult(input);
             """,
             includeDurableReferences: true);
 
-        var result = driver.GetRunResult();
-        result.Diagnostics.Select(diagnostic => diagnostic.Id).Should().Contain("LH0011");
-        GetDurableSource(result).Should().Contain("MapDurableHandlerInterceptor0");
+    [Fact]
+    public void EmitsExactWrapAsyncAndTerminalOrder()
+    {
+        var (driver, _) = GeneratorTestHelpers.GenerateFromSource(
+            """
+            using System.Threading.Tasks;
+            using Amazon.Lambda.DurableExecution;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            var app = LambdaApplication.CreateBuilder().Build();
+            app.MapDurableHandler(Handle);
+            static Task<string> Handle([FromEvent] int input, IDurableContext durable) => Task.FromResult(input.ToString());
+            """,
+            includeDurableReferences: true);
+
+        var source = GetDurableSource(driver.GetRunResult());
+        var enter = source.IndexOf(
+            "DurableTerminalInfrastructure.Enter(context);",
+            StringComparison.Ordinal);
+        var wrap = source.IndexOf(
+            "DurableFunction.WrapAsync<int, string>(",
+            StringComparison.Ordinal);
+        var setResponse = source.IndexOf(
+            "responseFeature.SetResponse(output);",
+            StringComparison.Ordinal);
+        var complete = source.IndexOf(
+            "DurableTerminalInfrastructure.Complete(context);",
+            StringComparison.Ordinal);
+
+        enter.Should().BeGreaterThanOrEqualTo(0);
+        wrap.Should().BeGreaterThan(enter);
+        setResponse.Should().BeGreaterThan(wrap);
+        complete.Should().BeGreaterThan(setResponse);
     }
 
     [Fact]

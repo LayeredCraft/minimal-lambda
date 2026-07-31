@@ -117,8 +117,58 @@ public class DurableHandlerDiagnosticTests
                 "Durable handler return type 'global::System.Threading.Tasks.ValueTask' is not supported; use 'Task' or 'Task<TOutput>' with a closed, nameable, accessible, non-transport output type.");
     }
 
+    [Fact]
+    public void ReportsMixedDuplicateEventInputsOnceAtExtraParameter()
+    {
+        var diagnostics = Generate(
+            """
+            using System.Threading.Tasks;
+            using Amazon.Lambda.DurableExecution;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            var app = LambdaApplication.CreateBuilder().Build();
+            app.MapDurableHandler(Handle);
+            static Task Handle([FromEvent] string first, [Event] int second, IDurableContext context) => Task.CompletedTask;
+            """);
+
+        diagnostics.Should().ContainSingle();
+        diagnostics[0].Id.Should().Be("LH0007");
+        diagnostics[0].GetMessage().Should().EndWith("found 2.");
+        diagnostics[0].Location.GetLineSpan().StartLinePosition.Line.Should().Be(7);
+    }
+
+    [Theory]
+    [InlineData("[FromEvent] string input", "LH0008", "found 0")]
+    [InlineData(
+        "[FromEvent] string input, IDurableContext first, IDurableContext second",
+        "LH0008",
+        "found 2")]
+    [InlineData("IDurableContext context", "LH0007", "found 0")]
+    public void ReportsIsolatedCardinalityFailures(string parameters, string id, string message)
+    {
+        var diagnostics = Generate(
+            $$"""
+              using System.Threading.Tasks;
+              using Amazon.Lambda.DurableExecution;
+              using MinimalLambda;
+              using MinimalLambda.Builder;
+
+              var app = LambdaApplication.CreateBuilder().Build();
+              app.MapDurableHandler(Handle);
+              static Task Handle({{parameters}}) => Task.CompletedTask;
+              """);
+
+        diagnostics.Should().ContainSingle();
+        diagnostics[0].Id.Should().Be(id);
+        diagnostics[0].GetMessage().Should().Contain(message);
+    }
+
     [Theory]
     [InlineData("CancellationToken token", "CancellationToken is not bound automatically")]
+    [InlineData(
+        "[FromServices] CancellationToken token",
+        "CancellationToken is not bound automatically")]
     [InlineData("Stream stream", "Stream transport types are reserved")]
     [InlineData(
         "DurableExecutionInvocationInput envelope",
@@ -165,6 +215,154 @@ public class DurableHandlerDiagnosticTests
             """);
 
         diagnostics.Select(diagnostic => diagnostic.Id).Should().Equal("LH0010", "LH0009");
+    }
+
+    [Theory]
+    [InlineData("DurableExecutionInvocationInput", "LH0009")]
+    [InlineData("DurableExecutionInvocationOutput", "LH0009")]
+    [InlineData("System.Collections.Generic.List<DurableExecutionInvocationInput>", "LH0009")]
+    [InlineData("System.Collections.Generic.List<DurableExecutionInvocationOutput>", "LH0009")]
+    public void RejectsRawAndRecursivelyNestedInputEnvelopes(string inputType, string id)
+    {
+        var diagnostics = Generate(
+            $$"""
+              using System.Threading.Tasks;
+              using Amazon.Lambda.DurableExecution;
+              using MinimalLambda;
+              using MinimalLambda.Builder;
+
+              var app = LambdaApplication.CreateBuilder().Build();
+              app.MapDurableHandler(Handle);
+              static Task Handle([FromEvent] {{inputType}} input, IDurableContext context) => Task.CompletedTask;
+              """);
+
+        diagnostics.Select(diagnostic => diagnostic.Id).Should().Equal(id);
+    }
+
+    [Theory]
+    [InlineData("DurableExecutionInvocationInput")]
+    [InlineData("DurableExecutionInvocationOutput")]
+    [InlineData("System.Collections.Generic.List<DurableExecutionInvocationInput>")]
+    [InlineData("System.Collections.Generic.List<DurableExecutionInvocationOutput>")]
+    [InlineData("System.Collections.Generic.List<System.IO.Stream>")]
+    public void RejectsRawAndRecursivelyNestedOutputTransport(string outputType)
+    {
+        var diagnostics = Generate(
+            $$"""
+              using System.Threading.Tasks;
+              using Amazon.Lambda.DurableExecution;
+              using MinimalLambda;
+              using MinimalLambda.Builder;
+
+              var app = LambdaApplication.CreateBuilder().Build();
+              app.MapDurableHandler(Handle);
+              static Task<{{outputType}}> Handle([FromEvent] string input, IDurableContext context) => null!;
+              """);
+
+        diagnostics.Select(diagnostic => diagnostic.Id).Should().Equal("LH0010");
+    }
+
+    [Theory]
+    [InlineData("ref int value")]
+    [InlineData("in int value")]
+    [InlineData("out int value")]
+    public void RejectsByRefParametersWhenRoslynResolvesHandler(string parameter)
+    {
+        var diagnostics = Generate(
+            $$"""
+              using System.Threading.Tasks;
+              using Amazon.Lambda.DurableExecution;
+              using MinimalLambda;
+              using MinimalLambda.Builder;
+
+              var app = LambdaApplication.CreateBuilder().Build();
+              app.MapDurableHandler(Handle);
+              static Task Handle([FromEvent] string input, IDurableContext context, {{parameter}})
+              {
+                  {{(parameter.StartsWith("out", StringComparison.Ordinal) ? "value = 0;" : "")}}
+                  return Task.CompletedTask;
+              }
+              """);
+
+        diagnostics.Select(diagnostic => diagnostic.Id).Should().Equal("LH0009");
+        diagnostics[0]
+            .GetMessage()
+            .Should()
+            .Contain("ref, in, and out parameters are not supported");
+    }
+
+    [Theory]
+    [InlineData("System.Span<int>")]
+    [InlineData("System.ReadOnlySpan<char>")]
+    public void RejectsRefLikeInputTypes(string inputType)
+    {
+        var diagnostics = Generate(
+            $$"""
+              using System.Threading.Tasks;
+              using Amazon.Lambda.DurableExecution;
+              using MinimalLambda;
+              using MinimalLambda.Builder;
+
+              var app = LambdaApplication.CreateBuilder().Build();
+              app.MapDurableHandler(Handle);
+              static Task Handle([FromEvent] {{inputType}} input, IDurableContext context) => Task.CompletedTask;
+              """);
+
+        diagnostics.Select(diagnostic => diagnostic.Id).Should().Equal("LH0009");
+    }
+
+    [Fact]
+    public void RejectsInaccessibleNestedInputAndOutputTypes()
+    {
+        var diagnostics = Generate(
+            """
+            using System.Threading.Tasks;
+            using Amazon.Lambda.DurableExecution;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            Entry.Map();
+            internal static class Entry
+            {
+                private sealed class Hidden { }
+                internal static void Map()
+                {
+                    var app = LambdaApplication.CreateBuilder().Build();
+                    app.MapDurableHandler(Handle);
+                }
+                private static Task<Hidden> Handle([FromEvent] Hidden input, IDurableContext context) => null!;
+            }
+            """);
+
+        diagnostics.Select(diagnostic => diagnostic.Id).Should().Equal("LH0010", "LH0009");
+    }
+
+    [Fact]
+    public void RejectsOpenTypesWhenRoslynProvidesConstructedModel()
+    {
+        var diagnostics = Generate(
+            """
+            using System.Threading.Tasks;
+            using Amazon.Lambda.DurableExecution;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            Entry.Map<int>();
+            internal static class Entry
+            {
+                internal static void Map<T>()
+                {
+                    var app = LambdaApplication.CreateBuilder().Build();
+                    app.MapDurableHandler(Handle<T>);
+                }
+                private static Task<T> Handle<T>([FromEvent] T input, IDurableContext context) => Task.FromResult(input);
+            }
+            """);
+
+        diagnostics.Select(diagnostic => diagnostic.Id).Should().Equal("LH0010", "LH0009");
+        diagnostics
+            .Should()
+            .AllSatisfy(diagnostic => diagnostic.GetMessage().Should().Contain("closed"));
     }
 
     [Fact]
