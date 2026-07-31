@@ -103,6 +103,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinimalLambda.DurableExecut
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinimalLambda.Testing.UnitTests.DurableLambda", "tests\MinimalLambda.Testing.UnitTests\Lambdas\MinimalLambda.Testing.UnitTests.DurableLambda\MinimalLambda.Testing.UnitTests.DurableLambda.csproj", "{189636EE-6C05-46DB-8AEB-256F2617025C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinimalLambda.Example.DurableExecution", "examples\MinimalLambda.Example.DurableExecution\MinimalLambda.Example.DurableExecution.csproj", "{998085AA-AEC6-45D9-9E51-26F09BD5138C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -533,6 +535,18 @@ Global
 		{189636EE-6C05-46DB-8AEB-256F2617025C}.Release|x64.Build.0 = Release|Any CPU
 		{189636EE-6C05-46DB-8AEB-256F2617025C}.Release|x86.ActiveCfg = Release|Any CPU
 		{189636EE-6C05-46DB-8AEB-256F2617025C}.Release|x86.Build.0 = Release|Any CPU
+		{998085AA-AEC6-45D9-9E51-26F09BD5138C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{998085AA-AEC6-45D9-9E51-26F09BD5138C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{998085AA-AEC6-45D9-9E51-26F09BD5138C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{998085AA-AEC6-45D9-9E51-26F09BD5138C}.Debug|x64.Build.0 = Debug|Any CPU
+		{998085AA-AEC6-45D9-9E51-26F09BD5138C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{998085AA-AEC6-45D9-9E51-26F09BD5138C}.Debug|x86.Build.0 = Debug|Any CPU
+		{998085AA-AEC6-45D9-9E51-26F09BD5138C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{998085AA-AEC6-45D9-9E51-26F09BD5138C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{998085AA-AEC6-45D9-9E51-26F09BD5138C}.Release|x64.ActiveCfg = Release|Any CPU
+		{998085AA-AEC6-45D9-9E51-26F09BD5138C}.Release|x64.Build.0 = Release|Any CPU
+		{998085AA-AEC6-45D9-9E51-26F09BD5138C}.Release|x86.ActiveCfg = Release|Any CPU
+		{998085AA-AEC6-45D9-9E51-26F09BD5138C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -576,5 +590,6 @@ Global
 		{E95304BB-646A-4A8A-A3C4-A4A2DA6BF0CA} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{A5852451-D1C2-4270-834C-BDCF03F4A9AA} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{189636EE-6C05-46DB-8AEB-256F2617025C} = {D9109C8A-AFA8-49C8-A19C-381500902B4D}
+		{998085AA-AEC6-45D9-9E51-26F09BD5138C} = {B36A84DF-456D-A817-6EDD-3EC3E7F6E11F}
 	EndGlobalSection
 EndGlobal
