@@ -13,8 +13,12 @@ public static class DurableContextExtensions
         ///     Gets the MinimalLambda invocation context associated with this durable execution.
         /// </summary>
         /// <remarks>
-        ///     MinimalLambda supplies its invocation context as the durable context's Lambda context when
-        ///     adapting a durable handler. This method preserves that exact context instance.
+        ///     MinimalLambda supplies its physical invocation context as the durable context's Lambda context
+        ///     when adapting a durable handler. This method preserves that exact context instance. AWS owns
+        ///     replay and creates a new physical Lambda invocation for a replay, so this context and its
+        ///     dependency-injection scope must not be treated as logical workflow state. Its cancellation token
+        ///     represents the physical invocation; using it to cancel the root workflow can produce a terminal
+        ///     durable failure. Prefer cancellation tokens supplied to durable operation callbacks.
         /// </remarks>
         /// <returns>
         ///     Exact <see cref="ILambdaInvocationContext" /> instance stored in

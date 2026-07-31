@@ -11,7 +11,7 @@
     <AssemblyName>MinimalLambda.DurableExecution</AssemblyName>
     <RootNamespace>MinimalLambda.DurableExecution</RootNamespace>
     <PackageId>MinimalLambda.DurableExecution</PackageId>
-    <MinimalLambdaMinimumVersion>2.6.0-beta.1</MinimalLambdaMinimumVersion>
+    <MinimalLambdaMinimumVersion>2.6.0-beta.2</MinimalLambdaMinimumVersion>
     <Description>AWS Lambda Durable Execution integration for MinimalLambda</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>

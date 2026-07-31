@@ -1,79 +1,199 @@
 # MinimalLambda.DurableExecution
 
-Experimental, locally buildable AWS Lambda Durable Execution integration for MinimalLambda.
+Typed AWS Lambda Durable Execution handlers for MinimalLambda.
 
-> 📚 **[View Full Documentation](https://layeredcraft.github.io/minimal-lambda/)**
+> This package is experimental. APIs may change before stable release.
 
-## Requirements
+## Compatibility and installation
 
-- .NET 8 or .NET 10
-- A compatible `MinimalLambda` version
-- `Amazon.Lambda.DurableExecution` 1.0.0
+Package ships assets for exactly `net8.0` and `net10.0`. Those are supported target frameworks;
+NuGet may select a lower compatible asset for other TFMs, but those combinations are not supported.
 
-## Installation
+`MinimalLambda.DurableExecution` is versioned independently from `MinimalLambda`; versions are not
+lockstep. Current minimum compatible core version is `MinimalLambda` `2.6.0-beta.2`.
 
-Install all three packages explicitly:
+Reference all three packages directly:
 
 ```bash
-dotnet add package MinimalLambda
-dotnet add package MinimalLambda.DurableExecution
+dotnet add package MinimalLambda --version 2.6.0-beta.2
+dotnet add package MinimalLambda.DurableExecution --version 2.6.0-beta.2
 dotnet add package Amazon.Lambda.DurableExecution --version 1.0.0
 ```
 
-Keep the direct `MinimalLambda` reference so its single source generator runs for ordinary and
-durable handlers; no separate durable generator package is required. The AWS Durable Execution
-runtime already arrives transitively through `MinimalLambda.DurableExecution`, but transitive
-package dependencies exclude analyzer assets. The direct `Amazon.Lambda.DurableExecution` reference
-ensures its DE001-DE004 analyzers also run. The wrapper package does not duplicate the AWS runtime or
-analyzer assemblies.
+Direct `MinimalLambda` reference supplies one source generator for both `MapHandler` and
+`MapDurableHandler`; no durable generator package exists. Wrapper already depends on AWS runtime,
+but NuGet does not flow analyzer assets through transitive dependencies. Direct AWS reference enables
+its DE001-DE004 analyzers.
 
-## Experimental API
-
-`MapDurableHandler(Delegate)` is the compile-time interception target for durable handlers. Supported
-handlers declare exactly one `[FromEvent]` workflow input, one `IDurableContext`, and return `Task`
-or `Task<T>`. MinimalLambda invocation contexts and DI services can be additional parameters.
+## Complete typed handler
 
 ```csharp
+using System.Text.Json.Serialization;
 using Amazon.Lambda.DurableExecution;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using MinimalLambda;
 using MinimalLambda.Builder;
 
-lambda.MapDurableHandler(async (
+var builder = LambdaApplication.CreateBuilder();
+
+builder.Services.AddLambdaSerializerWithContext<DurableJsonContext>();
+builder.Services.AddSingleton<IOrderService, OrderService>();
+
+await using var lambda = builder.Build();
+
+lambda.MapDurableHandler(HandleOrderAsync);
+
+await lambda.RunAsync();
+
+static async Task<OrderResult> HandleOrderAsync(
     [FromEvent] OrderRequest request,
     IDurableContext durable,
-    IOrderService orders) =>
+    ILambdaInvocationContext invocation,
+    [FromServices] IOrderService orders)
 {
-    return await durable.StepAsync(
-        (_, cancellationToken) => orders.ProcessAsync(request, cancellationToken));
-});
+    var step = await durable.StepAsync(
+        (_, cancellationToken) =>
+            orders.ProcessAsync(request.OrderId, cancellationToken),
+        name: "process-order");
+
+    return new OrderResult(
+        step.Message,
+        durable.ExecutionContext.DurableExecutionArn,
+        invocation.AwsRequestId);
+}
+
+internal sealed record OrderRequest(string OrderId);
+internal sealed record OrderResult(string Message, string ExecutionArn, string AwsRequestId);
+internal sealed record ProcessOrderStepResult(string Message);
+
+internal interface IOrderService
+{
+    Task<ProcessOrderStepResult> ProcessAsync(
+        string orderId,
+        CancellationToken cancellationToken);
+}
+
+internal sealed class OrderService : IOrderService
+{
+    public Task<ProcessOrderStepResult> ProcessAsync(
+        string orderId,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult(new ProcessOrderStepResult($"Order {orderId} processed"));
+    }
+}
+
+[JsonSerializable(typeof(DurableExecutionInvocationInput))]
+[JsonSerializable(typeof(DurableExecutionInvocationOutput))]
+[JsonSerializable(typeof(OrderRequest))]
+[JsonSerializable(typeof(OrderResult))]
+[JsonSerializable(typeof(ProcessOrderStepResult))]
+internal partial class DurableJsonContext : JsonSerializerContext;
 ```
 
-This API is experimental and may change before durable source-generation support is complete.
-Calling it without a generated interceptor throws the same runtime fallback exception as
-`MapHandler`.
+First four serializer roots are required for outer input/output envelopes and typed workflow
+input/output. Explicitly add every payload, result, or state type used by steps, callbacks, invokes,
+child workflows, waits, maps, and parallel branches; `ProcessOrderStepResult` is one representative
+step root. Generator cannot discover types hidden inside operation bodies or referenced libraries.
+Same registered `ILambdaSerializer` handles MinimalLambda outer envelopes and AWS inner values.
+Step bodies can be retried, so keep external side effects idempotent; checkpointed results do not
+provide exactly-once execution.
 
-Durable workflows can recover the exact MinimalLambda invocation context supplied to AWS by calling
-`GetInvocationContext()`:
+## Handler, cancellation, and context contract
+
+Durable handler must declare exactly one `[FromEvent] TInput`, exactly one exact AWS
+`IDurableContext`, and return exact `Task` or `Task<TOutput>`. Parameter order is unrestricted.
+Optional additional parameters are `ILambdaContext`, `ILambdaInvocationContext`, ordinary DI, keyed
+DI, or optional DI. Input is never inferred. Synchronous, `ValueTask`, custom-awaitable, `Stream`,
+outer durable envelope, and root `CancellationToken` forms are rejected by generator diagnostics.
+
+Do not put `CancellationToken` on root handler. Near-timeout cancellation could fault workflow into
+terminal `FAILED` state instead of letting physical invocation retry. Use cancellation tokens AWS
+supplies to durable operation callbacks. Reading `ILambdaInvocationContext.CancellationToken`
+explicitly means owning those failure/retry consequences.
+
+Inject `ILambdaInvocationContext` as above, or recover exact physical invocation context carried by
+AWS durable context:
 
 ```csharp
 using MinimalLambda.DurableExecution;
 
 ILambdaInvocationContext invocation = durable.GetInvocationContext();
-var requestId = invocation.AwsRequestId;
 ```
 
-Until durable interception is available, or when raw envelope control is needed, ordinary
-`MapHandler` remains the low-level escape hatch:
+DI scope and invocation context belong to one physical Lambda invocation. Replay creates another
+physical invocation and scope; never keep scoped state as logical workflow state.
+
+## Replay, middleware, and ownership
+
+MinimalLambda owns raw-stream hosting, middleware, physical invocation context and DI scope, outer
+envelope serialization, and generated terminal lifecycle enforcement. AWS runtime owns workflow
+payload handling, checkpoints, replay, suspension, waits, `IDurableContext`, and durable status/result
+mapping.
+
+Middleware wraps each physical Lambda invocation, so it runs again during replay. Durable middleware
+must call and await `next` exactly once, avoid ordinary-response short circuits, and not swallow
+terminal exceptions. Replay-safe observation, logging, metrics, and invocation-scoped behavior fit;
+response caches, response fabrication, and exception-to-response translation do not work unchanged.
+
+`MapDurableHandler` requires MinimalLambda compile-time interception. If source generation does not
+replace mapping call, runtime fallback throws `InvalidOperationException` instead of running handler.
+
+## Testing
+
+Use MinimalLambda host/integration tests for generated adapter, middleware, DI, serializer identity,
+terminal lifecycle, and outer stream roundtrip. Use `Amazon.Lambda.DurableExecution.Testing` for
+workflow operations, suspension, waits, and replay. Local tests do not prove IAM, deployment,
+managed-runtime behavior, or cloud service integration.
+
+## Raw-envelope and custom-client escape hatch
+
+Use low-level `MapHandler` when raw envelope access, custom `IAmazonLambda`, protocol diagnostics, or
+new AWS overloads are required. Register custom client before `builder.Build()`:
 
 ```csharp
+using Amazon.Lambda;
 using Amazon.Lambda.DurableExecution;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using MinimalLambda;
 using MinimalLambda.Builder;
 
+var builder = LambdaApplication.CreateBuilder();
+builder.Services.AddLambdaSerializerWithContext<DurableJsonContext>();
+builder.Services.AddSingleton<IAmazonLambda, AmazonLambdaClient>();
+
+await using var lambda = builder.Build();
 lambda.MapHandler(
-    ([FromEvent] DurableExecutionInvocationInput envelope, ILambdaInvocationContext context) =>
-        DurableFunction.WrapAsync<OrderRequest, OrderResult>(Workflow, envelope, context));
+    ([FromEvent] DurableExecutionInvocationInput envelope,
+        ILambdaInvocationContext invocation,
+        [FromServices] IAmazonLambda client) =>
+        DurableFunction.WrapAsync<OrderRequest, OrderResult>(
+            LowLevelWorkflowAsync,
+            envelope,
+            invocation,
+            client));
+
+await lambda.RunAsync();
+
+static Task<OrderResult> LowLevelWorkflowAsync(
+    OrderRequest request,
+    IDurableContext durable) =>
+    Task.FromResult(
+        new OrderResult(
+            $"Order {request.OrderId} processed",
+            durable.ExecutionContext.DurableExecutionArn,
+            durable.LambdaContext.AwsRequestId));
 ```
 
-Local restore, build, and package validation do not prove cloud deployment or production-ready
-NativeAOT support. Consult current project documentation and AWS runtime guidance before deployment.
+Replace high-level mapping; do not register both paths. Low-level workflow has AWS signature
+`Func<OrderRequest, IDurableContext, Task<OrderResult>>`. Keep same explicit serializer roots.
+
+## NativeAOT
+
+Durable NativeAOT support remains experimental. Ordinary restore/build/pack does not compile native
+code; validate with publish, for example
+`dotnet publish -c Release -r linux-x64 -p:PublishAot=true`. Successful local publish still does not
+prove cloud deployment or managed durable behavior.

@@ -20,14 +20,22 @@ public static class MapDurableHandlerLambdaApplicationExtensions
         ///     <para>
         ///         Source generation creates wiring code that resolves handler dependencies and adapts the
         ///         handler to the AWS Lambda Durable Execution protocol. A supported handler declares exactly
-        ///         one <see cref="FromEventAttribute" /> workflow input and one AWS
-        ///         <c>IDurableContext</c>, and returns <see cref="Task" /> or
+        ///         one <see cref="FromEventAttribute" /> workflow input and one exact AWS
+        ///         <c>IDurableContext</c>, and returns exactly <see cref="Task" /> or
         ///         <see cref="Task{TResult}" />. Invocation contexts and dependency-injection services can be
-        ///         additional parameters.
+        ///         additional parameters; a root <see cref="CancellationToken" /> is not supported.
         ///     </para>
         ///     <para>
-        ///         A compile-time interceptor replaces this call; invoking this method directly at runtime is
-        ///         unsupported.
+        ///         Invocation contexts, dependency-injection scopes, and middleware belong to one physical
+        ///         Lambda invocation. Middleware runs again when AWS replays a workflow. AWS owns durable
+        ///         context creation, checkpoints, replay, suspension, and durable status mapping;
+        ///         MinimalLambda owns physical invocation hosting, dependency injection, middleware, outer
+        ///         envelope serialization, and terminal lifecycle enforcement. Use cancellation tokens
+        ///         supplied to durable operation callbacks rather than a root handler token.
+        ///     </para>
+        ///     <para>
+        ///         A compile-time interceptor must replace this call; invoking this fallback directly at
+        ///         runtime is unsupported and throws <see cref="InvalidOperationException" />.
         ///     </para>
         /// </remarks>
         /// <param name="handler">

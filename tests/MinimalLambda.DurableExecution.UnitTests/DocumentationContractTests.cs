@@ -24,7 +24,13 @@ public class DocumentationContractTests
                 "Gets the MinimalLambda invocation context associated with this durable execution.");
         Text(documentation, "remarks")
             .Should()
-            .Contain("This method preserves that exact context instance.");
+            .Contain("physical invocation context")
+            .And
+            .Contain("creates a new physical Lambda invocation for a replay")
+            .And
+            .Contain("using it to cancel the root workflow can produce a terminal durable failure")
+            .And
+            .Contain("Prefer cancellation tokens supplied to durable operation callbacks.");
         Text(documentation, "returns").Should().Contain("Exact instance stored in .");
         ExceptionTypes(documentation)
             .Should()
@@ -48,9 +54,20 @@ public class DocumentationContractTests
                 "Registers an AWS Lambda Durable Execution handler with automatic dependency injection and serialization.");
         Text(documentation, "remarks")
             .Should()
-            .Contain("A compile-time interceptor replaces this call;")
+            .Contain("A compile-time interceptor must replace this call;")
             .And
-            .Contain("declares exactly one workflow input and one AWS IDurableContext");
+            .Contain("declares exactly one workflow input and one exact AWS IDurableContext")
+            .And
+            .Contain("a root is not supported")
+            .And
+            .Contain("Middleware runs again when AWS replays a workflow")
+            .And
+            .Contain(
+                "AWS owns durable context creation, checkpoints, replay, suspension, and durable status mapping")
+            .And
+            .Contain("MinimalLambda owns physical invocation hosting")
+            .And
+            .Contain("Use cancellation tokens supplied to durable operation callbacks");
         Text(documentation, "param")
             .Should()
             .Contain(
