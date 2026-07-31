@@ -3,8 +3,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace MinimalLambda;
 
-internal sealed class LambdaInvocationContext : ILambdaInvocationContext, IAsyncDisposable
+internal sealed class LambdaInvocationContext
+    : ILambdaInvocationContext, IDurableTerminalContext, IAsyncDisposable
 {
+    private readonly DurableTerminalState? _durableTerminalState;
     private readonly ILambdaContext _lambdaContext;
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
@@ -16,7 +18,8 @@ internal sealed class LambdaInvocationContext : ILambdaInvocationContext, IAsync
         ILambdaSerializer lambdaSerializer,
         IDictionary<string, object?> properties,
         IFeatureCollection featuresCollection,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        DurableTerminalState? durableTerminalState = null)
     {
         ArgumentNullException.ThrowIfNull(lambdaContext);
         ArgumentNullException.ThrowIfNull(serviceScopeFactory);
@@ -26,6 +29,7 @@ internal sealed class LambdaInvocationContext : ILambdaInvocationContext, IAsync
 
         _lambdaContext = lambdaContext;
         _serviceScopeFactory = serviceScopeFactory;
+        _durableTerminalState = durableTerminalState;
 
         CancellationToken = cancellationToken;
         Properties = properties;
@@ -103,4 +107,6 @@ internal sealed class LambdaInvocationContext : ILambdaInvocationContext, IAsync
     public CancellationToken CancellationToken { get; }
 
     public IFeatureCollection Features { get; }
+
+    DurableTerminalState? IDurableTerminalContext.DurableTerminalState => _durableTerminalState;
 }

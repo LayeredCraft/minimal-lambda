@@ -34,13 +34,18 @@ internal class LambdaInvocationContextFactory : ILambdaInvocationContextFactory
     {
         _featureProviders ??= CreateFeatureProviders(properties);
 
+        var durableTerminalState = DurableTerminalInfrastructure.IsRegistered(properties)
+            ? new DurableTerminalState()
+            : null;
+
         var context = new LambdaInvocationContext(
             lambdaContext,
             _serviceScopeFactory,
             _lambdaSerializer,
             properties,
             _featureCollectionFactory.Create(_featureProviders),
-            cancellationToken);
+            cancellationToken,
+            durableTerminalState);
 
         _contextAccessor?.LambdaInvocationContext = context;
 
