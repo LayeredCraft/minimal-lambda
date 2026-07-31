@@ -1,5 +1,7 @@
 using Microsoft.CodeAnalysis;
 
+#pragma warning disable RS1032 // Diagnostic text is fixed by ADR-004.
+
 namespace MinimalLambda.SourceGenerators;
 
 internal static class Diagnostics
@@ -46,5 +48,45 @@ internal static class Diagnostics
         "The type '{0}' must be a concrete class. Interfaces, abstract classes, and other non-instantiable types cannot be used as middleware.",
         ConfigurationCategory,
         DiagnosticSeverity.Error,
+        true);
+
+    internal static readonly DiagnosticDescriptor InvalidDurableInputCardinality = new(
+        "LH0007",
+        "Invalid durable workflow input cardinality",
+        "Durable handler must declare exactly one event input using '[FromEvent]'; found {0}.",
+        UsageCategory,
+        DiagnosticSeverity.Error,
+        true);
+
+    internal static readonly DiagnosticDescriptor InvalidDurableContextCardinality = new(
+        "LH0008",
+        "Invalid durable context cardinality",
+        "Durable handler must declare exactly one 'Amazon.Lambda.DurableExecution.IDurableContext' parameter; found {0}.",
+        UsageCategory,
+        DiagnosticSeverity.Error,
+        true);
+
+    internal static readonly DiagnosticDescriptor UnsupportedDurableParameter = new(
+        "LH0009",
+        "Unsupported durable handler parameter",
+        "Durable handler parameter '{0}' of type '{1}' is not supported: {2}.",
+        UsageCategory,
+        DiagnosticSeverity.Error,
+        true);
+
+    internal static readonly DiagnosticDescriptor UnsupportedDurableReturnType = new(
+        "LH0010",
+        "Unsupported durable handler return type",
+        "Durable handler return type '{0}' is not supported; use 'Task' or 'Task<TOutput>' with a closed, nameable, accessible, non-transport output type.",
+        UsageCategory,
+        DiagnosticSeverity.Error,
+        true);
+
+    internal static readonly DiagnosticDescriptor MissingDurableSerializerRoot = new(
+        "LH0011",
+        "Durable serializer root is not explicitly declared",
+        "Source-generated serializer context '{0}' does not explicitly declare durable serialization root '{1}'. Add [JsonSerializable(typeof({1}))] to that context or a base context declaration.",
+        ConfigurationCategory,
+        DiagnosticSeverity.Warning,
         true);
 }

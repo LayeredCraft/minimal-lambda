@@ -45,13 +45,16 @@ internal static class HandlerSyntaxProvider
         if (!TryGetInvocationOperation(context, out var targetOperation))
             return null;
 
-        if (!targetOperation.TryGetHandlerMethod(context.SemanticModel, out var method))
+        if (!targetOperation.TryGetHandlerMethod(
+            context.SemanticModel,
+            out var method,
+            out var handlerArgument))
             return null;
 
         return targetOperation.TargetMethod.Name switch
         {
             "MapHandler" => MapHandlerMethodInfo.Create(method, context),
-            "MapDurableHandler" => DurableMethodInfo.Create(method, context),
+            "MapDurableHandler" => DurableMethodInfo.Create(method, handlerArgument, context),
             "OnInit" => LifecycleMethodInfo.CreateForInit(method, context),
             "OnShutdown" => LifecycleMethodInfo.CreateForShutdown(method, context),
             var methodName => throw new InvalidOperationException($"Unknown method '{methodName}"),
@@ -84,9 +87,11 @@ internal static class HandlerSyntaxProvider
     private static bool TryGetHandlerMethod(
         this IInvocationOperation invocation,
         SemanticModel semanticModel,
-        [NotNullWhen(true)] out IMethodSymbol? method)
+        [NotNullWhen(true)] out IMethodSymbol? method,
+        [NotNullWhen(true)] out IArgumentOperation? handlerArgument)
     {
         method = null;
+        handlerArgument = null;
         var declaredMethod = invocation.TargetMethod.GetDeclaredMethod();
         var delegateType = semanticModel.Compilation.GetTypeByMetadataName("System.Delegate");
 
@@ -97,6 +102,7 @@ internal static class HandlerSyntaxProvider
                 out var argument))
         {
             method = ResolveMethodFromOperation(argument, semanticModel);
+            handlerArgument = argument;
             return method is not null;
         }
 

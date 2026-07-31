@@ -90,7 +90,8 @@ internal static class GeneratorTestHelpers
         string source,
         Dictionary<string, ReportDiagnostic>? diagnosticsToSuppress = null,
         LanguageVersion languageVersion = LanguageVersion.CSharp14,
-        bool includeDurableReferences = false)
+        bool includeDurableReferences = false,
+        IReadOnlyList<(string FilePath, string Source)>? additionalSources = null)
     {
         IEnumerable<KeyValuePair<string, string>> features =
         [
@@ -102,7 +103,14 @@ internal static class GeneratorTestHelpers
             .WithLanguageVersion(languageVersion)
             .WithFeatures(features);
 
-        var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions, "InputFile.cs");
+        var syntaxTrees = new List<SyntaxTree>
+        {
+            CSharpSyntaxTree.ParseText(source, parseOptions, "InputFile.cs"),
+        };
+        if (additionalSources is not null)
+            syntaxTrees.AddRange(
+                additionalSources.Select(item =>
+                    CSharpSyntaxTree.ParseText(item.Source, parseOptions, item.FilePath)));
 
         List<MetadataReference> references =
         [
@@ -146,7 +154,7 @@ internal static class GeneratorTestHelpers
 
         var compilation = CSharpCompilation.Create(
             "Tests",
-            [syntaxTree],
+            syntaxTrees,
             references,
             compilationOptions);
 

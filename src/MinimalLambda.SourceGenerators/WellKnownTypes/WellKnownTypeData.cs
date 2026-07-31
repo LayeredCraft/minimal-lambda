@@ -61,6 +61,13 @@ internal static class WellKnownTypeData
         MinimalLambda_Builder_MiddlewareConstructorAttribute,
         System_Boolean,
         MinimalLambda_ILambdaMiddleware,
+        System_Text_Json_Serialization_JsonSerializableAttribute,
+        System_Text_Json_Serialization_JsonSerializerContext,
+        Amazon_Lambda_Core_ILambdaSerializer,
+        Microsoft_Extensions_DependencyInjection_SerializerServiceCollectionExtensions,
+        MinimalLambda_Builder_LambdaApplicationBuilder,
+        MinimalLambda_Builder_BuilderLambdaApplicationExtensions,
+        MinimalLambda_Builder_LambdaApplication,
     }
 
     public static readonly string[] WellKnownTypeNames =
@@ -112,5 +119,12 @@ internal static class WellKnownTypeData
         "MinimalLambda.Builder.MiddlewareConstructorAttribute",
         "System.Boolean",
         "MinimalLambda.ILambdaMiddleware",
+        "System.Text.Json.Serialization.JsonSerializableAttribute",
+        "System.Text.Json.Serialization.JsonSerializerContext",
+        "Amazon.Lambda.Core.ILambdaSerializer",
+        "Microsoft.Extensions.DependencyInjection.SerializerServiceCollectionExtensions",
+        "MinimalLambda.Builder.LambdaApplicationBuilder",
+        "MinimalLambda.Builder.BuilderLambdaApplicationExtensions",
+        "MinimalLambda.Builder.LambdaApplication",
     ];
 }

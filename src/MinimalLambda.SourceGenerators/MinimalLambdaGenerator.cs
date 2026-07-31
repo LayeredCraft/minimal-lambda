@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using MinimalLambda.SourceGenerators.Emitters;
@@ -49,11 +50,16 @@ public class MinimalLambdaGenerator : IIncrementalGenerator
             .Select(static (c, _) => (MapHandlerMethodInfo)c)
             .Collect();
 
-        // Kept separate from ordinary handlers. Durable binding and emission attach to this stream.
+        // Kept separate from ordinary handlers. Durable emission attaches to valid models later.
         var durableHandlerCalls = registrationCalls
-            .WhereNoErrors()
             .Where(static c => c is DurableMethodInfo)
-            .Select(static (c, _) => (DurableMethodInfo)c);
+            .Select(static (c, _) => (DurableMethodInfo)c)
+            .Collect();
+
+        var durableDiagnostics = durableHandlerCalls
+            .Combine(context.CompilationProvider)
+            .Select(static (pair, cancellationToken) =>
+                DurableSerializerAnalyzer.Analyze(pair.Right, pair.Left, cancellationToken));
 
         var onInitHandlerCalls = registrationCalls
             .WhereNoErrors()
@@ -70,8 +76,13 @@ public class MinimalLambdaGenerator : IIncrementalGenerator
         var middlewareTCallsCollected = useMiddlewareTCalls.WhereNoErrors().Collect();
 
         context.RegisterSourceOutput(
-            registrationCalls,
+            registrationCalls.Where(static call => call is not DurableMethodInfo),
             (ctx, call) => call.DiagnosticInfos.ForEach(d => d.ReportDiagnostic(ctx)));
+
+        context.RegisterSourceOutput(
+            durableDiagnostics,
+            static (ctx, diagnostics) =>
+                diagnostics.ForEach(diagnostic => diagnostic.ReportDiagnostic(ctx)));
 
         context.RegisterSourceOutput(
             useMiddlewareTCalls,
