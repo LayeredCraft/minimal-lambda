@@ -122,4 +122,4 @@ model. Version coupling is explicit through the durable package's minimum core d
 ## References
 
 - [`ADR-001: Durable handler integration model`](./ADR-001-durable-handler-integration-model.md)
-- Durable research context: `.agents/docs/durable-execution-context.md`
+- [Durable dependency and support matrix](./durable-dependency-support-matrix.md)

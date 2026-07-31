@@ -250,5 +250,5 @@ because the AWS in-memory durable service-client overload is not public.
 
 - [`ADR-001: Durable handler integration model`](./ADR-001-durable-handler-integration-model.md)
 - [`ADR-002: Durable package and source-generation ownership`](./ADR-002-durable-package-and-source-generation-ownership.md)
-- Durable research context: `.agents/docs/durable-execution-context.md`
+- [Durable dependency and support matrix](./durable-dependency-support-matrix.md)
 - [AWS durable execution key concepts](https://docs.aws.amazon.com/durable-execution/getting-started/key-concepts/)

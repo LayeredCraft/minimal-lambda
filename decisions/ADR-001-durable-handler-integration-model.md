@@ -147,5 +147,5 @@ AWS .NET SDK is an adapter requirement, not the desired MinimalLambda workflow A
 ## References
 
 - [`ADR-002: Durable package and source-generation ownership`](./ADR-002-durable-package-and-source-generation-ownership.md)
-- Durable research context: `.agents/docs/durable-execution-context.md`
+- [Durable dependency and support matrix](./durable-dependency-support-matrix.md)
 - [AWS durable execution key concepts](https://docs.aws.amazon.com/durable-execution/getting-started/key-concepts/)
