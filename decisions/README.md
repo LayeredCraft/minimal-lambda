@@ -27,6 +27,7 @@ ADR metadata lives in YAML front matter. Use lowercase status values: `proposed`
 - [ADR-001: Durable handler integration model](./ADR-001-durable-handler-integration-model.md)
 - [ADR-002: Durable package and source-generation ownership](./ADR-002-durable-package-and-source-generation-ownership.md)
 - [ADR-003: Durable pipeline and adapter ownership](./ADR-003-durable-pipeline-and-adapter-ownership.md)
+- [ADR-004: Durable handler signature and diagnostics contract](./ADR-004-durable-handler-signature-and-diagnostics-contract.md)
 
 ## Supporting records
 
