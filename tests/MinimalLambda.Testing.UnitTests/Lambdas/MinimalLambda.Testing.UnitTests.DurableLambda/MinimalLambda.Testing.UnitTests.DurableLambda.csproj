@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <LangVersion>preview</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <AWSProjectType>Lambda</AWSProjectType>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);MinimalLambda.Generated</InterceptorsNamespaces>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="MinimalLambda.Testing.UnitTests" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference
+      Include="..\..\..\..\src\MinimalLambda.SourceGenerators\MinimalLambda.SourceGenerators.csproj"
+      ReferenceOutputAssembly="false"
+      OutputItemType="Analyzer" />
+    <ProjectReference
+      Include="..\..\..\..\src\MinimalLambda.DurableExecution\MinimalLambda.DurableExecution.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>

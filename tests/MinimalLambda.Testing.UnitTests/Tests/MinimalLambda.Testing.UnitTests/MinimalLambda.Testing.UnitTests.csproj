@@ -8,22 +8,22 @@
     <NoWarn>$(NoWarn);IL2026;IL2087;IL2091;IL3050;IL3051;IL2075:</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <Using Include="AutoFixture"/>
-    <Using Include="AwesomeAssertions"/>
-    <Using Include="NSubstitute"/>
-    <Using Include="Xunit"/>
+    <Using Include="AutoFixture" />
+    <Using Include="AwesomeAssertions" />
+    <Using Include="NSubstitute" />
+    <Using Include="Xunit" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac.Extensions.DependencyInjection"/>
-    <PackageReference Include="AutoFixture.Xunit3"/>
-    <PackageReference Include="JetBrains.Annotations"/>
-    <PackageReference Include="Microsoft.NET.Test.Sdk"/>
-    <PackageReference Include="NSubstitute"/>
-    <PackageReference Include="AutoFixture"/>
-    <PackageReference Include="AwesomeAssertions"/>
-    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage"/>
-    <PackageReference Include="AutoFixture.AutoNSubstitute"/>
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" />
+    <PackageReference Include="AutoFixture.Xunit3" />
+    <PackageReference Include="JetBrains.Annotations" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="AutoFixture" />
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+    <PackageReference Include="AutoFixture.AutoNSubstitute" />
     <PackageReference Include="NSubstitute.Analyzers.CSharp">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -32,18 +32,24 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="xunit.v3.mtp-v2"/>
+    <PackageReference Include="xunit.v3.mtp-v2" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\MinimalLambda.Testing\MinimalLambda.Testing.csproj"/>
-    <ProjectReference Include="..\..\Lambdas\MinimalLambda.Testing.UnitTests.DiLambda\MinimalLambda.Testing.UnitTests.DiLambda.csproj"/>
-    <ProjectReference Include="..\..\Lambdas\MinimalLambda.Testing.UnitTests.NoEventLambda\MinimalLambda.Testing.UnitTests.NoEventLambda.csproj"/>
-    <ProjectReference Include="..\..\Lambdas\MinimalLambda.Testing.UnitTests.NoResponseLambda\MinimalLambda.Testing.UnitTests.NoResponseLambda.csproj"/>
-    <ProjectReference Include="..\..\Lambdas\MinimalLambda.Testing.UnitTests.SimpleLambda\MinimalLambda.Testing.UnitTests.SimpleLambda.csproj"/>
+    <ProjectReference Include="..\..\..\..\src\MinimalLambda.Testing\MinimalLambda.Testing.csproj" />
+    <ProjectReference
+      Include="..\..\Lambdas\MinimalLambda.Testing.UnitTests.DiLambda\MinimalLambda.Testing.UnitTests.DiLambda.csproj" />
+    <ProjectReference
+      Include="..\..\Lambdas\MinimalLambda.Testing.UnitTests.DurableLambda\MinimalLambda.Testing.UnitTests.DurableLambda.csproj" />
+    <ProjectReference
+      Include="..\..\Lambdas\MinimalLambda.Testing.UnitTests.NoEventLambda\MinimalLambda.Testing.UnitTests.NoEventLambda.csproj" />
+    <ProjectReference
+      Include="..\..\Lambdas\MinimalLambda.Testing.UnitTests.NoResponseLambda\MinimalLambda.Testing.UnitTests.NoResponseLambda.csproj" />
+    <ProjectReference
+      Include="..\..\Lambdas\MinimalLambda.Testing.UnitTests.SimpleLambda\MinimalLambda.Testing.UnitTests.SimpleLambda.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest"/>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
