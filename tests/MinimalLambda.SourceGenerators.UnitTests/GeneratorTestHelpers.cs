@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Amazon.Lambda.Core;
+using Amazon.Lambda.DurableExecution;
 using Amazon.Lambda.RuntimeSupport;
 using Amazon.Lambda.Serialization.SystemTextJson;
 using AwesomeAssertions;
@@ -88,7 +89,8 @@ internal static class GeneratorTestHelpers
     internal static (GeneratorDriver driver, Compilation compilation) GenerateFromSource(
         string source,
         Dictionary<string, ReportDiagnostic>? diagnosticsToSuppress = null,
-        LanguageVersion languageVersion = LanguageVersion.CSharp14)
+        LanguageVersion languageVersion = LanguageVersion.CSharp14,
+        bool includeDurableReferences = false)
     {
         IEnumerable<KeyValuePair<string, string>> features =
         [
@@ -123,6 +125,16 @@ internal static class GeneratorTestHelpers
             MetadataReference.CreateFromFile(typeof(IOptions<>).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(ILambdaInvocationContext).Assembly.Location),
         ];
+
+        if (includeDurableReferences)
+        {
+            references.Add(
+                MetadataReference.CreateFromFile(
+                    typeof(MinimalLambda.DurableExecution.DurableContextExtensions).Assembly
+                        .Location));
+            references.Add(
+                MetadataReference.CreateFromFile(typeof(IDurableContext).Assembly.Location));
+        }
 
         var compilationOptions = new CSharpCompilationOptions(
             OutputKind.ConsoleApplication,

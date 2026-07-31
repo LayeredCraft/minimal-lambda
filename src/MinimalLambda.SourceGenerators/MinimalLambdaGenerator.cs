@@ -49,6 +49,12 @@ public class MinimalLambdaGenerator : IIncrementalGenerator
             .Select(static (c, _) => (MapHandlerMethodInfo)c)
             .Collect();
 
+        // Kept separate from ordinary handlers. Durable binding and emission attach to this stream.
+        var durableHandlerCalls = registrationCalls
+            .WhereNoErrors()
+            .Where(static c => c is DurableMethodInfo)
+            .Select(static (c, _) => (DurableMethodInfo)c);
+
         var onInitHandlerCalls = registrationCalls
             .WhereNoErrors()
             .Where(static c => c is LifecycleMethodInfo { MethodType: MethodType.OnInit })
