@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <LangVersion>preview</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IncludeBuildOutput>true</IncludeBuildOutput>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Package Metadata -->
+    <AssemblyName>MinimalLambda.DurableExecution</AssemblyName>
+    <RootNamespace>MinimalLambda.DurableExecution</RootNamespace>
+    <PackageId>MinimalLambda.DurableExecution</PackageId>
+    <MinimalLambdaMinimumVersion>2.6.0-beta.1</MinimalLambdaMinimumVersion>
+    <Description>AWS Lambda Durable Execution integration for MinimalLambda</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Amazon.Lambda.DurableExecution" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MinimalLambda\MinimalLambda.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+  <!--
+    _GetProjectReferenceVersions is a private NuGet pack hook. Keep this override limited to
+    MinimalLambda; x56 pack-matrix tests guard against future SDK behavior changes.
+  -->
+  <Target Name="PinMinimalLambdaPackageDependencyVersion"
+          AfterTargets="_GetProjectReferenceVersions">
+    <PropertyGroup>
+      <_MinimalLambdaProjectPath>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\MinimalLambda\MinimalLambda.csproj'))</_MinimalLambdaProjectPath>
+    </PropertyGroup>
+    <ItemGroup>
+      <_ProjectReferencesWithVersions
+        Update="@(_ProjectReferencesWithVersions)"
+        Condition="'%(_ProjectReferencesWithVersions.FullPath)' == '$(_MinimalLambdaProjectPath)'"
+        ProjectVersion="$(MinimalLambdaMinimumVersion)" />
+    </ItemGroup>
+  </Target>
+</Project>
