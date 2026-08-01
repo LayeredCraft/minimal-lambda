@@ -67,7 +67,7 @@ namespace MinimalLambda.Generated
             }
         }
     }
-    
+
     file static class Utilities
     {
         internal static T Cast<T>(Delegate d, T _) where T : Delegate => (T)d;
