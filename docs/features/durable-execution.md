@@ -179,7 +179,7 @@ Before claiming cloud support:
 - [ ] Cloud-test create, qualified invoke, checkpoint/replay, wait/suspension, callback, failure, retention, and IAM paths.
 - [ ] Repeat cloud tests for every claimed managed runtime and NativeAOT combination.
 
-Use [AWS infrastructure configuration](https://docs.aws.amazon.com/lambda/latest/dg/durable-getting-started-iac.html) and [supported runtimes](https://docs.aws.amazon.com/lambda/latest/dg/durable-supported-runtimes.html) as current service references. Package restore, sample build, template validation, local workflow tests, and local AOT publish are not cloud evidence.
+Follow [Durable Execution Deployment](../guides/durable-execution-deployment.md) for locally validated package/template assets, direct CLI and SAM syntax, IAM boundaries, qualified invocation, and version rollback safety. Use [AWS infrastructure configuration](https://docs.aws.amazon.com/lambda/latest/dg/durable-getting-started-iac.html) and [supported runtimes](https://docs.aws.amazon.com/lambda/latest/dg/durable-supported-runtimes.html) as current service references. Package restore, sample build, template validation, local workflow tests, and local AOT publish are not cloud evidence.
 
 ## Troubleshooting
 
