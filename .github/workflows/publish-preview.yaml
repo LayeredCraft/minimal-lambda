@@ -1,4 +1,4 @@
-name: Publish Preview
+name: Publish Core Preview
 
 on:
   push:
@@ -17,25 +17,108 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  resolve:
+    runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
-    uses: LayeredCraft/devops-templates/.github/workflows/publish-preview.yml@v10.1
-    with:
-      solution: MinimalLambda.sln
-      dotnetVersion: 11.0.x
-      prereleaseIdentifier: preview
-      hasTests: false
-      buildConfiguration: Release
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Resolve next version via Release Drafter
+        id: release-drafter
+        uses: release-drafter/release-drafter@v7
+        with:
+          config-name: release-drafter.yml
+          dry-run: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Resolve core preview version
+        id: version
+        env:
+          RESOLVED_VERSION: ${{ steps.release-drafter.outputs.resolved_version }}
+        shell: bash
+        run: |
+          if [[ -z "$RESOLVED_VERSION" ]]; then
+            echo "::error::Release Drafter returned an empty resolved_version."
+            exit 1
+          fi
+          base="${RESOLVED_VERSION%%-*}"
+          version="${base}-preview.${{ github.run_number }}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: resolve
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 11.0.x
+      - name: Restore core package cohort
+        run: dotnet restore MinimalLambda.Packages.slnf
+      - name: Build core package cohort
+        run: >-
+          dotnet build MinimalLambda.Packages.slnf
+          --configuration Release
+          --no-restore
+          -p:Version="${{ needs.resolve.outputs.version }}"
+      - name: Pack core package cohort
+        run: >-
+          dotnet pack MinimalLambda.Packages.slnf
+          --configuration Release
+          --no-build
+          --output artifacts
+          -p:Version="${{ needs.resolve.outputs.version }}"
+      - name: Guard core preview manifest
+        run: >-
+          python3 scripts/validate-release-artifacts.py
+          --lane core-preview
+          --expected-version "${{ needs.resolve.outputs.version }}"
+          --preview-run-number "${{ github.run_number }}"
+          --artifacts artifacts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: core-preview-nuget-packages
+          path: |
+            artifacts/*.nupkg
+            artifacts/*.snupkg
+          if-no-files-found: error
 
   push:
-    needs: build
+    needs: [resolve, build]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
     steps:
-      - uses: LayeredCraft/devops-templates/.github/actions/nuget-push@v10.1
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
         with:
-          nuget_user: ${{ secrets.NUGET_USER }}
+          name: core-preview-nuget-packages
+          path: artifacts
+      - name: Recheck manifest and reject existing NuGet versions
+        run: >-
+          python3 scripts/validate-release-artifacts.py
+          --lane core-preview
+          --expected-version "${{ needs.resolve.outputs.version }}"
+          --preview-run-number "${{ github.run_number }}"
+          --artifacts artifacts
+          --check-nuget
+      - name: Exchange GitHub OIDC token for temporary NuGet key
+        uses: NuGet/login@v1
+        id: nuget-login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+      - name: Publish core preview packages and symbols without duplicate suppression
+        env:
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # dotnet nuget push discovers and publishes adjacent .snupkg automatically.
+          for package in artifacts/*.nupkg; do
+            dotnet nuget push "$package" \
+              --api-key "$NUGET_API_KEY" \
+              --source https://api.nuget.org/v3/index.json
+          done

@@ -1,0 +1,21 @@
+{
+  "solution": {
+    "path": "MinimalLambda.sln",
+    "projects": [
+      "src/Envelopes/MinimalLambda.Envelopes.Alb/MinimalLambda.Envelopes.Alb.csproj",
+      "src/Envelopes/MinimalLambda.Envelopes.ApiGateway/MinimalLambda.Envelopes.ApiGateway.csproj",
+      "src/Envelopes/MinimalLambda.Envelopes.CloudWatchLogs/MinimalLambda.Envelopes.CloudWatchLogs.csproj",
+      "src/Envelopes/MinimalLambda.Envelopes.Kafka/MinimalLambda.Envelopes.Kafka.csproj",
+      "src/Envelopes/MinimalLambda.Envelopes.Kinesis/MinimalLambda.Envelopes.Kinesis.csproj",
+      "src/Envelopes/MinimalLambda.Envelopes.KinesisFirehose/MinimalLambda.Envelopes.KinesisFirehose.csproj",
+      "src/Envelopes/MinimalLambda.Envelopes.Sns/MinimalLambda.Envelopes.Sns.csproj",
+      "src/Envelopes/MinimalLambda.Envelopes.Sqs/MinimalLambda.Envelopes.Sqs.csproj",
+      "src/Envelopes/MinimalLambda.Envelopes/MinimalLambda.Envelopes.csproj",
+      "src/MinimalLambda.Abstractions/MinimalLambda.Abstractions.csproj",
+      "src/MinimalLambda.OpenTelemetry/MinimalLambda.OpenTelemetry.csproj",
+      "src/MinimalLambda.Templates/MinimalLambda.Templates.csproj",
+      "src/MinimalLambda.Testing/MinimalLambda.Testing.csproj",
+      "src/MinimalLambda/MinimalLambda.csproj"
+    ]
+  }
+}
