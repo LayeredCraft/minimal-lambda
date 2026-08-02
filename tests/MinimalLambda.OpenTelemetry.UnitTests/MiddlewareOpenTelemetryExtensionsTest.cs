@@ -26,7 +26,7 @@ public class MiddlewareOpenTelemetryExtensionsTest
         ILambdaInvocationBuilder builder)
     {
         // Arrange
-        serviceProvider.GetService(typeof(TracerProvider)).Returns(null);
+        serviceProvider.GetService(typeof(TracerProvider)).Returns(null!);
         builder.Services.Returns(serviceProvider);
 
         // Act
@@ -80,8 +80,8 @@ public class MiddlewareOpenTelemetryExtensionsTest
         builder.Services.Returns(serviceProvider);
         builder
             .Use(
-                Arg.Do<Func<LambdaInvocationDelegate, LambdaInvocationDelegate>>(m =>
-                    capturedMiddleware = m))
+                Arg.Do<Func<LambdaInvocationDelegate, LambdaInvocationDelegate>>(m
+                    => capturedMiddleware = m))
             .Returns(builder);
 
         context.Features.Returns(features);

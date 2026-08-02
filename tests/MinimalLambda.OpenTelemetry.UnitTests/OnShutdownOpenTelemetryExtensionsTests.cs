@@ -31,7 +31,7 @@ public class OnShutdownOpenTelemetryExtensionsTests
         // Arrange
         var mockApp = Substitute.For<ILambdaOnShutdownBuilder>();
         var mockServiceProvider = Substitute.For<IServiceProvider>();
-        mockServiceProvider.GetService(typeof(TracerProvider)).Returns(null);
+        mockServiceProvider.GetService(typeof(TracerProvider)).Returns(null!);
         mockApp.Services.Returns(mockServiceProvider);
 
         // Act
@@ -54,7 +54,7 @@ public class OnShutdownOpenTelemetryExtensionsTests
         mockServiceProvider
             .GetService(typeof(TracerProvider))
             .Returns(Substitute.For<TracerProvider>());
-        mockServiceProvider.GetService(typeof(ILoggerFactory)).Returns(null);
+        mockServiceProvider.GetService(typeof(ILoggerFactory)).Returns(null!);
         mockApp.Services.Returns(mockServiceProvider);
 
         // Act
@@ -189,7 +189,7 @@ public class OnShutdownOpenTelemetryExtensionsTests
         // Arrange
         var mockApp = Substitute.For<ILambdaOnShutdownBuilder>();
         var mockServiceProvider = Substitute.For<IServiceProvider>();
-        mockServiceProvider.GetService(typeof(MeterProvider)).Returns(null);
+        mockServiceProvider.GetService(typeof(MeterProvider)).Returns(null!);
         mockApp.Services.Returns(mockServiceProvider);
 
         // Act
@@ -212,7 +212,7 @@ public class OnShutdownOpenTelemetryExtensionsTests
         mockServiceProvider
             .GetService(typeof(MeterProvider))
             .Returns(Substitute.For<MeterProvider>());
-        mockServiceProvider.GetService(typeof(ILoggerFactory)).Returns(null);
+        mockServiceProvider.GetService(typeof(ILoggerFactory)).Returns(null!);
         mockApp.Services.Returns(mockServiceProvider);
 
         // Act
