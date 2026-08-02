@@ -2,6 +2,9 @@
   <PropertyGroup>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+    <!-- AutoFixture.AutoNSubstitute 4.18.1 supports NSubstitute < 6.0.0,
+         but this test-only integration is validated with NSubstitute 6.0.0. -->
+    <NoWarn>$(NoWarn);NU1608</NoWarn>
 
   </PropertyGroup>
 </Project>
