@@ -62,6 +62,17 @@ dotnet new mlambda -n FullRunStandard --profile default --region us-east-1
 dotnet test FullRunStandard/test/FullRunStandard.Tests/FullRunStandard.Tests.csproj
 ```
 
+Run a durable-template smoke test:
+
+```bash
+mkdir -p /tmp/minimal-lambda-template-test
+cd /tmp/minimal-lambda-template-test
+rm -rf FullRunDurable
+dotnet new mlambda-durable -n FullRunDurable --profile default --region us-east-1
+dotnet restore FullRunDurable/src/FullRunDurable/FullRunDurable.csproj
+dotnet build FullRunDurable/src/FullRunDurable/FullRunDurable.csproj
+```
+
 Run a full Native AOT-template smoke test:
 
 ```bash
@@ -120,18 +131,20 @@ This creates `src/MyLambda` and `test/MyLambda.Tests` beside your existing solut
 
 ## Templates
 
-| Template                                                    | Short name    | Use when                                     |
-| ----------------------------------------------------------- | ------------- | -------------------------------------------- |
-| MinimalLambda AWS Lambda Function                           | `mlambda`     | Starting a standard MinimalLambda function   |
-| MinimalLambda AWS Lambda Function configured for Native AOT | `mlambda-aot` | Starting a Native AOT MinimalLambda function |
+| Template                                                    | Short name        | Use when                                      |
+| ----------------------------------------------------------- | ----------------- | --------------------------------------------- |
+| MinimalLambda AWS Lambda Function                           | `mlambda`         | Starting a standard MinimalLambda function    |
+| MinimalLambda AWS Lambda Function configured for Native AOT | `mlambda-aot`     | Starting a Native AOT MinimalLambda function  |
+| MinimalLambda AWS Lambda Durable Execution Function         | `mlambda-durable` | Starting a .NET 10 Durable Execution workflow |
 
 ## Template Options
 
-Both templates support AWS profile and region replacement in `aws-lambda-tools-defaults.json`:
+All templates support AWS profile and region replacement in `aws-lambda-tools-defaults.json`:
 
 ```bash
 dotnet new mlambda -n MyLambda --profile default --region us-east-1
 dotnet new mlambda-aot -n MyAotLambda --profile prod --region eu-west-1
+dotnet new mlambda-durable -n MyDurableLambda --profile prod --region eu-west-1
 ```
 
 Use the same options when generating into an existing repository:
@@ -149,8 +162,8 @@ Add or update these package versions at the repository root:
 
 ```xml
 <ItemGroup>
-  <PackageVersion Include="MinimalLambda" Version="2.6.0-beta.1" />
-  <PackageVersion Include="MinimalLambda.Testing" Version="2.6.0-beta.1" />
+  <PackageVersion Include="MinimalLambda" Version="2.6.0-beta.2" />
+  <PackageVersion Include="MinimalLambda.Testing" Version="2.6.0-beta.2" />
   <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
   <PackageVersion Include="xunit" Version="2.9.3" />
   <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />

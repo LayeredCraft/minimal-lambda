@@ -8,7 +8,7 @@ Use `MapDurableHandler` to build typed workflows on [AWS Lambda Durable Executio
 
 ## Install packages
 
-Target `net8.0` or `net10.0`. Reference all three packages directly:
+Target `net10.0`. Reference all three packages directly:
 
 ```bash
 dotnet add package MinimalLambda --version 2.6.0-beta.2
@@ -18,7 +18,7 @@ dotnet add package Amazon.Lambda.DurableExecution --version 1.0.0
 
 `MinimalLambda.DurableExecution` and `MinimalLambda` are versioned independently; do not assume matching versions are always required. `2.6.0-beta.2` is current minimum compatible core version. Direct `MinimalLambda` reference supplies source generator for `MapHandler` and `MapDurableHandler`. Direct AWS package reference supplies DE001-DE004 analyzers, which do not flow through transitive dependencies.
 
-NuGet fallback may select an asset for another target framework, but only `net8.0` and `net10.0` are supported.
+NuGet fallback may select an asset for another target framework, but only `net10.0` is supported.
 
 ## Build typed workflow
 
@@ -39,14 +39,10 @@ builder.Services.AddSingleton<IOrderService, OrderService>();
 
 await using var lambda = builder.Build();
 
-lambda.MapDurableHandler(HandleOrderAsync);
-
-await lambda.RunAsync();
-
-static async Task<OrderResult> HandleOrderAsync(
+lambda.MapDurableHandler(async (
     [FromEvent] OrderRequest request,
     IDurableContext durable,
-    [FromServices] IOrderService orders)
+    [FromServices] IOrderService orders) =>
 {
     var step = await durable.StepAsync(
         (_, cancellationToken) => orders.ProcessAsync(request.OrderId, cancellationToken),
@@ -56,7 +52,9 @@ static async Task<OrderResult> HandleOrderAsync(
         step.Message,
         durable.ExecutionContext.DurableExecutionArn,
         durable.LambdaContext.AwsRequestId);
-}
+});
+
+await lambda.RunAsync();
 
 internal sealed record OrderRequest(string OrderId);
 
@@ -105,7 +103,7 @@ Do not expose `DurableExecutionInvocationInput`, `DurableExecutionInvocationOutp
 
 ### Cancellation
 
-Never add root `CancellationToken` to durable handler. Generator reports `LH0009` because near-timeout root cancellation could turn retryable physical invocation into terminal `FAILED` workflow. Use AWS-supplied token inside step, callback, child workflow, map, parallel, and other operation callbacks, as sample does.
+Never add root `CancellationToken` to durable handler. Generator reports `LH0009` because near-timeout root cancellation could turn retryable physical invocation into terminal `FAILED` workflow. AWS operation callbacks already receive SDK-linked cancellation tokens, while `WrapAsync` exposes no lifecycle-token hook. Automatically linking MinimalLambda physical-invocation cancellation would couple replay to Lambda timeout. Use AWS-supplied token inside step, callback, child workflow, map, parallel, and other operation callbacks, as sample does.
 
 Reading `ILambdaInvocationContext.CancellationToken` explicitly means accepting root failure/retry consequences.
 
@@ -141,7 +139,7 @@ One registered `ILambdaSerializer` handles MinimalLambda outer envelopes and AWS
 
 Generator cannot discover operation types hidden inside method bodies or referenced libraries. `LH0011` checks only explicit outer input/output and handler input/output declarations. It does not inspect member graphs or hidden operation types, and warning absence does not prove serializer completeness. `LH0011` does not suppress generation, so missing runtime metadata can still fail later.
 
-Local package-only `net8.0` and source-based `net10.0` NativeAOT publishes pass. This proves local publishing only. Managed cloud integration remains unverified, and Durable Execution NativeAOT support remains experimental. Successful local publish is not evidence of deployment, IAM, replay, or managed-service behavior. See [AWS NativeAOT guidance](https://docs.aws.amazon.com/lambda/latest/dg/dotnet-native-aot.html) and project [support matrix](https://github.com/LayeredCraft/minimal-lambda/blob/main/decisions/durable-dependency-support-matrix.md).
+Local source-based `net10.0` NativeAOT publish passes. This proves local publishing only. Managed cloud integration remains unverified, and Durable Execution NativeAOT support remains experimental. Successful local publish is not evidence of deployment, IAM, replay, or managed-service behavior. See [AWS NativeAOT guidance](https://docs.aws.amazon.com/lambda/latest/dg/dotnet-native-aot.html) and project [support matrix](https://github.com/LayeredCraft/minimal-lambda/blob/main/decisions/durable-dependency-support-matrix.md).
 
 ## Make replay safe
 
@@ -168,18 +166,6 @@ Split tests by ownership:
 - Use `Amazon.Lambda.DurableExecution.Testing` for workflow operations, suspension, waits, and replay. Follow [AWS durable testing guide](https://docs.aws.amazon.com/lambda/latest/dg/durable-testing.html).
 
 `dotnet run` is not local workflow runner; executable expects Lambda Runtime API. Local engine and integration tests do not prove IAM, deployment, managed-runtime behavior, retention, or cloud service integration.
-
-## Deploy and invoke
-
-Before claiming cloud support:
-
-- [ ] Create function with Durable Execution configuration; existing ordinary function cannot be converted by update alone.
-- [ ] Configure execution timeout, retention, IAM, runtime, architecture, and serializer roots.
-- [ ] Publish and invoke qualified version or alias, not unqualified function ARN.
-- [ ] Cloud-test create, qualified invoke, checkpoint/replay, wait/suspension, callback, failure, retention, and IAM paths.
-- [ ] Repeat cloud tests for every claimed managed runtime and NativeAOT combination.
-
-Follow [Durable Execution Deployment](../guides/durable-execution-deployment.md) for locally validated package/template assets, direct CLI and SAM syntax, IAM boundaries, qualified invocation, and version rollback safety. Use [AWS infrastructure configuration](https://docs.aws.amazon.com/lambda/latest/dg/durable-getting-started-iac.html) and [supported runtimes](https://docs.aws.amazon.com/lambda/latest/dg/durable-supported-runtimes.html) as current service references. Package restore, sample build, template validation, local workflow tests, and local AOT publish are not cloud evidence.
 
 ## Troubleshooting
 

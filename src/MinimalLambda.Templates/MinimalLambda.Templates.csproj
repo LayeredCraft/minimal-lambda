@@ -37,7 +37,7 @@
       <Using Namespace="System.IO" />
       <Using Namespace="System.Text.RegularExpressions" />
       <Code Type="Fragment" Language="cs"><![CDATA[
-        var pattern = "(<(?:PackageReference|PackageVersion) Include=\"MinimalLambda(?:\\.Testing)?\" Version=\")[^\"]+(\")";
+        var pattern = "(<(?:PackageReference|PackageVersion) Include=\"MinimalLambda(?:\\.(?:Testing|DurableExecution))?\" Version=\")[^\"]+(\")";
         foreach (var item in Files)
         {
             var path = item.ItemSpec;
@@ -66,6 +66,10 @@
         Include="templates/mlambda-aot/src/BlueprintBaseName.1/README.md" />
       <TemplatePackageReferenceFile
         Include="templates/mlambda-aot/test/BlueprintBaseName.1.Tests/BlueprintBaseName.1.Tests.csproj" />
+      <TemplatePackageReferenceFile
+        Include="templates/mlambda-durable/src/BlueprintBaseName.1/BlueprintBaseName.1.csproj" />
+      <TemplatePackageReferenceFile
+        Include="templates/mlambda-durable/src/BlueprintBaseName.1/README.md" />
     </ItemGroup>
     <StampTemplatePackageReferencesTask Files="@(TemplatePackageReferenceFile)"
                                         Version="$(Version)" />

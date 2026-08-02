@@ -6,7 +6,7 @@ Typed durable handler with dependency injection, execution metadata, checkpointe
 dotnet build examples/MinimalLambda.Example.DurableExecution/MinimalLambda.Example.DurableExecution.csproj
 ```
 
-`dotnet run` expects Lambda Runtime API and is not a standalone local workflow runner. Deployment assets are included for static validation. Follow [Durable Execution Deployment](../../docs/guides/durable-execution-deployment.md) for local package validation, deployment syntax, IAM, qualified invocation, and evidence limits. No AWS deployment was run for this example.
+`dotnet run` expects Lambda Runtime API and is not a standalone local workflow runner. Deployment assets are included for static validation. Consult current [AWS Durable Execution documentation](https://docs.aws.amazon.com/lambda/latest/dg/durable-getting-started.html) for deployment and IAM requirements. No AWS deployment was run for this example.
 
 ## Advanced low-level escape hatch
 

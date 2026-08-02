@@ -115,7 +115,6 @@ nav:
       - Configuration: guides/configuration.md
       - Error Handling: guides/error-handling.md
       - Testing: guides/testing.md
-      - Durable Execution Deployment: guides/durable-execution-deployment.md
   - Examples (Coming Soon):
       - examples/index.md
   - Features:

@@ -15,7 +15,7 @@ dotnet add package Amazon.Lambda.DurableExecution --version 1.0.0
 
 Direct `MinimalLambda` reference activates MinimalLambda source generator. Direct AWS package
 reference activates DE001-DE004 analyzers; runtime dependency otherwise arrives transitively.
-Initial supported targets are .NET 8 and .NET 10. Treat NativeAOT durable deployment as experimental
+Initial supported target is .NET 10. Treat NativeAOT durable deployment as experimental
 until project documentation records cloud evidence.
 
 ## Handler contract
@@ -48,7 +48,8 @@ envelope or explicit-client control is required.
 ## Cancellation
 
 Do not declare `CancellationToken` on durable root handler. Near-timeout cancellation can fault root
-workflow and become terminal `FAILED` result instead of allowing physical invocation retry.
+workflow and become terminal `FAILED` result instead of allowing physical invocation retry. AWS operation
+callbacks already receive SDK-linked cancellation tokens, and `WrapAsync` exposes no lifecycle-token hook.
 
 Use cancellation token supplied by durable operation callback (`StepAsync`, callback, map/parallel,
 child workflow, and related APIs). Advanced code can read

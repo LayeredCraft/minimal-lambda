@@ -6,8 +6,8 @@ Typed AWS Lambda Durable Execution handlers for MinimalLambda.
 
 ## Compatibility and installation
 
-Package ships assets for exactly `net8.0` and `net10.0`. Those are supported target frameworks;
-NuGet may select a lower compatible asset for other TFMs, but those combinations are not supported.
+Package ships assets for exactly `net10.0`. NuGet may select a compatible asset for other TFMs, but
+those combinations are not supported.
 
 `MinimalLambda.DurableExecution` is versioned independently from `MinimalLambda`; versions are not
 lockstep. Current minimum compatible core version is `MinimalLambda` `2.6.0-beta.2`.
@@ -42,15 +42,11 @@ builder.Services.AddSingleton<IOrderService, OrderService>();
 
 await using var lambda = builder.Build();
 
-lambda.MapDurableHandler(HandleOrderAsync);
-
-await lambda.RunAsync();
-
-static async Task<OrderResult> HandleOrderAsync(
+lambda.MapDurableHandler(async (
     [FromEvent] OrderRequest request,
     IDurableContext durable,
     ILambdaInvocationContext invocation,
-    [FromServices] IOrderService orders)
+    [FromServices] IOrderService orders) =>
 {
     var step = await durable.StepAsync(
         (_, cancellationToken) =>
@@ -61,7 +57,9 @@ static async Task<OrderResult> HandleOrderAsync(
         step.Message,
         durable.ExecutionContext.DurableExecutionArn,
         invocation.AwsRequestId);
-}
+});
+
+await lambda.RunAsync();
 
 internal sealed record OrderRequest(string OrderId);
 internal sealed record OrderResult(string Message, string ExecutionArn, string AwsRequestId);
@@ -110,9 +108,9 @@ DI, or optional DI. Input is never inferred. Synchronous, `ValueTask`, custom-aw
 outer durable envelope, and root `CancellationToken` forms are rejected by generator diagnostics.
 
 Do not put `CancellationToken` on root handler. Near-timeout cancellation could fault workflow into
-terminal `FAILED` state instead of letting physical invocation retry. Use cancellation tokens AWS
-supplies to durable operation callbacks. Reading `ILambdaInvocationContext.CancellationToken`
-explicitly means owning those failure/retry consequences.
+terminal `FAILED` state instead of letting physical invocation retry. AWS operation callbacks already
+receive SDK-linked cancellation tokens, and `WrapAsync` exposes no lifecycle-token hook. Reading
+`ILambdaInvocationContext.CancellationToken` explicitly means owning those failure/retry consequences.
 
 Inject `ILambdaInvocationContext` as above, or recover exact physical invocation context carried by
 AWS durable context:

@@ -1,12 +1,12 @@
 {
   "Information": [
     "Defaults for packaging and deploying the executable MinimalLambda durable example with Amazon.Lambda.Tools 7.",
-    "Deployment commands are documented in docs/guides/durable-execution-deployment.md."
+    "Run dotnet lambda help for deployment command options."
   ],
   "configuration": "Release",
-  "framework": "net8.0",
+  "framework": "net10.0",
   "package-type": "Zip",
-  "function-runtime": "dotnet8",
+  "function-runtime": "dotnet10",
   "function-handler": "MinimalLambda.Example.DurableExecution",
   "function-memory-size": 512,
   "function-timeout": 30,

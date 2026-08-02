@@ -9,16 +9,12 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <PublishReadyToRun>true</PublishReadyToRun>
     <InterceptorsNamespaces>$(InterceptorsNamespaces);MinimalLambda.Generated</InterceptorsNamespaces>
-    <RootNamespace>MinimalLambda.Example.DurableExecution</RootNamespace>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Amazon.Lambda.DurableExecution" />
-    <ProjectReference
-      Include="..\..\src\MinimalLambda.DurableExecution\MinimalLambda.DurableExecution.csproj" />
-    <ProjectReference
-      Include="..\..\src\MinimalLambda.SourceGenerators\MinimalLambda.SourceGenerators.csproj"
-      ReferenceOutputAssembly="false"
-      OutputItemType="Analyzer" />
+    <PackageReference Include="MinimalLambda" Version="2.6.0-beta.2" />
+    <PackageReference Include="MinimalLambda.DurableExecution" Version="2.6.0-beta.2" />
+    <PackageReference Include="Amazon.Lambda.DurableExecution" Version="1.0.0" />
   </ItemGroup>
 </Project>

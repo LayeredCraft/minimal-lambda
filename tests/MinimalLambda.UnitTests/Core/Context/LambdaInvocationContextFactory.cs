@@ -302,7 +302,8 @@ public class LambdaInvocationContextFactoryTests
             .Received(1)
             .Create(
                 Arg.Is<IEnumerable<IFeatureProvider>>(providers =>
-                    providers.Count() == 2
+                    providers != null
+                    && providers.Count() == 2
                     && providers.Contains(eventFeatureProvider)
                     && providers.Contains(responseFeatureProvider)));
         // ReSharper restore PossibleMultipleEnumeration

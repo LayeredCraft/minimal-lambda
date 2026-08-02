@@ -8,7 +8,7 @@ Resources:
     Properties:
       PackageType: Zip
       CodeUri: artifacts/MinimalLambda.Example.DurableExecution.zip
-      Runtime: dotnet8
+      Runtime: dotnet10
       Handler: MinimalLambda.Example.DurableExecution
       Architectures:
         - x86_64

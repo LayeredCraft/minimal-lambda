@@ -12,14 +12,10 @@ builder.Services.AddSingleton<IOrderService, OrderService>();
 
 await using var lambda = builder.Build();
 
-lambda.MapDurableHandler(HandleOrderAsync);
-
-await lambda.RunAsync();
-
-static async Task<OrderResult> HandleOrderAsync(
+lambda.MapDurableHandler(async (
     [FromEvent] OrderRequest request,
     IDurableContext durable,
-    [FromServices] IOrderService orders)
+    [FromServices] IOrderService orders) =>
 {
     var step = await durable.StepAsync(
         (_, cancellationToken) => orders.ProcessAsync(request.OrderId, cancellationToken),
@@ -29,7 +25,9 @@ static async Task<OrderResult> HandleOrderAsync(
         step.Message,
         durable.ExecutionContext.DurableExecutionArn,
         durable.LambdaContext.AwsRequestId);
-}
+});
+
+await lambda.RunAsync();
 
 internal sealed record OrderRequest(string OrderId);
 
