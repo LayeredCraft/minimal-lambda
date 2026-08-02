@@ -1,3 +1,4 @@
+#if NET10_0_OR_GREATER
 using AwesomeAssertions;
 using Microsoft.CodeAnalysis;
 
@@ -363,3 +364,4 @@ public class DurableHandlerEmitterTests
             .SourceText
             .ToString();
 }
+#endif

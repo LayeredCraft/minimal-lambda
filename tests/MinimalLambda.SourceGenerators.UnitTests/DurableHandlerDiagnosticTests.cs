@@ -1,3 +1,4 @@
+#if NET10_0_OR_GREATER
 using AwesomeAssertions;
 using Microsoft.CodeAnalysis;
 using MinimalLambda.SourceGenerators.Models;
@@ -604,3 +605,4 @@ public class DurableHandlerDiagnosticTests
         return driver.GetRunResult().Diagnostics.ToArray();
     }
 }
+#endif

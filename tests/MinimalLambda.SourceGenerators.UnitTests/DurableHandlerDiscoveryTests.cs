@@ -1,3 +1,4 @@
+#if NET10_0_OR_GREATER
 using AwesomeAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -184,3 +185,4 @@ public class DurableHandlerDiscoveryTests
             .Single(invocation =>
                 invocation.Expression.ToString().EndsWith(methodName, StringComparison.Ordinal));
 }
+#endif

@@ -1,3 +1,4 @@
+#if NET10_0_OR_GREATER
 using AwesomeAssertions;
 
 namespace MinimalLambda.SourceGenerators.UnitTests;
@@ -467,3 +468,4 @@ public class DurableSerializerDiagnosticTests
         return driver.GetRunResult().Diagnostics.ToArray();
     }
 }
+#endif

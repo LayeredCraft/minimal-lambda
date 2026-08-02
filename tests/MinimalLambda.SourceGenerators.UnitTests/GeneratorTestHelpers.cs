@@ -1,7 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Amazon.Lambda.Core;
+#if NET10_0_OR_GREATER
 using Amazon.Lambda.DurableExecution;
+#endif
 using Amazon.Lambda.RuntimeSupport;
 using Amazon.Lambda.Serialization.SystemTextJson;
 using AwesomeAssertions;
@@ -160,6 +162,7 @@ internal static class GeneratorTestHelpers
             MetadataReference.CreateFromFile(typeof(ILambdaInvocationContext).Assembly.Location),
         ];
 
+#if NET10_0_OR_GREATER
         if (includeDurableReferences)
         {
             references.Add(
@@ -169,6 +172,7 @@ internal static class GeneratorTestHelpers
             references.Add(
                 MetadataReference.CreateFromFile(typeof(IDurableContext).Assembly.Location));
         }
+#endif
 
         var compilationOptions = new CSharpCompilationOptions(
             OutputKind.ConsoleApplication,
