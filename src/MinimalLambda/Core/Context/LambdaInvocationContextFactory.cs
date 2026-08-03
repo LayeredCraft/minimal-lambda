@@ -7,24 +7,20 @@ internal class LambdaInvocationContextFactory : ILambdaInvocationContextFactory
 {
     private readonly ILambdaInvocationContextAccessor? _contextAccessor;
     private readonly IFeatureCollectionFactory _featureCollectionFactory;
-    private readonly ILambdaSerializer _lambdaSerializer;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private IFeatureProvider[]? _featureProviders;
 
     public LambdaInvocationContextFactory(
         IServiceScopeFactory serviceScopeFactory,
         IFeatureCollectionFactory featureCollectionFactory,
-        ILambdaSerializer lambdaSerializer,
         ILambdaInvocationContextAccessor? contextAccessor = null)
     {
         ArgumentNullException.ThrowIfNull(serviceScopeFactory);
         ArgumentNullException.ThrowIfNull(featureCollectionFactory);
-        ArgumentNullException.ThrowIfNull(lambdaSerializer);
 
         _serviceScopeFactory = serviceScopeFactory;
         _contextAccessor = contextAccessor;
         _featureCollectionFactory = featureCollectionFactory;
-        _lambdaSerializer = lambdaSerializer;
     }
 
     public ILambdaInvocationContext Create(
@@ -37,7 +33,6 @@ internal class LambdaInvocationContextFactory : ILambdaInvocationContextFactory
         var context = new LambdaInvocationContext(
             lambdaContext,
             _serviceScopeFactory,
-            _lambdaSerializer,
             properties,
             _featureCollectionFactory.Create(_featureProviders),
             cancellationToken);

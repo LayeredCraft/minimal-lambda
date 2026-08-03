@@ -13,14 +13,12 @@ internal sealed class LambdaInvocationContext : ILambdaInvocationContext, IAsync
     public LambdaInvocationContext(
         ILambdaContext lambdaContext,
         IServiceScopeFactory serviceScopeFactory,
-        ILambdaSerializer lambdaSerializer,
         IDictionary<string, object?> properties,
         IFeatureCollection featuresCollection,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(lambdaContext);
         ArgumentNullException.ThrowIfNull(serviceScopeFactory);
-        ArgumentNullException.ThrowIfNull(lambdaSerializer);
         ArgumentNullException.ThrowIfNull(properties);
         ArgumentNullException.ThrowIfNull(featuresCollection);
 
@@ -30,7 +28,6 @@ internal sealed class LambdaInvocationContext : ILambdaInvocationContext, IAsync
         CancellationToken = cancellationToken;
         Properties = properties;
         Features = featuresCollection;
-        Serializer = lambdaSerializer;
     }
 
     public async ValueTask DisposeAsync()
@@ -70,8 +67,6 @@ internal sealed class LambdaInvocationContext : ILambdaInvocationContext, IAsync
     public int MemoryLimitInMB => _lambdaContext.MemoryLimitInMB;
 
     public TimeSpan RemainingTime => _lambdaContext.RemainingTime;
-
-    public ILambdaSerializer Serializer { get; }
 
     public string TenantId => _lambdaContext.TenantId;
 

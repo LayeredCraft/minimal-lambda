@@ -209,7 +209,7 @@ public class DurableHandlerEmitterTests
             includeDurableReferences: true);
 
         var result = driver.GetRunResult();
-        result.Diagnostics.Select(diagnostic => diagnostic.Id).Should().Contain("LH0010");
+        result.Diagnostics.Select(diagnostic => diagnostic.Id).Should().Contain("LH0007");
         var durableSource = GetDurableSource(result);
         durableSource.Should().Contain("MapDurableHandlerInterceptor0");
         durableSource.Should().NotContain("MapDurableHandlerInterceptor1");
@@ -218,8 +218,9 @@ public class DurableHandlerEmitterTests
     }
 
     [Fact]
-    public Task WarningOnlyAdapterStillEmitsAndCompiles() =>
-        GeneratorTestHelpers.Verify(
+    public void DoesNotRequireExplicitSerializerRoots()
+    {
+        var (driver, _) = GeneratorTestHelpers.GenerateFromSource(
             """
             using System.Text.Json.Serialization;
             using System.Threading.Tasks;
@@ -241,8 +242,10 @@ public class DurableHandlerEmitterTests
                 protected AppJsonContext() : base(null) { }
             }
             """,
-            includeDurableReferences: true,
-            expectedDiagnosticIds: ["LH0011", "LH0011"]);
+            includeDurableReferences: true);
+
+        driver.GetRunResult().Diagnostics.Should().BeEmpty();
+    }
 
     [Fact]
     public Task MultipleDurableRegistrationsCoexistWithOrdinaryHandler() =>
@@ -285,10 +288,10 @@ public class DurableHandlerEmitterTests
             "DurableFunction.WrapAsync<int, string>(",
             StringComparison.Ordinal);
         var deserialize = source.IndexOf(
-            "context.Serializer.Deserialize<DurableExecutionInvocationInput>(",
+            "serializer.Deserialize<DurableExecutionInvocationInput>(",
             StringComparison.Ordinal);
         var serialize = source.IndexOf(
-            "context.Serializer.Serialize(output, invocationData.ResponseStream);",
+            "serializer.Serialize(output, invocationData.ResponseStream);",
             StringComparison.Ordinal);
 
         deserialize.Should().BeGreaterThanOrEqualTo(0);

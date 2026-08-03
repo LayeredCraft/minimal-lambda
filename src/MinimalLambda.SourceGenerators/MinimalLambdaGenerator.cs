@@ -54,13 +54,7 @@ public class MinimalLambdaGenerator : IIncrementalGenerator
             .Where(static c => c is DurableMethodInfo)
             .Select(static (c, _) => (DurableMethodInfo)c);
 
-        var durableHandlerCalls = durableHandlerModels.Collect();
         var validDurableHandlerCalls = durableHandlerModels.WhereNoErrors().Collect();
-
-        var durableDiagnostics = durableHandlerCalls
-            .Combine(context.CompilationProvider)
-            .Select(static (pair, cancellationToken) =>
-                DurableSerializerAnalyzer.Analyze(pair.Right, pair.Left, cancellationToken));
 
         var onInitHandlerCalls = registrationCalls
             .WhereNoErrors()
@@ -81,9 +75,9 @@ public class MinimalLambdaGenerator : IIncrementalGenerator
             (ctx, call) => call.DiagnosticInfos.ForEach(d => d.ReportDiagnostic(ctx)));
 
         context.RegisterSourceOutput(
-            durableDiagnostics,
-            static (ctx, diagnostics) =>
-                diagnostics.ForEach(diagnostic => diagnostic.ReportDiagnostic(ctx)));
+            durableHandlerModels,
+            (ctx, call) =>
+                call.DiagnosticInfos.ForEach(diagnostic => diagnostic.ReportDiagnostic(ctx)));
 
         context.RegisterSourceOutput(
             useMiddlewareTCalls,

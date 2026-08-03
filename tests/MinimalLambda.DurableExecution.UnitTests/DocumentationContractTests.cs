@@ -56,9 +56,9 @@ public class DocumentationContractTests
             .Should()
             .Contain("A compile-time interceptor must replace this call;")
             .And
-            .Contain("declares exactly one workflow input and one exact AWS IDurableContext")
+            .Contain("can optionally declare a")
             .And
-            .Contain("a root is not supported")
+            .Contain("returns")
             .And
             .Contain("Middleware runs again when AWS replays a workflow")
             .And

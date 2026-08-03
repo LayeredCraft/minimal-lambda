@@ -90,20 +90,20 @@ internal partial class DurableExampleJsonContext : JsonSerializerContext;
 
 ## Handler contract
 
-Durable handlers support two exact return forms:
+Durable handlers support two return forms:
 
-| Form            | Purpose                       | Required explicit serializer roots             |
-| --------------- | ----------------------------- | ---------------------------------------------- |
-| `Task`          | Workflow with no typed result | outer input, outer output, `TInput`            |
-| `Task<TOutput>` | Workflow with typed result    | outer input, outer output, `TInput`, `TOutput` |
+| Form            | Purpose                       |
+| --------------- | ----------------------------- |
+| `Task`          | Workflow with no typed result |
+| `Task<TOutput>` | Workflow with typed result    |
 
-Both forms require exactly one `[FromEvent] TInput` and exactly one exact AWS `IDurableContext`. Input is never inferred, and parameter order is unrestricted. Additional parameters may be `ILambdaContext`, `ILambdaInvocationContext`, ordinary DI, keyed DI, or optional DI. See [Dependency Injection](../guides/dependency-injection.md) for service lifetimes.
+`[FromEvent] TInput` and AWS `IDurableContext` are optional; a handler may use either, both, or neither. Parameter order is unrestricted. Other parameters use the normal handler binding rules. See [Dependency Injection](../guides/dependency-injection.md) for service lifetimes.
 
 Do not expose `DurableExecutionInvocationInput`, `DurableExecutionInvocationOutput`, streams, or AWS client in high-level handler. MinimalLambda directly deserializes and serializes hidden outer envelopes through its configured Lambda serializer; durable envelopes are not available through `IEventFeature` or `IResponseFeature`. It also owns raw-stream hosting, middleware, DI scope, and physical invocation context. AWS runtime owns workflow payloads, `IDurableContext`, checkpoints, replay, suspension, waits, and durable status/result mapping.
 
 ### Cancellation
 
-Never add root `CancellationToken` to durable handler. Generator reports `LH0009` because near-timeout root cancellation could turn retryable physical invocation into terminal `FAILED` workflow. AWS operation callbacks already receive SDK-linked cancellation tokens, while `WrapAsync` exposes no lifecycle-token hook. Automatically linking MinimalLambda physical-invocation cancellation would couple replay to Lambda timeout. Use AWS-supplied token inside step, callback, child workflow, map, parallel, and other operation callbacks, as sample does.
+AWS operation callbacks receive SDK-linked cancellation tokens. If a durable handler also reads `ILambdaInvocationContext.CancellationToken`, it owns the resulting physical-invocation failure and retry behavior.
 
 Reading `ILambdaInvocationContext.CancellationToken` explicitly means accepting root failure/retry consequences.
 
@@ -132,12 +132,12 @@ One registered `ILambdaSerializer` handles MinimalLambda outer envelopes and AWS
 - [ ] Register context with `AddLambdaSerializerWithContext<TContext>()`.
 - [ ] Add `DurableExecutionInvocationInput` root.
 - [ ] Add `DurableExecutionInvocationOutput` root.
-- [ ] Add workflow `TInput` root.
-- [ ] For `Task<TOutput>`, add `TOutput` root. `Task` handlers therefore need three signature roots; `Task<TOutput>` handlers need four.
+- [ ] Add the event type if the handler declares one.
+- [ ] For `Task<TOutput>`, add `TOutput` when required by the configured serializer.
 - [ ] Add every operation payload, result, and state root used by steps, callbacks, invokes, child workflows, waits, maps, or parallel branches.
 - [ ] Publish intended runtime and architecture with NativeAOT enabled; restore/build alone does not compile native code.
 
-Generator cannot discover operation types hidden inside method bodies or referenced libraries. `LH0011` checks only explicit outer input/output and handler input/output declarations. It does not inspect member graphs or hidden operation types, and warning absence does not prove serializer completeness. `LH0011` does not suppress generation, so missing runtime metadata can still fail later.
+The generator does not inspect serializer contexts. Ensure that the context registered for the Lambda serializer includes the outer envelopes and every payload, result, and state type your workflow uses.
 
 Local source-based `net10.0` NativeAOT publish passes. This proves local publishing only. Managed cloud integration remains unverified, and Durable Execution NativeAOT support remains experimental. Successful local publish is not evidence of deployment, IAM, replay, or managed-service behavior. See [AWS NativeAOT guidance](https://docs.aws.amazon.com/lambda/latest/dg/dotnet-native-aot.html) and project [support matrix](https://github.com/LayeredCraft/minimal-lambda/blob/main/decisions/durable-dependency-support-matrix.md).
 
@@ -171,11 +171,7 @@ Split tests by ownership:
 
 | Symptom                                                    | Fix                                                                                                                                                                                                     |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `LH0007`                                                   | Declare exactly one `[FromEvent] TInput`; remove missing or duplicate event inputs.                                                                                                                     |
-| `LH0008`                                                   | Declare exactly one exact `Amazon.Lambda.DurableExecution.IDurableContext`.                                                                                                                             |
-| `LH0009`                                                   | Remove unsupported parameter. Common cases: root `CancellationToken`, stream/outer envelope, conflicting binding attribute, or `ref`/`in`/`out`. Use operation callback token or raw path where needed. |
-| `LH0010`                                                   | Return exact `Task` or `Task<TOutput>`. Sync, `ValueTask`, custom awaitable, stream, and envelope outputs are unsupported.                                                                              |
-| `LH0011`                                                   | Add explicit `[JsonSerializable(typeof(...))]` signature root. Then audit hidden operation roots manually; warning checks only signature roots and does not block emission.                             |
+| `LH0007`                                                   | Return `Task` or `Task<TOutput>`.                                                                                                                       |
 | Runtime `InvalidOperationException` at `MapDurableHandler` | Compile-time interceptor did not replace fallback stub. Keep direct `MinimalLambda` reference and project interceptor/source-generator configuration.                                                   |
 | AWS DE001-DE004 absent                                     | Add direct `Amazon.Lambda.DurableExecution` reference; analyzer assets are not transitive.                                                                                                              |
 | Duplicate logs, metrics, or DI work                        | Replay caused another physical invocation. Use AWS replay-aware logger for workflow logs and make invocation observation replay-safe.                                                                   |

@@ -19,11 +19,10 @@ public static class MapDurableHandlerLambdaApplicationExtensions
         /// <remarks>
         ///     <para>
         ///         Source generation creates wiring code that resolves handler dependencies and adapts the
-        ///         handler to the AWS Lambda Durable Execution protocol. A supported handler declares exactly
-        ///         one <see cref="FromEventAttribute" /> workflow input and one exact AWS
-        ///         <c>IDurableContext</c>, and returns exactly <see cref="Task" /> or
-        ///         <see cref="Task{TResult}" />. Invocation contexts and dependency-injection services can be
-        ///         additional parameters; a root <see cref="CancellationToken" /> is not supported.
+        ///         handler to the AWS Lambda Durable Execution protocol. A handler can optionally declare a
+        ///         <see cref="FromEventAttribute" /> workflow input and an AWS <c>IDurableContext</c>.
+        ///         It returns <see cref="Task" /> or <see cref="Task{TResult}" />. Invocation contexts and
+        ///         dependency-injection services can be additional parameters.
         ///     </para>
         ///     <para>
         ///         Invocation contexts, dependency-injection scopes, and middleware belong to one physical

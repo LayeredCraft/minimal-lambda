@@ -91,8 +91,8 @@ internal sealed class OrderService : IOrderService
 internal partial class DurableJsonContext : JsonSerializerContext;
 ```
 
-First four serializer roots are required for outer input/output envelopes and typed workflow
-input/output. Explicitly add every payload, result, or state type used by steps, callbacks, invokes,
+Register the serializer roots required by your configured serializer, including the outer input/output
+envelopes and every payload, result, or state type used by steps, callbacks, invokes,
 child workflows, waits, maps, and parallel branches; `ProcessOrderStepResult` is one representative
 step root. Generator cannot discover types hidden inside operation bodies or referenced libraries.
 Same registered `ILambdaSerializer` handles MinimalLambda outer envelopes and AWS inner values.
@@ -101,16 +101,14 @@ provide exactly-once execution.
 
 ## Handler, cancellation, and context contract
 
-Durable handler must declare exactly one `[FromEvent] TInput`, exactly one exact AWS
-`IDurableContext`, and return exact `Task` or `Task<TOutput>`. Parameter order is unrestricted.
-Optional additional parameters are `ILambdaContext`, `ILambdaInvocationContext`, ordinary DI, keyed
-DI, or optional DI. Input is never inferred. Synchronous, `ValueTask`, custom-awaitable, `Stream`,
-outer durable envelope, and root `CancellationToken` forms are rejected by generator diagnostics.
+Durable handlers return `Task` or `Task<TOutput>`. `[FromEvent] TInput` and AWS `IDurableContext`
+are optional; a handler may use either, both, or neither. Parameter order is unrestricted. Other
+parameters are resolved using the normal handler binding rules. The generator does not validate
+serializer roots or impose a durable-specific payload-shape policy.
 
-Do not put `CancellationToken` on root handler. Near-timeout cancellation could fault workflow into
-terminal `FAILED` state instead of letting physical invocation retry. AWS operation callbacks already
-receive SDK-linked cancellation tokens, and `WrapAsync` exposes no lifecycle-token hook. Reading
-`ILambdaInvocationContext.CancellationToken` explicitly means owning those failure/retry consequences.
+If a handler needs physical-invocation cancellation, read it through
+`ILambdaInvocationContext.CancellationToken` and own the resulting failure/retry consequences. AWS
+operation callbacks already receive SDK-linked cancellation tokens.
 
 Inject `ILambdaInvocationContext` as above, or recover exact physical invocation context carried by
 AWS durable context:

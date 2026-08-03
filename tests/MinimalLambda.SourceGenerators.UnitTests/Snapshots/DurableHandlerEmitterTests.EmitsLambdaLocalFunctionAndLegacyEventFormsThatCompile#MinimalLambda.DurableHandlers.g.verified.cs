@@ -50,7 +50,8 @@ namespace MinimalLambda.Generated
             async Task InvocationDelegate(ILambdaInvocationContext context)
             {
                 var invocationData = context.Features.GetRequired<IInvocationDataFeature>();
-                var envelope = context.Serializer.Deserialize<DurableExecutionInvocationInput>(
+                var serializer = context.ServiceProvider.GetRequiredService<Amazon.Lambda.Core.ILambdaSerializer>();
+                var envelope = serializer.Deserialize<DurableExecutionInvocationInput>(
                     invocationData.EventStream);
                 var output = await DurableFunction.WrapAsync<string>(
                     (input, durableContext) =>
@@ -63,7 +64,7 @@ namespace MinimalLambda.Generated
                     context).ConfigureAwait(false);
 
                 invocationData.ResponseStream.SetLength(0L);
-                context.Serializer.Serialize(output, invocationData.ResponseStream);
+                serializer.Serialize(output, invocationData.ResponseStream);
                 invocationData.ResponseStream.Position = 0L;
             }
         }
@@ -82,7 +83,8 @@ namespace MinimalLambda.Generated
             async Task InvocationDelegate(ILambdaInvocationContext context)
             {
                 var invocationData = context.Features.GetRequired<IInvocationDataFeature>();
-                var envelope = context.Serializer.Deserialize<DurableExecutionInvocationInput>(
+                var serializer = context.ServiceProvider.GetRequiredService<Amazon.Lambda.Core.ILambdaSerializer>();
+                var envelope = serializer.Deserialize<DurableExecutionInvocationInput>(
                     invocationData.EventStream);
                 var output = await DurableFunction.WrapAsync<int>(
                     (input, durableContext) =>
@@ -95,7 +97,7 @@ namespace MinimalLambda.Generated
                     context).ConfigureAwait(false);
 
                 invocationData.ResponseStream.SetLength(0L);
-                context.Serializer.Serialize(output, invocationData.ResponseStream);
+                serializer.Serialize(output, invocationData.ResponseStream);
                 invocationData.ResponseStream.Position = 0L;
             }
         }
@@ -114,7 +116,8 @@ namespace MinimalLambda.Generated
             async Task InvocationDelegate(ILambdaInvocationContext context)
             {
                 var invocationData = context.Features.GetRequired<IInvocationDataFeature>();
-                var envelope = context.Serializer.Deserialize<DurableExecutionInvocationInput>(
+                var serializer = context.ServiceProvider.GetRequiredService<Amazon.Lambda.Core.ILambdaSerializer>();
+                var envelope = serializer.Deserialize<DurableExecutionInvocationInput>(
                     invocationData.EventStream);
                 var output = await DurableFunction.WrapAsync<long>(
                     (input, durableContext) =>
@@ -127,7 +130,7 @@ namespace MinimalLambda.Generated
                     context).ConfigureAwait(false);
 
                 invocationData.ResponseStream.SetLength(0L);
-                context.Serializer.Serialize(output, invocationData.ResponseStream);
+                serializer.Serialize(output, invocationData.ResponseStream);
                 invocationData.ResponseStream.Position = 0L;
             }
         }
@@ -146,7 +149,8 @@ namespace MinimalLambda.Generated
             async Task InvocationDelegate(ILambdaInvocationContext context)
             {
                 var invocationData = context.Features.GetRequired<IInvocationDataFeature>();
-                var envelope = context.Serializer.Deserialize<DurableExecutionInvocationInput>(
+                var serializer = context.ServiceProvider.GetRequiredService<Amazon.Lambda.Core.ILambdaSerializer>();
+                var envelope = serializer.Deserialize<DurableExecutionInvocationInput>(
                     invocationData.EventStream);
                 var output = await DurableFunction.WrapAsync<decimal>(
                     (input, durableContext) =>
@@ -162,7 +166,7 @@ namespace MinimalLambda.Generated
                     context).ConfigureAwait(false);
 
                 invocationData.ResponseStream.SetLength(0L);
-                context.Serializer.Serialize(output, invocationData.ResponseStream);
+                serializer.Serialize(output, invocationData.ResponseStream);
                 invocationData.ResponseStream.Position = 0L;
             }
         }
