@@ -49,6 +49,53 @@ public class DurableHandlerDiagnosticTests
     }
 
     [Fact]
+    public void TreatsCancellationTokenAsSpecialBinding()
+    {
+        var model = TransformSingle(
+            """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using MinimalLambda.Builder;
+
+            var app = LambdaApplication.CreateBuilder().Build();
+            app.MapDurableHandler(Handle);
+            static Task Handle(CancellationToken cancellationToken) => Task.CompletedTask;
+            """);
+
+        model.DiagnosticInfos.Should().BeEmpty();
+        model
+            .ParameterAssignments
+            .Should()
+            .ContainSingle()
+            .Which
+            .Should()
+            .Match<DurableHandlerParameterInfo>(parameter =>
+                parameter.Source == ParameterSource.CancellationToken
+                && parameter.Assignment == "context.CancellationToken");
+    }
+
+    [Fact]
+    public void ReportsEveryEventParameterAfterFirst()
+    {
+        var model = TransformSingle(
+            """
+            using System.Threading.Tasks;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            var app = LambdaApplication.CreateBuilder().Build();
+            app.MapDurableHandler(Handle);
+            static Task Handle([FromEvent] string first, [Event] int second) => Task.CompletedTask;
+            """);
+
+        model
+            .DiagnosticInfos
+            .Select(diagnostic => diagnostic.DiagnosticDescriptor.Id)
+            .Should()
+            .Equal("LH0002");
+    }
+
+    [Fact]
     public void ReportsOnlyUnsupportedReturnFamilies()
     {
         var diagnostics = Generate(

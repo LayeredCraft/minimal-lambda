@@ -39,6 +39,24 @@ internal sealed record DurableMethodInfo(
 
 internal static class DurableMethodInfoExtensions
 {
+    private static IEnumerable<DiagnosticInfo> ReportMultipleEvents(
+        IReadOnlyList<int> eventOrdinals,
+        IReadOnlyList<IParameterSymbol> parameters,
+        LocationInfo fallback,
+        GeneratorContext context)
+    {
+        var eventAttribute = new Lazy<string>(() =>
+            context.WellKnownTypes.Get(WellKnownType.MinimalLambda_Builder_FromEventAttribute)
+                .QualifiedNullableName);
+
+        return eventOrdinals
+            .Skip(1)
+            .Select(ordinal => DiagnosticInfo.Create(
+                Diagnostics.MultipleParametersUseAttribute,
+                GetParameterLocation(parameters[ordinal], fallback),
+                [eventAttribute.Value]));
+    }
+
     extension(DurableMethodInfo)
     {
         internal static DurableMethodInfo Create(
@@ -111,6 +129,13 @@ internal static class DurableMethodInfoExtensions
                     source = ParameterSource.Context;
                     assignment = "context";
                 }
+                else if (context.WellKnownTypes.IsType(
+                    parameter.Type,
+                    WellKnownType.System_Threading_CancellationToken))
+                {
+                    source = ParameterSource.CancellationToken;
+                    assignment = "context.CancellationToken";
+                }
                 else
                 {
                     var diResult = parameter.GetDiParameterAssignment(context);
@@ -139,6 +164,9 @@ internal static class DurableMethodInfoExtensions
                         key,
                         parameterLocation));
             }
+
+            diagnostics.AddRange(
+                ReportMultipleEvents(candidates, parameters, handlerArgumentLocation, context));
 
             var hasOutput = false;
             ITypeSymbol? outputType = null;
