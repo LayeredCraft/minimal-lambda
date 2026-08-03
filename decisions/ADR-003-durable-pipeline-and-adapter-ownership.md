@@ -6,6 +6,7 @@
 - **Date:** 2026-07-29
 - **Deciders:** MinimalLambda maintainers
 - **Supersedes:** none
+- **Amended:** 2026-08-03 — terminal lifecycle tracking removed; see middleware contract below.
 
 ______________________________________________________________________
 
@@ -32,7 +33,6 @@ only at its required Lambda adapter boundary.
 - Generate only code requiring compile-time handler types.
 - Avoid reflection, duplicate serialization, and a second pipeline.
 - Prevent invocation timeout cancellation from becoming an accidental terminal workflow failure.
-- Ensure the durable terminal runs exactly once per physical invocation.
 - Keep checkpoint tokens and replay history out of the normal workflow API.
 - Preserve a manual escape hatch.
 
@@ -102,10 +102,9 @@ async Task InvokeDurable(ILambdaInvocationContext invocation)
 ### Generated
 
 - Exact user-delegate cast.
-- Internal outer durable input and output feature registration.
+- Direct outer durable envelope stream serialization.
 - Typed or void `WrapAsync` overload selection.
 - Binding of workflow input, `IDurableContext`, MinimalLambda context, and DI services.
-- Declaration that the mapped handler requires a durable terminal.
 - Handler-shape diagnostics.
 - Serializer-metadata diagnostics for types statically inferable from the handler signature.
 - A diagnostic rejecting automatic `CancellationToken` binding in durable handler signatures.
@@ -114,21 +113,9 @@ async Task InvokeDurable(ILambdaInvocationContext invocation)
 
 - Raw-stream bootstrap and existing middleware pipeline.
 - Invocation context and DI scope.
-- Outer durable input deserialization and output serialization through existing features.
+- Outer durable input deserialization and output serialization through invocation streams.
 - Exposure of the configured `ILambdaSerializer` through
   `ILambdaInvocationContext.Serializer`.
-- Per-invocation durable-terminal lifecycle tracking and validation.
-
-The terminal lifecycle is atomic:
-
-```text
-NotStarted -> Running -> Completed
-```
-
-The runtime rejects a second terminal invocation, whether sequential or concurrent. If middleware
-returns while the terminal is `NotStarted` or `Running`, the runtime throws an invocation error.
-This prevents empty responses, swallowed terminal failures, duplicate workflow execution, and
-conflicting checkpoint use.
 
 ### AWS runtime
 
@@ -138,7 +125,8 @@ conflicting checkpoint use.
 - Durable status and result mapping.
 
 The same serializer instance handles outer envelopes in MinimalLambda and inner values through AWS.
-MinimalLambda does not create a public durable envelope abstraction or parse the inner payload.
+Durable envelopes are not exposed through `IEventFeature` or `IResponseFeature`; MinimalLambda does
+not create a public durable envelope abstraction or parse the inner payload.
 
 For `MapDurableHandler`, `[FromEvent] TInput` always means workflow input. The outer
 `DurableExecutionInvocationInput`, checkpoint token, and replay history are not bindable handler
@@ -174,11 +162,10 @@ features are framework transport plumbing, not a supported application abstracti
 If a concrete middleware use case emerges, MinimalLambda may expose read-only semantic metadata,
 such as execution ARN. It will not expose checkpoint token or replay history through that API.
 
-Durable-compatible middleware must call `next` exactly once. It must not short-circuit with an
-ordinary typed response, fabricate a durable response, or swallow an exception from the terminal.
-If the pipeline completes without the generated terminal completing, MinimalLambda throws an
-invocation error instead of returning an empty or fabricated durable response. This preserves host
-retry behavior for transient checkpoint and state-hydration failures.
+Durable middleware should call and await `next` once, preserve exceptions, and avoid response
+short-circuits or fabrication. This is guidance, not framework enforcement: skipped `next` can return
+an empty response, repeated `next` reruns the adapter, and swallowed failures can change AWS-visible
+behavior. This tradeoff removes durable-specific state from the shared host pipeline.
 
 Existing middleware that only observes, logs, measures, or adds invocation-scoped behavior remains
 reusable. Response caching, ordinary typed-response short-circuiting, and exception-to-response
@@ -205,17 +192,13 @@ normal workflow API. It is the only supported path for raw envelope access.
 
 ## Rationale
 
-The generated terminal is the narrow point where all required static type information is available.
-Type-independent pipeline behavior stays in MinimalLambda runtime; durable behavior stays in AWS.
-Atomic lifecycle enforcement belongs to the runtime because it does not depend on handler types.
+The generated adapter is the narrow point where all required static type information is available.
+Type-independent pipeline behavior stays in MinimalLambda runtime; durable protocol behavior stays in AWS.
 
 ## Validation requirements
 
 Implementation must cover:
 
-- Missing terminal invocation.
-- A swallowed terminal exception.
-- Sequential and concurrent double invocation of `next`.
 - Successful, failed, and suspended AWS durable outputs.
 - Middleware execution before and after a suspended physical invocation.
 - Serializer identity across outer MinimalLambda and inner AWS serialization.
@@ -241,10 +224,10 @@ because the AWS in-memory durable service-client overload is not public.
 - Middleware cannot inspect typed workflow input before the terminal runs.
 - Raw envelope access requires the explicit low-level mapping path.
 - Middleware executes on every physical replay.
-- Middleware that short-circuits or translates exceptions into ordinary responses is incompatible.
+- Middleware that short-circuits, repeats `next`, or translates exceptions into ordinary responses can change durable behavior and is unsupported guidance rather than a host-enforced error.
 - Durable handlers cannot receive an automatically bound invocation `CancellationToken`.
 - Serializer diagnostics cannot cover types hidden inside workflow implementations or libraries.
-- Core runtime needs serializer exposure and atomic terminal-lifecycle validation.
+- Core runtime needs serializer exposure, but no durable-specific lifecycle state.
 
 ## References
 

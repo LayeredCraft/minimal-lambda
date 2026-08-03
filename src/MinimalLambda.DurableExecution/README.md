@@ -126,15 +126,17 @@ physical invocation and scope; never keep scoped state as logical workflow state
 
 ## Replay, middleware, and ownership
 
-MinimalLambda owns raw-stream hosting, middleware, physical invocation context and DI scope, outer
-envelope serialization, and generated terminal lifecycle enforcement. AWS runtime owns workflow
+MinimalLambda directly serializes hidden outer envelopes through its configured Lambda serializer;
+durable envelopes are not available through `IEventFeature` or `IResponseFeature`. It also owns
+raw-stream hosting, middleware, physical invocation context and DI scope. AWS runtime owns workflow
 payload handling, checkpoints, replay, suspension, waits, `IDurableContext`, and durable status/result
 mapping.
 
 Middleware wraps each physical Lambda invocation, so it runs again during replay. Durable middleware
-must call and await `next` exactly once, avoid ordinary-response short circuits, and not swallow
-terminal exceptions. Replay-safe observation, logging, metrics, and invocation-scoped behavior fit;
-response caches, response fabrication, and exception-to-response translation do not work unchanged.
+should call and await `next` once, preserve exceptions, and avoid ordinary-response short circuits.
+MinimalLambda does not enforce those rules: skipped or repeated `next` and swallowed failures can
+change AWS-visible behavior. Replay-safe observation, logging, metrics, and invocation-scoped behavior
+fit; response caches, response fabrication, and exception-to-response translation do not work unchanged.
 
 `MapDurableHandler` requires MinimalLambda compile-time interception. If source generation does not
 replace mapping call, runtime fallback throws `InvalidOperationException` instead of running handler.
@@ -142,7 +144,7 @@ replace mapping call, runtime fallback throws `InvalidOperationException` instea
 ## Testing
 
 Use MinimalLambda host/integration tests for generated adapter, middleware, DI, serializer identity,
-terminal lifecycle, and outer stream roundtrip. Use `Amazon.Lambda.DurableExecution.Testing` for
+and outer stream roundtrip. Use `Amazon.Lambda.DurableExecution.Testing` for
 workflow operations, suspension, waits, and replay. Local tests do not prove IAM, deployment,
 managed-runtime behavior, or cloud service integration.
 

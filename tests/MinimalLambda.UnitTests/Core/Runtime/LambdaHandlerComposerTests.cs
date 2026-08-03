@@ -112,21 +112,6 @@ public class LambdaHandlerComposerTests
         public void SetInvocationHandler(LambdaInvocationDelegate handler) =>
             InvocationBuilder.Build().Returns(handler);
 
-        public DurableTerminalState RegisterDurableTerminal()
-        {
-            DurableTerminalInfrastructure.Register(InvocationBuilder);
-            var state = new DurableTerminalState();
-            LambdaInvocationContext = new LambdaInvocationContext(
-                LambdaContext,
-                Substitute.For<IServiceScopeFactory>(),
-                Substitute.For<ILambdaSerializer>(),
-                InvocationBuilder.Properties,
-                Features,
-                CancellationToken.None,
-                state);
-            return state;
-        }
-
         /// <summary>Creates a fresh cancellation token source for a test.</summary>
         public CancellationTokenSource CreateNewCancellationTokenSource()
         {
@@ -334,185 +319,6 @@ public class LambdaHandlerComposerTests
         act.Should().ThrowExactly<ObjectDisposedException>();
     }
 
-    [Fact]
-    public async Task RequestHandler_OrdinaryHandler_DoesNotValidateDurableTerminal()
-    {
-        // Arrange
-        var composer = _fixture.CreateComposer();
-        var handler = composer.CreateHandler(CancellationToken.None);
-
-        // Act
-        var act = () => handler(new MemoryStream(), _fixture.LambdaContext);
-
-        // Assert
-        await act.Should().NotThrowAsync();
-        _fixture.ResponseFeature.Received(1).SerializeToStream(_fixture.LambdaInvocationContext);
-    }
-
-    [Fact]
-    public async Task RequestHandler_DurableHandlerWithoutTerminal_FailsBeforeSerialization()
-    {
-        // Arrange
-        _fixture.RegisterDurableTerminal();
-        var composer = _fixture.CreateComposer();
-        var handler = composer.CreateHandler(CancellationToken.None);
-
-        // Act
-        var act = () => handler(new MemoryStream(), _fixture.LambdaContext);
-
-        // Assert
-        await act
-            .Should()
-            .ThrowExactlyAsync<InvalidOperationException>()
-            .WithMessage(DurableTerminalState.MissingMessage);
-        _fixture
-            .ResponseFeature
-            .DidNotReceive()
-            .SerializeToStream(Arg.Any<ILambdaInvocationContext>());
-    }
-
-    [Fact]
-    public async Task RequestHandler_DurableHandlerStillRunning_FailsBeforeSerialization()
-    {
-        // Arrange
-        _fixture.RegisterDurableTerminal();
-        _fixture.SetInvocationHandler(context =>
-        {
-            DurableTerminalInfrastructure.Enter(context);
-            return Task.CompletedTask;
-        });
-        var composer = _fixture.CreateComposer();
-        var handler = composer.CreateHandler(CancellationToken.None);
-
-        // Act
-        var act = () => handler(new MemoryStream(), _fixture.LambdaContext);
-
-        // Assert
-        await act
-            .Should()
-            .ThrowExactlyAsync<InvalidOperationException>()
-            .WithMessage(DurableTerminalState.IncompleteMessage);
-        _fixture
-            .ResponseFeature
-            .DidNotReceive()
-            .SerializeToStream(Arg.Any<ILambdaInvocationContext>());
-    }
-
-    [Fact]
-    public async Task RequestHandler_CompletedDurableHandler_SerializesResponse()
-    {
-        // Arrange
-        _fixture.RegisterDurableTerminal();
-        _fixture.SetInvocationHandler(context =>
-        {
-            DurableTerminalInfrastructure.Enter(context);
-            DurableTerminalInfrastructure.Complete(context);
-            return Task.CompletedTask;
-        });
-        var composer = _fixture.CreateComposer();
-        var handler = composer.CreateHandler(CancellationToken.None);
-
-        // Act
-        await handler(new MemoryStream(), _fixture.LambdaContext);
-
-        // Assert
-        _fixture.ResponseFeature.Received(1).SerializeToStream(_fixture.LambdaInvocationContext);
-    }
-
-    [Fact]
-    public async Task RequestHandler_SwallowedDuplicateTerminal_FailsBeforeSerialization()
-    {
-        // Arrange
-        _fixture.RegisterDurableTerminal();
-        _fixture.SetInvocationHandler(context =>
-        {
-            DurableTerminalInfrastructure.Enter(context);
-            DurableTerminalInfrastructure.Complete(context);
-
-            var duplicate = () => DurableTerminalInfrastructure.Enter(context);
-            duplicate.Should().ThrowExactly<InvalidOperationException>();
-            return Task.CompletedTask;
-        });
-        var composer = _fixture.CreateComposer();
-        var handler = composer.CreateHandler(CancellationToken.None);
-
-        // Act
-        var act = () => handler(new MemoryStream(), _fixture.LambdaContext);
-
-        // Assert
-        await act
-            .Should()
-            .ThrowExactlyAsync<InvalidOperationException>()
-            .WithMessage(DurableTerminalState.LifecycleViolationMessage);
-        _fixture
-            .ResponseFeature
-            .DidNotReceive()
-            .SerializeToStream(Arg.Any<ILambdaInvocationContext>());
-    }
-
-    [Fact]
-    public async Task
-        RequestHandler_ConcurrentDoubleTerminal_InvokesBodyOnceAndFailsBeforeSerialization()
-    {
-        // Arrange
-        _fixture.RegisterDurableTerminal();
-        var bodyEntered = new TaskCompletionSource<bool>(
-            TaskCreationOptions.RunContinuationsAsynchronously);
-        var releaseBody = new TaskCompletionSource<bool>(
-            TaskCreationOptions.RunContinuationsAsynchronously);
-        var bodyInvocationCount = 0;
-        Exception? duplicateException = null;
-
-        LambdaInvocationDelegate terminalNext = async context =>
-        {
-            DurableTerminalInfrastructure.Enter(context);
-            Interlocked.Increment(ref bodyInvocationCount);
-            bodyEntered.TrySetResult(true);
-            await releaseBody.Task;
-            DurableTerminalInfrastructure.Complete(context);
-        };
-        _fixture.SetInvocationHandler(async context =>
-        {
-            var firstExecution = terminalNext(context);
-            await bodyEntered.Task;
-
-            var duplicateExecution = CaptureExceptionAsync(terminalNext(context));
-            try
-            {
-                duplicateException = await duplicateExecution.WaitAsync(TimeSpan.FromSeconds(5));
-            }
-            finally
-            {
-                releaseBody.TrySetResult(true);
-            }
-
-            await firstExecution;
-        });
-        var composer = _fixture.CreateComposer();
-        var handler = composer.CreateHandler(CancellationToken.None);
-
-        // Act
-        var act = () => handler(new MemoryStream(), _fixture.LambdaContext);
-
-        // Assert
-        await act
-            .Should()
-            .ThrowExactlyAsync<InvalidOperationException>()
-            .WithMessage(DurableTerminalState.LifecycleViolationMessage);
-        duplicateException
-            .Should()
-            .BeOfType<InvalidOperationException>()
-            .Which
-            .Message
-            .Should()
-            .Be(DurableTerminalState.DuplicateExecutionMessage);
-        bodyInvocationCount.Should().Be(1);
-        _fixture
-            .ResponseFeature
-            .DidNotReceive()
-            .SerializeToStream(Arg.Any<ILambdaInvocationContext>());
-    }
-
     [Theory]
     [InlineData(InvocationStatus.Succeeded)]
     [InlineData(InvocationStatus.Failed)]
@@ -521,18 +327,15 @@ public class LambdaHandlerComposerTests
         InvocationStatus status)
     {
         // Arrange
-        _fixture.RegisterDurableTerminal();
         var serializer = Substitute.For<ILambdaSerializer>();
         var responseFeature =
             new DefaultResponseFeature<DurableExecutionInvocationOutput>(serializer);
         _fixture.Features.Get<IResponseFeature>().Returns(responseFeature);
         _fixture.Features.Get<IInvocationDataFeature>().Returns(_fixture.InvocationDataFeature);
         var expected = new DurableExecutionInvocationOutput { Status = status };
-        _fixture.SetInvocationHandler(context =>
+        _fixture.SetInvocationHandler(_ =>
         {
-            DurableTerminalInfrastructure.Enter(context);
             responseFeature.SetResponse(expected);
-            DurableTerminalInfrastructure.Complete(context);
             return Task.CompletedTask;
         });
         var composer = _fixture.CreateComposer();
@@ -551,82 +354,5 @@ public class LambdaHandlerComposerTests
                 _fixture.InvocationDataFeature.ResponseStream);
     }
 
-    [Fact]
-    public async Task RequestHandler_SwallowedTerminalBodyFailure_FailsBeforeSerialization()
-    {
-        // Arrange
-        var terminalException = new InvalidOperationException("terminal failed");
-        _fixture.RegisterDurableTerminal();
-        _fixture.SetInvocationHandler(async context =>
-        {
-            DurableTerminalInfrastructure.Enter(context);
-            try
-            {
-                await Task.FromException(terminalException);
-            }
-            catch (InvalidOperationException exception) when (ReferenceEquals(
-                exception,
-                terminalException))
-            {
-                // Simulate middleware swallowing the durable terminal body failure.
-            }
-        });
-        var composer = _fixture.CreateComposer();
-        var handler = composer.CreateHandler(CancellationToken.None);
-
-        // Act
-        var act = () => handler(new MemoryStream(), _fixture.LambdaContext);
-
-        // Assert
-        var assertion = await act
-            .Should()
-            .ThrowExactlyAsync<InvalidOperationException>()
-            .WithMessage(DurableTerminalState.IncompleteMessage);
-        assertion.Which.Should().NotBeSameAs(terminalException);
-        _fixture
-            .ResponseFeature
-            .DidNotReceive()
-            .SerializeToStream(Arg.Any<ILambdaInvocationContext>());
-    }
-
-    [Fact]
-    public async Task RequestHandler_EscapingDurableTerminalException_PreservesOriginalException()
-    {
-        // Arrange
-        var expected = new InvalidOperationException("terminal failed");
-        _fixture.RegisterDurableTerminal();
-        _fixture.SetInvocationHandler(context =>
-        {
-            DurableTerminalInfrastructure.Enter(context);
-            return Task.FromException(expected);
-        });
-        var composer = _fixture.CreateComposer();
-        var handler = composer.CreateHandler(CancellationToken.None);
-
-        // Act
-        var act = () => handler(new MemoryStream(), _fixture.LambdaContext);
-
-        // Assert
-        var assertion = await act.Should().ThrowExactlyAsync<InvalidOperationException>();
-        assertion.Which.Should().BeSameAs(expected);
-        _fixture
-            .ResponseFeature
-            .DidNotReceive()
-            .SerializeToStream(Arg.Any<ILambdaInvocationContext>());
-    }
-
     #endregion
-
-    private static async Task<Exception?> CaptureExceptionAsync(Task task)
-    {
-        try
-        {
-            await task;
-            return null;
-        }
-        catch (Exception exception)
-        {
-            return exception;
-        }
-    }
 }

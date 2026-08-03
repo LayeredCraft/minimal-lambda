@@ -99,7 +99,7 @@ Durable handlers support two exact return forms:
 
 Both forms require exactly one `[FromEvent] TInput` and exactly one exact AWS `IDurableContext`. Input is never inferred, and parameter order is unrestricted. Additional parameters may be `ILambdaContext`, `ILambdaInvocationContext`, ordinary DI, keyed DI, or optional DI. See [Dependency Injection](../guides/dependency-injection.md) for service lifetimes.
 
-Do not expose `DurableExecutionInvocationInput`, `DurableExecutionInvocationOutput`, streams, or AWS client in high-level handler. MinimalLambda owns hidden outer envelope, raw-stream host, serializer boundary, middleware, DI scope, physical invocation context, and terminal lifecycle. AWS runtime owns workflow payloads, `IDurableContext`, checkpoints, replay, suspension, waits, and durable status/result mapping.
+Do not expose `DurableExecutionInvocationInput`, `DurableExecutionInvocationOutput`, streams, or AWS client in high-level handler. MinimalLambda directly deserializes and serializes hidden outer envelopes through its configured Lambda serializer; durable envelopes are not available through `IEventFeature` or `IResponseFeature`. It also owns raw-stream hosting, middleware, DI scope, and physical invocation context. AWS runtime owns workflow payloads, `IDurableContext`, checkpoints, replay, suspension, waits, and durable status/result mapping.
 
 ### Cancellation
 
@@ -150,7 +150,7 @@ AWS rebuilds workflow state by replaying code around checkpointed operations.
 - Do not use invocation-scoped memory or DI service as durable state.
 - Expect middleware, scope construction, and invocation-level telemetry to run once per physical invocation, including replay.
 
-Durable middleware must call and await `next` exactly once. It must not skip or double `next`, fabricate ordinary response, short-circuit through response cache, translate terminal exception into response, or swallow terminal exception. Replay-safe logging, metrics, tracing, and invocation-scoped observation fit. Apply these constraints when using [Middleware](../guides/middleware.md) or [OpenTelemetry](open_telemetry.md).
+Durable middleware should call and await `next` once, preserve exceptions, and avoid response fabrication or short-circuiting. MinimalLambda does not enforce these rules: skipped `next` can produce an empty response, repeated `next` reruns the adapter, and swallowed failures can change AWS-visible behavior. Replay-safe logging, metrics, tracing, and invocation-scoped observation fit. Apply these constraints when using [Middleware](../guides/middleware.md) or [OpenTelemetry](open_telemetry.md).
 
 ## Test locally
 
@@ -162,7 +162,7 @@ dotnet build examples/MinimalLambda.Example.DurableExecution/MinimalLambda.Examp
 
 Split tests by ownership:
 
-- Use [MinimalLambda host/integration tests](../guides/testing.md) for generated adapter, middleware, DI, serializer identity, terminal lifecycle, and outer stream roundtrip.
+- Use [MinimalLambda host/integration tests](../guides/testing.md) for generated adapter, middleware, DI, serializer identity, and outer stream roundtrip. Durable envelope feature access is intentionally unsupported.
 - Use `Amazon.Lambda.DurableExecution.Testing` for workflow operations, suspension, waits, and replay. Follow [AWS durable testing guide](https://docs.aws.amazon.com/lambda/latest/dg/durable-testing.html).
 
 `dotnet run` is not local workflow runner; executable expects Lambda Runtime API. Local engine and integration tests do not prove IAM, deployment, managed-runtime behavior, retention, or cloud service integration.
@@ -179,7 +179,6 @@ Split tests by ownership:
 | Runtime `InvalidOperationException` at `MapDurableHandler` | Compile-time interceptor did not replace fallback stub. Keep direct `MinimalLambda` reference and project interceptor/source-generator configuration.                                                   |
 | AWS DE001-DE004 absent                                     | Add direct `Amazon.Lambda.DurableExecution` reference; analyzer assets are not transitive.                                                                                                              |
 | Duplicate logs, metrics, or DI work                        | Replay caused another physical invocation. Use AWS replay-aware logger for workflow logs and make invocation observation replay-safe.                                                                   |
-| Empty/fabricated response or swallowed failure             | Middleware violated durable terminal lifecycle. Call/await `next` once and preserve terminal exception.                                                                                                 |
 | `dotnet run` cannot execute workflow                       | Use builds/tests or deploy configured durable function; process expects Lambda Runtime API.                                                                                                             |
 
 ## Raw-envelope escape hatch

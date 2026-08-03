@@ -35,9 +35,6 @@ namespace MinimalLambda.Generated
     [global::System.CodeDom.Compiler.GeneratedCode("MinimalLambda.SourceGenerators", "REPLACED")]
     file static class GeneratedDurableLambdaInvocationBuilderExtensions
     {
-        private const string EventFeatureProviderKey = "__EventFeatureProvider";
-        private const string ResponseFeatureProviderKey = "__ResponseFeatureProvider";
-
         [InterceptsLocation(1, "REPLACED")]
         internal static ILambdaInvocationBuilder MapDurableHandlerInterceptor0(
             this ILambdaInvocationBuilder application,
@@ -47,25 +44,14 @@ namespace MinimalLambda.Generated
             var castHandler = Utilities.Cast(handler, global::System.Threading.Tasks.Task (string arg0, global::Amazon.Lambda.DurableExecution.IDurableContext arg1) => throw null!);
 
             application.Handle(InvocationDelegate);
-            DurableTerminalInfrastructure.Register(application);
-
-            if (!application.Properties.ContainsKey(EventFeatureProviderKey))
-                application.Properties[EventFeatureProviderKey] = application
-                    .Services.GetRequiredService<IEventFeatureProviderFactory>()
-                    .Create<DurableExecutionInvocationInput>();
-
-            if (!application.Properties.ContainsKey(ResponseFeatureProviderKey))
-                application.Properties[ResponseFeatureProviderKey] = application
-                    .Services.GetRequiredService<IResponseFeatureProviderFactory>()
-                    .Create<DurableExecutionInvocationOutput>();
 
             return application;
 
             async Task InvocationDelegate(ILambdaInvocationContext context)
             {
-                DurableTerminalInfrastructure.Enter(context);
-
-                var envelope = context.GetRequiredEvent<DurableExecutionInvocationInput>();
+                var invocationData = context.Features.GetRequired<IInvocationDataFeature>();
+                var envelope = context.Serializer.Deserialize<DurableExecutionInvocationInput>(
+                    invocationData.EventStream);
                 var output = await DurableFunction.WrapAsync<string>(
                     (input, durableContext) =>
                     {
@@ -76,13 +62,9 @@ namespace MinimalLambda.Generated
                     envelope,
                     context).ConfigureAwait(false);
 
-                if (context.Features.Get<IResponseFeature>() is not IResponseFeature<DurableExecutionInvocationOutput> responseFeature)
-                {
-                    throw new InvalidOperationException($"Response feature for type '{typeof(DurableExecutionInvocationOutput).FullName}' is not available in the collection.");
-                }
-
-                responseFeature.SetResponse(output);
-                DurableTerminalInfrastructure.Complete(context);
+                invocationData.ResponseStream.SetLength(0L);
+                context.Serializer.Serialize(output, invocationData.ResponseStream);
+                invocationData.ResponseStream.Position = 0L;
             }
         }
         [InterceptsLocation(1, "REPLACED")]
@@ -94,25 +76,14 @@ namespace MinimalLambda.Generated
             var castHandler = Utilities.Cast(handler, global::System.Threading.Tasks.Task (int arg0, global::Amazon.Lambda.DurableExecution.IDurableContext arg1) => throw null!);
 
             application.Handle(InvocationDelegate);
-            DurableTerminalInfrastructure.Register(application);
-
-            if (!application.Properties.ContainsKey(EventFeatureProviderKey))
-                application.Properties[EventFeatureProviderKey] = application
-                    .Services.GetRequiredService<IEventFeatureProviderFactory>()
-                    .Create<DurableExecutionInvocationInput>();
-
-            if (!application.Properties.ContainsKey(ResponseFeatureProviderKey))
-                application.Properties[ResponseFeatureProviderKey] = application
-                    .Services.GetRequiredService<IResponseFeatureProviderFactory>()
-                    .Create<DurableExecutionInvocationOutput>();
 
             return application;
 
             async Task InvocationDelegate(ILambdaInvocationContext context)
             {
-                DurableTerminalInfrastructure.Enter(context);
-
-                var envelope = context.GetRequiredEvent<DurableExecutionInvocationInput>();
+                var invocationData = context.Features.GetRequired<IInvocationDataFeature>();
+                var envelope = context.Serializer.Deserialize<DurableExecutionInvocationInput>(
+                    invocationData.EventStream);
                 var output = await DurableFunction.WrapAsync<int>(
                     (input, durableContext) =>
                     {
@@ -123,13 +94,9 @@ namespace MinimalLambda.Generated
                     envelope,
                     context).ConfigureAwait(false);
 
-                if (context.Features.Get<IResponseFeature>() is not IResponseFeature<DurableExecutionInvocationOutput> responseFeature)
-                {
-                    throw new InvalidOperationException($"Response feature for type '{typeof(DurableExecutionInvocationOutput).FullName}' is not available in the collection.");
-                }
-
-                responseFeature.SetResponse(output);
-                DurableTerminalInfrastructure.Complete(context);
+                invocationData.ResponseStream.SetLength(0L);
+                context.Serializer.Serialize(output, invocationData.ResponseStream);
+                invocationData.ResponseStream.Position = 0L;
             }
         }
         [InterceptsLocation(1, "REPLACED")]
@@ -141,25 +108,14 @@ namespace MinimalLambda.Generated
             var castHandler = Utilities.Cast(handler, global::System.Threading.Tasks.Task (long arg0, global::Amazon.Lambda.DurableExecution.IDurableContext arg1) => throw null!);
 
             application.Handle(InvocationDelegate);
-            DurableTerminalInfrastructure.Register(application);
-
-            if (!application.Properties.ContainsKey(EventFeatureProviderKey))
-                application.Properties[EventFeatureProviderKey] = application
-                    .Services.GetRequiredService<IEventFeatureProviderFactory>()
-                    .Create<DurableExecutionInvocationInput>();
-
-            if (!application.Properties.ContainsKey(ResponseFeatureProviderKey))
-                application.Properties[ResponseFeatureProviderKey] = application
-                    .Services.GetRequiredService<IResponseFeatureProviderFactory>()
-                    .Create<DurableExecutionInvocationOutput>();
 
             return application;
 
             async Task InvocationDelegate(ILambdaInvocationContext context)
             {
-                DurableTerminalInfrastructure.Enter(context);
-
-                var envelope = context.GetRequiredEvent<DurableExecutionInvocationInput>();
+                var invocationData = context.Features.GetRequired<IInvocationDataFeature>();
+                var envelope = context.Serializer.Deserialize<DurableExecutionInvocationInput>(
+                    invocationData.EventStream);
                 var output = await DurableFunction.WrapAsync<long>(
                     (input, durableContext) =>
                     {
@@ -170,13 +126,9 @@ namespace MinimalLambda.Generated
                     envelope,
                     context).ConfigureAwait(false);
 
-                if (context.Features.Get<IResponseFeature>() is not IResponseFeature<DurableExecutionInvocationOutput> responseFeature)
-                {
-                    throw new InvalidOperationException($"Response feature for type '{typeof(DurableExecutionInvocationOutput).FullName}' is not available in the collection.");
-                }
-
-                responseFeature.SetResponse(output);
-                DurableTerminalInfrastructure.Complete(context);
+                invocationData.ResponseStream.SetLength(0L);
+                context.Serializer.Serialize(output, invocationData.ResponseStream);
+                invocationData.ResponseStream.Position = 0L;
             }
         }
         [InterceptsLocation(1, "REPLACED")]
@@ -188,25 +140,14 @@ namespace MinimalLambda.Generated
             var castHandler = Utilities.Cast(handler, global::System.Threading.Tasks.Task (decimal arg0, global::Amazon.Lambda.Core.ILambdaContext arg1, global::Amazon.Lambda.DurableExecution.IDurableContext arg2, global::MinimalLambda.ILambdaInvocationContext arg3, global::Amazon.Lambda.Core.ILambdaContext arg4) => throw null!);
 
             application.Handle(InvocationDelegate);
-            DurableTerminalInfrastructure.Register(application);
-
-            if (!application.Properties.ContainsKey(EventFeatureProviderKey))
-                application.Properties[EventFeatureProviderKey] = application
-                    .Services.GetRequiredService<IEventFeatureProviderFactory>()
-                    .Create<DurableExecutionInvocationInput>();
-
-            if (!application.Properties.ContainsKey(ResponseFeatureProviderKey))
-                application.Properties[ResponseFeatureProviderKey] = application
-                    .Services.GetRequiredService<IResponseFeatureProviderFactory>()
-                    .Create<DurableExecutionInvocationOutput>();
 
             return application;
 
             async Task InvocationDelegate(ILambdaInvocationContext context)
             {
-                DurableTerminalInfrastructure.Enter(context);
-
-                var envelope = context.GetRequiredEvent<DurableExecutionInvocationInput>();
+                var invocationData = context.Features.GetRequired<IInvocationDataFeature>();
+                var envelope = context.Serializer.Deserialize<DurableExecutionInvocationInput>(
+                    invocationData.EventStream);
                 var output = await DurableFunction.WrapAsync<decimal>(
                     (input, durableContext) =>
                     {
@@ -220,13 +161,9 @@ namespace MinimalLambda.Generated
                     envelope,
                     context).ConfigureAwait(false);
 
-                if (context.Features.Get<IResponseFeature>() is not IResponseFeature<DurableExecutionInvocationOutput> responseFeature)
-                {
-                    throw new InvalidOperationException($"Response feature for type '{typeof(DurableExecutionInvocationOutput).FullName}' is not available in the collection.");
-                }
-
-                responseFeature.SetResponse(output);
-                DurableTerminalInfrastructure.Complete(context);
+                invocationData.ResponseStream.SetLength(0L);
+                context.Serializer.Serialize(output, invocationData.ResponseStream);
+                invocationData.ResponseStream.Position = 0L;
             }
         }
     }

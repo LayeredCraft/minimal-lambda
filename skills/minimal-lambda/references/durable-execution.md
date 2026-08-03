@@ -57,7 +57,9 @@ child workflow, and related APIs). Advanced code can read
 
 ## Context and DI
 
-AWS durable context carries MinimalLambda invocation context as `LambdaContext`.
+AWS durable context carries MinimalLambda invocation context as `LambdaContext`. Durable envelopes are
+serialized directly through the configured Lambda serializer; they are not available through
+`IEventFeature` or `IResponseFeature`.
 
 ```csharp
 ILambdaInvocationContext invocation = durable.GetInvocationContext();
@@ -72,17 +74,14 @@ survives logical execution.
 ## Replay and middleware
 
 Middleware wraps each physical Lambda invocation and runs again on replay. It cannot depend on raw
-checkpoint transport or typed workflow input before terminal runs.
+checkpoint transport or typed workflow input.
 
-Durable-compatible middleware:
-
-- calls `next` exactly once and awaits it;
-- does not short-circuit with ordinary response;
-- does not swallow terminal exceptions;
-- limits work to replay-safe observation, logging, metrics, or invocation-scoped behavior.
-
-Do not reuse response caching, ordinary response fabrication, or exception-to-response translation
-middleware unchanged. AWS owns replay, checkpoints, suspension, waits, and durable status mapping.
+Durable-compatible middleware should call and await `next` once, preserve exceptions, avoid response
+short-circuits, and limit work to replay-safe observation, logging, metrics, or invocation-scoped
+behavior. MinimalLambda does not enforce these rules; skipped or repeated `next` and swallowed failures
+can change AWS-visible behavior. Do not reuse response caching, ordinary response fabrication, or
+exception-to-response translation middleware unchanged. AWS owns replay, checkpoints, suspension,
+waits, and durable status mapping.
 
 ## Serialization and AOT
 
@@ -101,7 +100,7 @@ bodies or referenced libraries.
 ## Testing split
 
 Use MinimalLambda host/integration tests to prove generated adapter, middleware, DI, exact serializer
-identity, terminal lifecycle, and outer stream roundtrip. Use
+identity, and outer stream roundtrip. Use
 `Amazon.Lambda.DurableExecution.Testing` to prove workflow operations, suspension, and replay. Local
 runner does not prove IAM, deployment, managed runtime, or cloud service behavior.
 

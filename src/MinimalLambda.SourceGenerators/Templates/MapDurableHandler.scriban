@@ -34,9 +34,6 @@ namespace MinimalLambda.Generated
     {{ generated_code_attribute.value }}
     file static class GeneratedDurableLambdaInvocationBuilderExtensions
     {
-        private const string EventFeatureProviderKey = "__EventFeatureProvider";
-        private const string ResponseFeatureProviderKey = "__ResponseFeatureProvider";
-
         {{~ for call in map_durable_handler_calls ~}}
         {{ call.interceptable_location_attribute }}
         internal static ILambdaInvocationBuilder MapDurableHandlerInterceptor{{ for.index }}(
@@ -47,25 +44,14 @@ namespace MinimalLambda.Generated
             var castHandler = Utilities.Cast(handler, {{ if call.handler_delegate_type }}({{ call.handler_delegate_type }})null!{{ else }}{{ call.delegate_cast_type }}{{ end }});
 
             application.Handle(InvocationDelegate);
-            DurableTerminalInfrastructure.Register(application);
-
-            if (!application.Properties.ContainsKey(EventFeatureProviderKey))
-                application.Properties[EventFeatureProviderKey] = application
-                    .Services.GetRequiredService<IEventFeatureProviderFactory>()
-                    .Create<DurableExecutionInvocationInput>();
-
-            if (!application.Properties.ContainsKey(ResponseFeatureProviderKey))
-                application.Properties[ResponseFeatureProviderKey] = application
-                    .Services.GetRequiredService<IResponseFeatureProviderFactory>()
-                    .Create<DurableExecutionInvocationOutput>();
 
             return application;
 
             async Task InvocationDelegate(ILambdaInvocationContext context)
             {
-                DurableTerminalInfrastructure.Enter(context);
-
-                var envelope = context.GetRequiredEvent<DurableExecutionInvocationInput>();
+                var invocationData = context.Features.GetRequired<IInvocationDataFeature>();
+                var envelope = context.Serializer.Deserialize<DurableExecutionInvocationInput>(
+                    invocationData.EventStream);
                 var output = await DurableFunction.WrapAsync<{{ call.input_type }}{{ if call.has_output }}, {{ call.output_type }}{{ end }}>(
                     (input, durableContext) =>
                     {
@@ -83,13 +69,9 @@ namespace MinimalLambda.Generated
                     envelope,
                     context).ConfigureAwait(false);
 
-                if (context.Features.Get<IResponseFeature>() is not IResponseFeature<DurableExecutionInvocationOutput> responseFeature)
-                {
-                    throw new InvalidOperationException($"Response feature for type '{typeof(DurableExecutionInvocationOutput).FullName}' is not available in the collection.");
-                }
-
-                responseFeature.SetResponse(output);
-                DurableTerminalInfrastructure.Complete(context);
+                invocationData.ResponseStream.SetLength(0L);
+                context.Serializer.Serialize(output, invocationData.ResponseStream);
+                invocationData.ResponseStream.Position = 0L;
             }
         }
         {{~ end ~}}

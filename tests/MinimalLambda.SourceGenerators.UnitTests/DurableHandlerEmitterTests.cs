@@ -265,7 +265,7 @@ public class DurableHandlerEmitterTests
             includeDurableReferences: true);
 
     [Fact]
-    public void EmitsExactWrapAsyncAndTerminalOrder()
+    public void EmitsDirectEnvelopeAdapter()
     {
         var (driver, _) = GeneratorTestHelpers.GenerateFromSource(
             """
@@ -281,23 +281,22 @@ public class DurableHandlerEmitterTests
             includeDurableReferences: true);
 
         var source = GetDurableSource(driver.GetRunResult());
-        var enter = source.IndexOf(
-            "DurableTerminalInfrastructure.Enter(context);",
-            StringComparison.Ordinal);
         var wrap = source.IndexOf(
             "DurableFunction.WrapAsync<int, string>(",
             StringComparison.Ordinal);
-        var setResponse = source.IndexOf(
-            "responseFeature.SetResponse(output);",
+        var deserialize = source.IndexOf(
+            "context.Serializer.Deserialize<DurableExecutionInvocationInput>(",
             StringComparison.Ordinal);
-        var complete = source.IndexOf(
-            "DurableTerminalInfrastructure.Complete(context);",
+        var serialize = source.IndexOf(
+            "context.Serializer.Serialize(output, invocationData.ResponseStream);",
             StringComparison.Ordinal);
 
-        enter.Should().BeGreaterThanOrEqualTo(0);
-        wrap.Should().BeGreaterThan(enter);
-        setResponse.Should().BeGreaterThan(wrap);
-        complete.Should().BeGreaterThan(setResponse);
+        deserialize.Should().BeGreaterThanOrEqualTo(0);
+        wrap.Should().BeGreaterThan(deserialize);
+        serialize.Should().BeGreaterThan(wrap);
+        source.Should().NotContain("IEventFeatureProviderFactory");
+        source.Should().NotContain("IResponseFeatureProviderFactory");
+        source.Should().NotContain("DurableTerminalInfrastructure");
     }
 
     [Fact]

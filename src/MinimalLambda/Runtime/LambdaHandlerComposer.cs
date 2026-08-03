@@ -39,8 +39,6 @@ internal sealed class LambdaHandlerComposer : ILambdaHandlerFactory
 
         _options.ConfigureHandlerBuilder?.Invoke(builder);
 
-        var requiresDurableTerminal =
-            DurableTerminalInfrastructure.IsRegistered(builder.Properties);
         var handler = builder.Build();
 
         return CreateRequestHandler;
@@ -74,9 +72,6 @@ internal sealed class LambdaHandlerComposer : ILambdaHandlerFactory
 
                 // Invoke the handler wrapped in the middleware pipeline.
                 await handler.Invoke(lambdaInvocationContext).ConfigureAwait(false);
-
-                if (requiresDurableTerminal)
-                    DurableTerminalInfrastructure.Validate(lambdaInvocationContext);
 
                 if (lambdaInvocationContext.Features.TryGet<IResponseFeature>(
                     out var responseFeature))
