@@ -75,6 +75,196 @@ public class DurableHandlerDiagnosticTests
     }
 
     [Fact]
+    public void ReportsInaccessibleHandlerTypesAndSuppressesDurableAdapter()
+    {
+        var (driver, _) = GeneratorTestHelpers.GenerateFromSource(
+            """
+            using System.Threading.Tasks;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            internal static class Handlers
+            {
+                private sealed record Request;
+
+                internal static void Map(ILambdaInvocationBuilder app) =>
+                    app.MapDurableHandler(Handle);
+
+                private static Task Handle([FromEvent] Request request) => Task.CompletedTask;
+            }
+            """,
+            includeDurableReferences: true);
+
+        // Act
+        var result = driver.GetRunResult();
+
+        // Assert
+        result.Diagnostics.Should().ContainSingle(diagnostic => diagnostic.Id == "LH0007");
+        result.GeneratedTrees.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ReportsInaccessibleOutputTypeAndSuppressesDurableAdapter()
+    {
+        var (driver, _) = GeneratorTestHelpers.GenerateFromSource(
+            """
+            using System.Threading.Tasks;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            internal static class Handlers
+            {
+                private sealed record Result;
+
+                internal static void Map(ILambdaInvocationBuilder app) =>
+                    app.MapDurableHandler(Handle);
+
+                private static Task<Result> Handle() => Task.FromResult(new Result());
+            }
+            """,
+            includeDurableReferences: true);
+
+        // Act
+        var result = driver.GetRunResult();
+
+        // Assert
+        result.Diagnostics.Should().ContainSingle(diagnostic => diagnostic.Id == "LH0007");
+        result.GeneratedTrees.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ReportsUnboundTypeParametersAndSuppressesDurableAdapter()
+    {
+        var (driver, _) = GeneratorTestHelpers.GenerateFromSource(
+            """
+            using System.Threading.Tasks;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            internal static class Handlers<T>
+            {
+                internal static void Map(ILambdaInvocationBuilder app) =>
+                    app.MapDurableHandler(Handle);
+
+                private static Task Handle([FromEvent] T request) => Task.CompletedTask;
+            }
+            """,
+            includeDurableReferences: true);
+
+        // Act
+        var result = driver.GetRunResult();
+
+        // Assert
+        result.Diagnostics.Should().ContainSingle(diagnostic => diagnostic.Id == "LH0007");
+        result.GeneratedTrees.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ReportsByReferenceParametersAndSuppressesDurableAdapter()
+    {
+        var (driver, _) = GeneratorTestHelpers.GenerateFromSource(
+            """
+            using System;
+            using System.Threading.Tasks;
+            using MinimalLambda.Builder;
+
+            delegate Task RefHandler(ref int value);
+
+            var app = LambdaApplication.CreateBuilder().Build();
+            app.MapDurableHandler((RefHandler)Handle);
+            static Task Handle(ref int value) => Task.CompletedTask;
+            """,
+            includeDurableReferences: true);
+
+        // Act
+        var result = driver.GetRunResult();
+
+        // Assert
+        result.Diagnostics.Should().ContainSingle(diagnostic => diagnostic.Id == "LH0007");
+        result.GeneratedTrees.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ReportsFileLocalContainingTypeAndSuppressesDurableAdapter()
+    {
+        var (driver, _) = GeneratorTestHelpers.GenerateFromSource(
+            """
+            using System.Threading.Tasks;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            file static class Handlers
+            {
+                public sealed record Request;
+
+                internal static void Map(ILambdaInvocationBuilder app) =>
+                    app.MapDurableHandler(Handle);
+
+                private static Task Handle([FromEvent] Request request) => Task.CompletedTask;
+            }
+            """,
+            includeDurableReferences: true);
+
+        var result = driver.GetRunResult();
+
+        result.Diagnostics.Should().ContainSingle(diagnostic => diagnostic.Id == "LH0007");
+        result.GeneratedTrees.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ReportsPointerParameterAndSuppressesDurableAdapter()
+    {
+        var (driver, _) = GeneratorTestHelpers.GenerateFromSource(
+            """
+            using System.Threading.Tasks;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            internal static unsafe class Handlers
+            {
+                internal static void Map(ILambdaInvocationBuilder app) =>
+                    app.MapDurableHandler(Handle);
+
+                private static Task Handle([FromEvent] int* request) => Task.CompletedTask;
+            }
+            """,
+            includeDurableReferences: true,
+            allowUnsafe: true);
+
+        var result = driver.GetRunResult();
+
+        result.Diagnostics.Should().ContainSingle(diagnostic => diagnostic.Id == "LH0007");
+        result.GeneratedTrees.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ReportsRefLikeParameterAndSuppressesDurableAdapter()
+    {
+        var (driver, _) = GeneratorTestHelpers.GenerateFromSource(
+            """
+            using System.Threading.Tasks;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            internal static class Handlers
+            {
+                internal ref struct Request;
+
+                internal static void Map(ILambdaInvocationBuilder app) =>
+                    app.MapDurableHandler(Handle);
+
+                private static Task Handle([FromEvent] Request request) => Task.CompletedTask;
+            }
+            """,
+            includeDurableReferences: true);
+
+        var result = driver.GetRunResult();
+
+        result.Diagnostics.Should().ContainSingle(diagnostic => diagnostic.Id == "LH0007");
+        result.GeneratedTrees.Should().BeEmpty();
+    }
+
+    [Fact]
     public void ReportsEveryEventParameterAfterFirst()
     {
         var model = TransformSingle(
@@ -93,6 +283,73 @@ public class DurableHandlerDiagnosticTests
             .Select(diagnostic => diagnostic.DiagnosticDescriptor.Id)
             .Should()
             .Equal("LH0002");
+    }
+
+    [Fact]
+    public void ReportsInaccessibleExplicitCustomDelegateAndSuppressesDurableAdapter()
+    {
+        var (driver, _) = GeneratorTestHelpers.GenerateFromSource(
+            """
+            using System.Threading.Tasks;
+            using Amazon.Lambda.DurableExecution;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            Entry.Map();
+
+            internal static class Entry
+            {
+                private delegate Task DurableHandler(string input, IDurableContext durable);
+
+                internal static void Map()
+                {
+                    var app = LambdaApplication.CreateBuilder().Build();
+                    app.MapDurableHandler((DurableHandler)Handle);
+                }
+
+                private static Task Handle([FromEvent] string input, IDurableContext durable) => Task.CompletedTask;
+            }
+            """,
+            includeDurableReferences: true);
+
+        var result = driver.GetRunResult();
+
+        result.Diagnostics.Should().ContainSingle(diagnostic => diagnostic.Id == "LH0007");
+        result.GeneratedTrees.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ReportsRefReturnAndSuppressesDurableAdapter()
+    {
+        var (driver, _) = GeneratorTestHelpers.GenerateFromSource(
+            """
+            using System.Threading.Tasks;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            Entry.Map();
+
+            internal delegate ref Task RefHandler();
+
+            internal static class Entry
+            {
+                private static Task task = Task.CompletedTask;
+
+                internal static void Map()
+                {
+                    var app = LambdaApplication.CreateBuilder().Build();
+                    app.MapDurableHandler((RefHandler)Handle);
+                }
+
+                private static ref Task Handle() => ref task;
+            }
+            """,
+            includeDurableReferences: true);
+
+        var result = driver.GetRunResult();
+
+        result.Diagnostics.Should().ContainSingle(diagnostic => diagnostic.Id == "LH0007");
+        result.GeneratedTrees.Should().BeEmpty();
     }
 
     [Fact]

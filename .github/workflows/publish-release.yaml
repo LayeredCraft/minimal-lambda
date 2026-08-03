@@ -1,4 +1,4 @@
-name: Publish Core Release
+name: Publish Release
 
 on:
   release:
@@ -8,25 +8,6 @@ permissions:
   contents: read
 
 jobs:
-  preflight:
-    if: startsWith(github.event.release.tag_name, 'v')
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-    steps:
-      - uses: actions/checkout@v5
-      - name: Guard and resolve core release tag
-        id: version
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        shell: bash
-        run: |
-          python3 scripts/validate-release-artifacts.py \
-            --lane core \
-            --tag "$RELEASE_TAG" \
-            --tag-only
-          echo "version=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
-
   build:
     permissions:
       contents: write
@@ -38,8 +19,7 @@ jobs:
       buildConfiguration: Release
 
   push:
-    needs: [preflight, build]
-    if: startsWith(github.event.release.tag_name, 'v')
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -47,16 +27,4 @@ jobs:
     steps:
       - uses: LayeredCraft/devops-templates/.github/actions/nuget-push@v10.3
         with:
-          user: ${{ secrets.NUGET_USER }}
-      - name: Publish core packages and symbols without duplicate suppression
-        env:
-          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          # dotnet nuget push discovers and publishes adjacent .snupkg automatically.
-          for package in artifacts/*.nupkg; do
-            dotnet nuget push "$package" \
-              --api-key "$NUGET_API_KEY" \
-              --source https://api.nuget.org/v3/index.json
-          done
+          nuget_user: ${{ secrets.NUGET_USER }}

@@ -119,7 +119,8 @@ internal static class GeneratorTestHelpers
         LanguageVersion languageVersion = LanguageVersion.CSharp14,
         bool includeDurableReferences = false,
         IReadOnlyList<(string FilePath, string Source)>? additionalSources = null,
-        bool treatWarningsAsErrors = false)
+        bool treatWarningsAsErrors = false,
+        bool allowUnsafe = false)
     {
         IEnumerable<KeyValuePair<string, string>> features =
         [
@@ -179,7 +180,8 @@ internal static class GeneratorTestHelpers
             nullableContextOptions: NullableContextOptions.Enable,
             generalDiagnosticOption: treatWarningsAsErrors
                 ? ReportDiagnostic.Error
-                : ReportDiagnostic.Default);
+                : ReportDiagnostic.Default,
+            allowUnsafe: allowUnsafe);
 
         if (diagnosticsToSuppress is not null)
             compilationOptions =

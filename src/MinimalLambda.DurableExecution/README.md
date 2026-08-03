@@ -9,8 +9,8 @@ Typed AWS Lambda Durable Execution handlers for MinimalLambda.
 Package ships assets for exactly `net10.0`. NuGet may select a compatible asset for other TFMs, but
 those combinations are not supported.
 
-`MinimalLambda.DurableExecution` is versioned independently from `MinimalLambda`; versions are not
-lockstep. Current minimum compatible core version is `MinimalLambda` `2.6.0-beta.2`.
+`MinimalLambda.DurableExecution` releases on same synchronous version cadence as `MinimalLambda`.
+Current minimum compatible core version is `MinimalLambda` `2.6.0-beta.2`.
 
 Reference all three packages directly:
 
@@ -103,11 +103,14 @@ provide exactly-once execution.
 
 Durable handlers return `Task` or `Task<TOutput>`. `[FromEvent] TInput` and AWS `IDurableContext`
 are optional; a handler may use either, both, or neither. Parameter order is unrestricted. Other
-parameters are resolved using the normal handler binding rules. The generator does not validate
-serializer roots or impose a durable-specific payload-shape policy.
+parameters are resolved using normal handler binding rules. `ref`, `in`, and `out` parameters are
+unsupported; handler parameter and output types must be accessible from generated code and closed over
+all type parameters. The generator does not validate serializer roots or impose a durable-specific
+payload-shape policy.
 
-If a handler needs physical-invocation cancellation, read it through
-`ILambdaInvocationContext.CancellationToken` and own the resulting failure/retry consequences. AWS
+A handler that explicitly declares `CancellationToken` receives
+`ILambdaInvocationContext.CancellationToken`. It represents physical Lambda-invocation cancellation;
+own resulting failure/retry consequences and do not treat it as durable-operation cancellation. AWS
 operation callbacks already receive SDK-linked cancellation tokens.
 
 Inject `ILambdaInvocationContext` as above, or recover exact physical invocation context carried by

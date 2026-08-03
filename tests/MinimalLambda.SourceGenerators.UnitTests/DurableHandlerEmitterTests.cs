@@ -121,32 +121,6 @@ public class DurableHandlerEmitterTests
             includeDurableReferences: true);
 
     [Fact]
-    public Task FallsBackToInferredSignatureForInaccessibleCustomDelegate() =>
-        GeneratorTestHelpers.Verify(
-            """
-            using System.Threading.Tasks;
-            using Amazon.Lambda.DurableExecution;
-            using MinimalLambda;
-            using MinimalLambda.Builder;
-
-            Entry.Map();
-
-            internal static class Entry
-            {
-                private delegate Task DurableHandler(string input, IDurableContext durable);
-
-                internal static void Map()
-                {
-                    var app = LambdaApplication.CreateBuilder().Build();
-                    app.MapDurableHandler((DurableHandler)Handle);
-                }
-
-                private static Task Handle([FromEvent] string input, IDurableContext durable) => Task.CompletedTask;
-            }
-            """,
-            includeDurableReferences: true);
-
-    [Fact]
     public Task EmitsTaskOfTAdapterThatCompiles() =>
         GeneratorTestHelpers.Verify(
             """

@@ -20,11 +20,10 @@ until project documentation records cloud evidence.
 
 ## Handler contract
 
-Durable handler must have:
+Durable handler must have an exact `Task` or `Task<TOutput>` return. It may have:
 
-- exactly one `[FromEvent] TInput` workflow input;
-- exactly one exact AWS `IDurableContext`;
-- exact `Task` or `Task<TOutput>` return;
+- zero or one `[FromEvent] TInput` workflow input;
+- zero or one exact AWS `IDurableContext`;
 - optional `ILambdaContext`, `ILambdaInvocationContext`, ordinary DI, keyed DI, or optional DI
   parameters.
 
@@ -47,13 +46,13 @@ envelope or explicit-client control is required.
 
 ## Cancellation
 
-Do not declare `CancellationToken` on durable root handler. Near-timeout cancellation can fault root
-workflow and become terminal `FAILED` result instead of allowing physical invocation retry. AWS operation
-callbacks already receive SDK-linked cancellation tokens, and `WrapAsync` exposes no lifecycle-token hook.
+A durable root handler can explicitly declare `CancellationToken`; MinimalLambda binds it to
+`ILambdaInvocationContext.CancellationToken`. It represents physical Lambda-invocation cancellation, so
+near-timeout cancellation can fault root workflow and become terminal `FAILED`; handler owns resulting
+failure/retry consequences. It is not an AWS durable-operation token.
 
 Use cancellation token supplied by durable operation callback (`StepAsync`, callback, map/parallel,
-child workflow, and related APIs). Advanced code can read
-`ILambdaInvocationContext.CancellationToken`, but then owns durable failure/retry consequences.
+child workflow, and related APIs) for durable step work. `WrapAsync` exposes no lifecycle-token hook.
 
 ## Context and DI
 

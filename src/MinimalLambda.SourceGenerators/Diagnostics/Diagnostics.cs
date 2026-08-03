@@ -50,10 +50,10 @@ internal static class Diagnostics
         DiagnosticSeverity.Error,
         true);
 
-    internal static readonly DiagnosticDescriptor UnsupportedDurableReturnType = new(
+    internal static readonly DiagnosticDescriptor UnsupportedDurableHandlerSignature = new(
         "LH0007",
-        "Unsupported durable handler return type",
-        "Durable handler return type '{0}' is not supported; use 'Task' or 'Task<TOutput>'.",
+        "Unsupported durable handler signature",
+        "Durable handler signature component '{0}' is not supported; use Task or Task<TOutput>, value parameters, and types accessible to generated adapter code.",
         UsageCategory,
         DiagnosticSeverity.Error,
         true);

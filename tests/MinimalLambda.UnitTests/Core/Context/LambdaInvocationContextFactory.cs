@@ -58,6 +58,28 @@ public class LambdaInvocationContextFactoryTests
 
     [Theory]
     [AutoNSubstituteData]
+    internal void Create_ForwardsRuntimeSerializer(
+        IServiceScopeFactory serviceScopeFactory,
+        IFeatureCollectionFactory featureCollectionFactory,
+        ILambdaContext lambdaContext,
+        IDictionary<string, object?> properties,
+        ILambdaSerializer serializer)
+    {
+        // Arrange
+        lambdaContext.Serializer.Returns(serializer);
+        var factory = new LambdaInvocationContextFactory(
+            serviceScopeFactory,
+            featureCollectionFactory);
+
+        // Act
+        var context = factory.Create(lambdaContext, properties, CancellationToken.None);
+
+        // Assert
+        context.Serializer.Should().BeSameAs(serializer);
+    }
+
+    [Theory]
+    [AutoNSubstituteData]
     internal void Create_CallsFeatureCollectionFactoryCreate(
         [Frozen] IFeatureCollectionFactory featureCollectionFactory,
         IServiceScopeFactory serviceScopeFactory,

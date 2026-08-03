@@ -11,8 +11,8 @@ ______________________________________________________________________
 
 ## Context
 
-Durable support adds optional AWS dependencies and may need releases on a different cadence from
-MinimalLambda core. It also needs source generation for `MapDurableHandler`.
+Durable support adds optional AWS dependencies and needs source generation for
+`MapDurableHandler`. Repository package releases use one synchronous cadence.
 
 MinimalLambda currently ships one source generator inside the core `MinimalLambda` package. We need
 to decide where durable runtime APIs and generation should live.
@@ -20,7 +20,7 @@ to decide where durable runtime APIs and generation should live.
 ## Decision Drivers
 
 - Keep durable dependencies optional.
-- Allow durable runtime fixes to release independently.
+- Keep durable dependency optional without introducing a separate release lane.
 - Avoid duplicate generators and generated output.
 - Reuse existing MinimalLambda handler-generation behavior.
 - Keep package compatibility understandable.
@@ -82,8 +82,9 @@ minimal-lambda-durable-execution
 
 ## Decision
 
-We will use **Option A: a separately versioned `MinimalLambda.DurableExecution` package with durable
-generation implemented by the existing core `MinimalLambda.SourceGenerators` assembly**.
+We will use **Option A: a separate `MinimalLambda.DurableExecution` package with durable generation
+implemented by the existing core `MinimalLambda.SourceGenerators` assembly**. It shares repository
+synchronous package versioning and release cadence with core.
 
 A durable application references both packages:
 
@@ -96,8 +97,7 @@ A durable application references both packages:
   dependency.
 - Core source generator recognizes `MapDurableHandler` from the durable package.
 - Durable package declares the minimum compatible `MinimalLambda` version.
-- Runtime-only durable fixes can release independently.
-- Generator contract changes require coordinated compatible releases.
+- Durable runtime and generator changes release with the synchronous package set.
 
 ## Rationale
 
@@ -110,14 +110,14 @@ model. Version coupling is explicit through the durable package's minimum core d
 
 - Durable dependencies remain optional.
 - Only one MinimalLambda generator runs.
-- Runtime-only durable fixes can release independently.
 - Durable and ordinary handlers share generation behavior.
+- One trusted-publishing release workflow publishes all packages together.
 
 ### Negative / trade-offs
 
 - Durable generator changes require a core release.
 - Package compatibility must be tested and documented.
-- Release automation must support an independent durable package version.
+- Durable runtime fixes wait for the repository's synchronous release cadence.
 
 ## References
 

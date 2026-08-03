@@ -47,7 +47,7 @@ Core pieces:
 - `LambdaApplication.CreateBuilder()` creates standard .NET host/config/DI defaults.
 - `MapHandler(...)` registers one ordinary Lambda handler. Source generator intercepts it at compile time.
 - `MapDurableHandler(...)` registers one durable workflow with stricter signature, cancellation, replay, middleware, and serializer rules; read `references/durable-execution.md`.
-- `[FromEvent]` marks deserialized event payload. Ordinary handlers allow at most one; durable handlers require exactly one.
+- `[FromEvent]` marks deserialized event payload. Ordinary handlers allow at most one; durable handlers allow zero or one. `IDurableContext` is optional for durable handlers.
 - Other handler parameters resolve from DI/context/keyed services/cancellation token.
 - Middleware wraps invocation pipeline via inline `UseMiddleware(...)` or class `UseMiddleware<T>()`.
 - `OnInit(...)` runs once during cold start; `OnShutdown(...)` runs during teardown.
@@ -73,7 +73,7 @@ Read `references/best-practices.md` before giving architectural advice.
 - Allow simple inline logic in `Program.cs` when logic is tiny and Lambda remains easy to read.
 - Extract middleware classes only when middleware is complex, reusable, stateful, or worth testing
   separately.
-- Prefer `CancellationToken` in ordinary async handlers and downstream calls. Durable root handlers must not declare one; use SDK-provided durable-operation callback tokens instead.
+- Prefer `CancellationToken` in ordinary async handlers and downstream calls. A durable root handler may declare one only for physical invocation cancellation; use SDK-provided durable-operation callback tokens for durable steps.
 - Prefer scoped services for per-invocation state; singleton for reusable clients/caches.
 - Avoid storing scoped services in singletons.
 - Prefer typed records/responses/envelopes over anonymous response contracts.
@@ -86,8 +86,8 @@ Read `references/best-practices.md` before giving architectural advice.
 
 Before final answer or patch:
 
-- Does code compile with source generation? `MapHandler` has 0 or 1 `[FromEvent]`; `MapDurableHandler` has exactly 1 plus exactly 1 `IDurableContext` and returns `Task`/`Task<T>`.
-- Does durable code avoid a root `CancellationToken`, register explicit serializer roots, and obey replay-safe middleware rules?
+- Does code compile with source generation? `MapHandler` has 0 or 1 `[FromEvent]`; `MapDurableHandler` has 0 or 1 `[FromEvent]`, 0 or 1 `IDurableContext`, and returns `Task`/`Task<T>`.
+- Does durable code treat optional root `CancellationToken` as physical invocation cancellation, use SDK operation-callback tokens for durable steps, register explicit serializer roots, and obey replay-safe middleware rules?
 - Does runtime call only one handler mapping path?
 - Are packages matched (`MinimalLambda.Testing` same version as `MinimalLambda`)?
 - Are envelope package/type and AWS trigger type aligned?

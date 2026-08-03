@@ -71,3 +71,4 @@ Packages version synchronously:
 - `MinimalLambda.OpenTelemetry`
 - `MinimalLambda.Templates`
 - `MinimalLambda.Testing`
+- `MinimalLambda.DurableExecution`

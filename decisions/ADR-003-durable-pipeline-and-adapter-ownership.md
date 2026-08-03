@@ -107,7 +107,7 @@ async Task InvokeDurable(ILambdaInvocationContext invocation)
 - Binding of workflow input, `IDurableContext`, MinimalLambda context, and DI services.
 - Handler-shape diagnostics.
 - Serializer-metadata diagnostics for types statically inferable from the handler signature.
-- A diagnostic rejecting automatic `CancellationToken` binding in durable handler signatures.
+- Binding of an optional root `CancellationToken` to physical invocation cancellation.
 
 ### MinimalLambda runtime
 
@@ -145,13 +145,13 @@ map or parallel results.
 
 ### Cancellation
 
-MinimalLambda does not automatically bind its invocation `CancellationToken` into durable handler
-signatures. Near-timeout cancellation can fault the root workflow task, which AWS maps to a terminal
-`FAILED` durable result instead of allowing the physical invocation to time out and retry.
+A durable handler may declare one root `CancellationToken`. MinimalLambda binds it to physical
+invocation cancellation through `ILambdaInvocationContext.CancellationToken`; it is not a durable
+workflow-operation token. Near-timeout cancellation can fault the root workflow task, which AWS maps
+to a terminal `FAILED` durable result instead of allowing the physical invocation to time out and retry.
 
-A durable handler declaring a `CancellationToken` receives a generator diagnostic. Advanced users
-can still access `ILambdaInvocationContext.CancellationToken`, but then own the resulting durable
-failure and retry semantics.
+Use SDK-provided callback tokens for durable steps. A handler that uses the root token owns the
+resulting durable failure and retry semantics.
 
 ### Middleware
 
@@ -202,7 +202,7 @@ Implementation must cover:
 - Successful, failed, and suspended AWS durable outputs.
 - Middleware execution before and after a suspended physical invocation.
 - Serializer identity across outer MinimalLambda and inner AWS serialization.
-- Generator rejection of durable `CancellationToken` parameters.
+- Generator binding of an optional durable root `CancellationToken` to physical invocation cancellation.
 - Diagnostics for inferable serializer roots without claiming coverage of nested workflow types.
 
 Full host-plus-replay testing may require separate MinimalLambda host tests and AWS durable SDK tests
@@ -225,7 +225,7 @@ because the AWS in-memory durable service-client overload is not public.
 - Raw envelope access requires the explicit low-level mapping path.
 - Middleware executes on every physical replay.
 - Middleware that short-circuits, repeats `next`, or translates exceptions into ordinary responses can change durable behavior and is unsupported guidance rather than a host-enforced error.
-- Durable handlers cannot receive an automatically bound invocation `CancellationToken`.
+- Root `CancellationToken` represents physical invocation cancellation, not durable operation cancellation.
 - Serializer diagnostics cannot cover types hidden inside workflow implementations or libraries.
 - Core runtime needs serializer exposure, but no durable-specific lifecycle state.
 

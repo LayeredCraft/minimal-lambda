@@ -16,7 +16,7 @@ dotnet add package MinimalLambda.DurableExecution --version 2.6.0-beta.2
 dotnet add package Amazon.Lambda.DurableExecution --version 1.0.0
 ```
 
-`MinimalLambda.DurableExecution` and `MinimalLambda` are versioned independently; do not assume matching versions are always required. `2.6.0-beta.2` is current minimum compatible core version. Direct `MinimalLambda` reference supplies source generator for `MapHandler` and `MapDurableHandler`. Direct AWS package reference supplies DE001-DE004 analyzers, which do not flow through transitive dependencies.
+`MinimalLambda.DurableExecution` and `MinimalLambda` release on same synchronous version cadence. `2.6.0-beta.2` is current minimum compatible core version. Direct `MinimalLambda` reference supplies source generator for `MapHandler` and `MapDurableHandler`. Direct AWS package reference supplies DE001-DE004 analyzers, which do not flow through transitive dependencies.
 
 NuGet fallback may select an asset for another target framework, but only `net10.0` is supported.
 
@@ -97,15 +97,13 @@ Durable handlers support two return forms:
 | `Task`          | Workflow with no typed result |
 | `Task<TOutput>` | Workflow with typed result    |
 
-`[FromEvent] TInput` and AWS `IDurableContext` are optional; a handler may use either, both, or neither. Parameter order is unrestricted. Other parameters use the normal handler binding rules. See [Dependency Injection](../guides/dependency-injection.md) for service lifetimes.
+`[FromEvent] TInput` and AWS `IDurableContext` are optional; a handler may use either, both, or neither. Parameter order is unrestricted. Other parameters use normal handler binding rules, but `ref`, `in`, and `out` parameters are unsupported. Types referenced by handler parameters or output must be accessible from generated code and cannot contain unbound type parameters. See [Dependency Injection](../guides/dependency-injection.md) for service lifetimes.
 
 Do not expose `DurableExecutionInvocationInput`, `DurableExecutionInvocationOutput`, streams, or AWS client in high-level handler. MinimalLambda directly deserializes and serializes hidden outer envelopes through its configured Lambda serializer; durable envelopes are not available through `IEventFeature` or `IResponseFeature`. It also owns raw-stream hosting, middleware, DI scope, and physical invocation context. AWS runtime owns workflow payloads, `IDurableContext`, checkpoints, replay, suspension, waits, and durable status/result mapping.
 
 ### Cancellation
 
-AWS operation callbacks receive SDK-linked cancellation tokens. If a durable handler also reads `ILambdaInvocationContext.CancellationToken`, it owns the resulting physical-invocation failure and retry behavior.
-
-Reading `ILambdaInvocationContext.CancellationToken` explicitly means accepting root failure/retry consequences.
+AWS operation callbacks receive SDK-linked cancellation tokens. A durable handler that explicitly declares `CancellationToken` receives `ILambdaInvocationContext.CancellationToken`; it owns resulting physical-invocation failure and retry behavior. It is not a durable-operation token.
 
 ### Execution and invocation metadata
 
@@ -169,13 +167,13 @@ Split tests by ownership:
 
 ## Troubleshooting
 
-| Symptom                                                    | Fix                                                                                                                                                                                                     |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `LH0007`                                                   | Return `Task` or `Task<TOutput>`.                                                                                                                       |
-| Runtime `InvalidOperationException` at `MapDurableHandler` | Compile-time interceptor did not replace fallback stub. Keep direct `MinimalLambda` reference and project interceptor/source-generator configuration.                                                   |
-| AWS DE001-DE004 absent                                     | Add direct `Amazon.Lambda.DurableExecution` reference; analyzer assets are not transitive.                                                                                                              |
-| Duplicate logs, metrics, or DI work                        | Replay caused another physical invocation. Use AWS replay-aware logger for workflow logs and make invocation observation replay-safe.                                                                   |
-| `dotnet run` cannot execute workflow                       | Use builds/tests or deploy configured durable function; process expects Lambda Runtime API.                                                                                                             |
+| Symptom                                                    | Fix                                                                                                                                                   |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LH0007`                                                   | Use `Task` or `Task<TOutput>`, value parameters, and closed types accessible to generated adapter code.                                               |
+| Runtime `InvalidOperationException` at `MapDurableHandler` | Compile-time interceptor did not replace fallback stub. Keep direct `MinimalLambda` reference and project interceptor/source-generator configuration. |
+| AWS DE001-DE004 absent                                     | Add direct `Amazon.Lambda.DurableExecution` reference; analyzer assets are not transitive.                                                            |
+| Duplicate logs, metrics, or DI work                        | Replay caused another physical invocation. Use AWS replay-aware logger for workflow logs and make invocation observation replay-safe.                 |
+| `dotnet run` cannot execute workflow                       | Use builds/tests or deploy configured durable function; process expects Lambda Runtime API.                                                           |
 
 ## Raw-envelope escape hatch
 

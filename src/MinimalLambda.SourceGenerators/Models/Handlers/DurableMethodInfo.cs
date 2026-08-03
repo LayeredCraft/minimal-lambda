@@ -106,6 +106,20 @@ internal static class DurableMethodInfoExtensions
             {
                 var parameter = parameters[i];
                 var parameterLocation = GetParameterLocation(parameter, handlerArgumentLocation);
+                if (parameter.RefKind != RefKind.None)
+                    diagnostics.Add(
+                        CreateDiagnostic(
+                            Diagnostics.UnsupportedDurableHandlerSignature,
+                            parameterLocation,
+                            $"{parameter.RefKind.ToString().ToLowerInvariant()} {parameter.Name}"));
+
+                if (!IsAccessibleFromGeneratedAdapter(parameter.Type))
+                    diagnostics.Add(
+                        CreateDiagnostic(
+                            Diagnostics.UnsupportedDurableHandlerSignature,
+                            parameterLocation,
+                            parameter.Type.QualifiedNullableName));
+
                 var source = ParameterSource.Services;
                 var assignment = string.Empty;
                 var isKeyed = false;
@@ -171,6 +185,13 @@ internal static class DurableMethodInfoExtensions
             var hasOutput = false;
             ITypeSymbol? outputType = null;
             var validReturn = false;
+            if (methodSymbol.RefKind != RefKind.None)
+                diagnostics.Add(
+                    CreateDiagnostic(
+                        Diagnostics.UnsupportedDurableHandlerSignature,
+                        returnLocation,
+                        $"{methodSymbol.RefKind.ToString().ToLowerInvariant()} {methodSymbol.ReturnType.QualifiedNullableName}"));
+
             if (SymbolEqualityComparer.Default.Equals(
                 methodSymbol.ReturnType,
                 context.WellKnownTypes.Get(WellKnownType.System_Threading_Tasks_Task)))
@@ -184,20 +205,38 @@ internal static class DurableMethodInfoExtensions
                 hasOutput = true;
                 outputType = namedReturn.TypeArguments[0];
                 validReturn = true;
+
+                if (!IsAccessibleFromGeneratedAdapter(outputType))
+                    diagnostics.Add(
+                        CreateDiagnostic(
+                            Diagnostics.UnsupportedDurableHandlerSignature,
+                            returnLocation,
+                            outputType.QualifiedNullableName));
             }
 
             if (!validReturn)
                 diagnostics.Add(
                     CreateDiagnostic(
-                        Diagnostics.UnsupportedDurableReturnType,
+                        Diagnostics.UnsupportedDurableHandlerSignature,
                         returnLocation,
                         methodSymbol.ReturnType.QualifiedNullableName));
+
+            var handlerDelegateType = GetHandlerDelegateType(
+                handlerArgument,
+                compilation,
+                context.CancellationToken,
+                out var inaccessibleDelegateType);
+            if (inaccessibleDelegateType is not null)
+                diagnostics.Add(
+                    CreateDiagnostic(
+                        Diagnostics.UnsupportedDurableHandlerSignature,
+                        handlerArgumentLocation,
+                        inaccessibleDelegateType.QualifiedNullableName));
 
             return new DurableMethodInfo(
                 InterceptableLocationAttribute: interceptableLocation.Attribute,
                 DelegateCastType: methodSymbol.GetCastableSignature(),
-                HandlerDelegateType:
-                GetHandlerDelegateType(handlerArgument, compilation, context.CancellationToken),
+                HandlerDelegateType: handlerDelegateType,
                 ParameterAssignments: assignments.ToEquatableArray(),
                 InputType:
                 inputOrdinal < 0
@@ -216,8 +255,10 @@ internal static class DurableMethodInfoExtensions
     private static string? GetHandlerDelegateType(
         IArgumentOperation handlerArgument,
         Compilation compilation,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        out INamedTypeSymbol? inaccessibleDelegateType)
     {
+        inaccessibleDelegateType = null;
         var operation = UnwrapHandlerOperation(handlerArgument.Value);
 
         if (operation is IFieldReferenceOperation field
@@ -233,11 +274,17 @@ internal static class DurableMethodInfoExtensions
                 or IDelegateCreationOperation { IsImplicit: false }
                 or IFieldReferenceOperation;
 
-        return hasExplicitDelegateType
-            && operation.Type is INamedTypeSymbol { TypeKind: TypeKind.Delegate, } delegateType
-            && IsAccessibleDelegateType(delegateType, compilation)
-                ? delegateType.QualifiedNullableName
-                : null;
+        if (!hasExplicitDelegateType
+            || operation.Type is not INamedTypeSymbol { TypeKind: TypeKind.Delegate, } delegateType)
+            return null;
+
+        if (!IsAccessibleDelegateType(delegateType, compilation))
+        {
+            inaccessibleDelegateType = delegateType;
+            return null;
+        }
+
+        return delegateType.QualifiedNullableName;
     }
 
     private static IOperation UnwrapHandlerOperation(IOperation operation)
@@ -287,15 +334,49 @@ internal static class DurableMethodInfoExtensions
         return true;
     }
 
-    private static bool ContainsTypeParameter(INamedTypeSymbol type)
-    {
-        if (type.ContainingType is { } containingType && ContainsTypeParameter(containingType))
-            return true;
+    private static bool IsAccessibleFromGeneratedAdapter(ITypeSymbol type) =>
+        !ContainsTypeParameter(type) && IsAccessibleFromGeneratedAdapterCore(type);
 
-        return type.TypeArguments.Any(argument =>
-            argument is ITypeParameterSymbol
-            || argument is INamedTypeSymbol namedArgument && ContainsTypeParameter(namedArgument));
+    private static bool IsAccessibleFromGeneratedAdapterCore(ITypeSymbol type) =>
+        type switch
+        {
+            IArrayTypeSymbol array => IsAccessibleFromGeneratedAdapterCore(array.ElementType),
+            IPointerTypeSymbol => false,
+            IFunctionPointerTypeSymbol => false,
+            INamedTypeSymbol named => IsNamedTypeAccessibleFromGeneratedAdapter(named),
+            ITypeParameterSymbol => false,
+            _ => !type.IsRefLikeType,
+        };
+
+    private static bool IsNamedTypeAccessibleFromGeneratedAdapter(INamedTypeSymbol type)
+    {
+        if (type.IsRefLikeType)
+            return false;
+
+        for (INamedTypeSymbol? current = type;
+            current is not null;
+            current = current.ContainingType)
+            if (current.IsFileLocal
+                || current.DeclaredAccessibility is not (Accessibility.Public
+                    or Accessibility.Internal
+                    or Accessibility.ProtectedOrInternal))
+                return false;
+
+        return type.TypeArguments.All(IsAccessibleFromGeneratedAdapter);
     }
+
+    private static bool ContainsTypeParameter(ITypeSymbol type) =>
+        type switch
+        {
+            ITypeParameterSymbol => true,
+            IArrayTypeSymbol array => ContainsTypeParameter(array.ElementType),
+            IPointerTypeSymbol pointer => ContainsTypeParameter(pointer.PointedAtType),
+            IFunctionPointerTypeSymbol => true,
+            INamedTypeSymbol named => (named.ContainingType is not null
+                    && ContainsTypeParameter(named.ContainingType))
+                || named.TypeArguments.Any(ContainsTypeParameter),
+            _ => false,
+        };
 
     private static DiagnosticInfo CreateDiagnostic(
         DiagnosticDescriptor descriptor,

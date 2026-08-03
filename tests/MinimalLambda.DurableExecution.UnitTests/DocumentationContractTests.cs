@@ -67,7 +67,10 @@ public class DocumentationContractTests
             .And
             .Contain("MinimalLambda owns physical invocation hosting")
             .And
-            .Contain("Use cancellation tokens supplied to durable operation callbacks");
+            .Contain("root handler cancellation tokens supplied by the physical invocation")
+            .And
+            .Contain(
+                "Durable operation callbacks receive distinct SDK cancellation tokens for step work");
         Text(documentation, "param")
             .Should()
             .Contain(

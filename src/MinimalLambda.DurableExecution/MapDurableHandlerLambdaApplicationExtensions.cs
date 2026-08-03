@@ -29,8 +29,8 @@ public static class MapDurableHandlerLambdaApplicationExtensions
         ///         Lambda invocation. Middleware runs again when AWS replays a workflow. AWS owns durable
         ///         context creation, checkpoints, replay, suspension, and durable status mapping;
         ///         MinimalLambda owns physical invocation hosting, dependency injection, middleware, outer
-        ///         envelope serialization, and Use cancellation tokens
-        ///         supplied to durable operation callbacks rather than a root handler token.
+        ///         envelope serialization, and root handler cancellation tokens supplied by the physical
+        ///         invocation. Durable operation callbacks receive distinct SDK cancellation tokens for step work.
         ///     </para>
         ///     <para>
         ///         A compile-time interceptor must replace this call; invoking this fallback directly at

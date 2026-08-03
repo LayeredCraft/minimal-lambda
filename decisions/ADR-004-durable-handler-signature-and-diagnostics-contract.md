@@ -15,21 +15,29 @@ Func<TInput, IDurableContext, Task>
 Func<TInput, IDurableContext, Task<TOutput>>
 ```
 
-The generated terminal handler owns the outer `DurableExecutionInvocationInput` and
-`DurableExecutionInvocationOutput` transport. It resolves `ILambdaSerializer` from the invocation
-service provider rather than adding serializer state to `ILambdaInvocationContext`.
+The generated terminal handler owns outer `DurableExecutionInvocationInput` and
+`DurableExecutionInvocationOutput` transport. It resolves `ILambdaSerializer` from invocation
+services for outer transport. `ILambdaInvocationContext` forwards runtime `ILambdaContext.Serializer` or falls back to invocation
+services, which AWS `DurableFunction.WrapAsync` requires for inner durable payload transport.
 
 ## Decision
 
 - `[FromEvent]` input and `IDurableContext` parameters are optional. If no event parameter is
   present, the generated adapter uses an ignored `object` payload; if no durable context is present,
   it is unused.
-- Other parameters follow normal MinimalLambda binding rules. The adapter does not impose a
-  durable-specific payload-shape or serializer-root policy.
-- The generator does not inspect source-generated serializer contexts. Applications remain
-  responsible for registering the metadata needed by their configured serializer.
-- The only durable-specific signature diagnostic is `LH0007`, emitted when a handler does not return
-  `Task` or `Task<TOutput>`. That is required by the AWS `DurableFunction.WrapAsync` overloads.
+- Other value parameters follow normal MinimalLambda binding rules. `ref`, `in`, and `out` parameters
+  are rejected because generated durable adapters cannot safely preserve their calling semantics.
+- Handler parameter, input, output, and service types must be accessible from namespace-level generated
+  code, cannot contain unbound type parameters, and cannot be pointer or ref-like types. Invalid signature
+  components suppress adapter emission.
+- A requested root `CancellationToken` binds to `ILambdaInvocationContext.CancellationToken`: it is a
+  physical Lambda-invocation token, not an AWS durable-operation token. SDK operation callbacks retain
+  their own cancellation tokens; their behavior is out of scope here.
+- The generator does not inspect source-generated serializer contexts. Applications remain responsible
+  for registering metadata needed by configured serializer.
+- `LH0007` is emitted for unsupported durable signature components: return type must be `Task` or
+  `Task<TOutput>`; parameters must be values; emitted types must be accessible, closed, and valid generic
+  type arguments.
 
 ## Consequences
 

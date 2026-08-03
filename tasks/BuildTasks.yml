@@ -64,3 +64,9 @@ tasks:
     silent: true
     cmds:
       - dotnet publish src/AotCompatibility.TestApp/AotCompatibility.TestApp.csproj /p:TreatWarningsAsErrors=true
+
+  package-compat:
+    desc: Validates packed durable package consumers on net10.0
+    silent: true
+    cmds:
+      - bash scripts/test-package-compatibility.sh

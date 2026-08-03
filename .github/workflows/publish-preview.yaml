@@ -1,4 +1,4 @@
-name: Publish Core Preview
+name: Publish Preview
 
 on:
   push:
@@ -17,8 +17,7 @@ permissions:
   contents: read
 
 jobs:
-  resolve:
-    runs-on: ubuntu-latest
+  build:
     permissions:
       contents: write
       pull-requests: write
@@ -31,7 +30,7 @@ jobs:
       buildConfiguration: Release
 
   push:
-    needs: [resolve, build]
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -39,16 +38,4 @@ jobs:
     steps:
       - uses: LayeredCraft/devops-templates/.github/actions/nuget-push@v10.3
         with:
-          user: ${{ secrets.NUGET_USER }}
-      - name: Publish core preview packages and symbols without duplicate suppression
-        env:
-          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          # dotnet nuget push discovers and publishes adjacent .snupkg automatically.
-          for package in artifacts/*.nupkg; do
-            dotnet nuget push "$package" \
-              --api-key "$NUGET_API_KEY" \
-              --source https://api.nuget.org/v3/index.json
-          done
+          nuget_user: ${{ secrets.NUGET_USER }}

@@ -20,7 +20,7 @@ jobs:
   quality:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
 
     steps:
       - uses: actions/checkout@v6
@@ -47,6 +47,9 @@ jobs:
       - name: Validate AOT compatibility
         run: task build:aot-check
 
+      - name: Validate package compatibility
+        run: task build:package-compat
+
       - name: Run coverage
         timeout-minutes: 10
         run: |
@@ -56,6 +59,8 @@ jobs:
           dotnet test tests/MinimalLambda.SourceGenerators.UnitTests/MinimalLambda.SourceGenerators.UnitTests.csproj --framework net9.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
           dotnet test tests/MinimalLambda.SourceGenerators.UnitTests/MinimalLambda.SourceGenerators.UnitTests.csproj --framework net10.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
           dotnet test tests/MinimalLambda.SourceGenerators.UnitTests/MinimalLambda.SourceGenerators.UnitTests.csproj --framework net11.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
+          dotnet test tests/MinimalLambda.DurableExecution.UnitTests/MinimalLambda.DurableExecution.UnitTests.csproj --framework net10.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
+          dotnet test tests/MinimalLambda.Testing.UnitTests/Tests/MinimalLambda.Testing.UnitTests/MinimalLambda.Testing.UnitTests.csproj --framework net10.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
           dotnet test tests/MinimalLambda.OpenTelemetry.UnitTests/MinimalLambda.OpenTelemetry.UnitTests.csproj --framework net9.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
 
       - name: Upload coverage reports to Codecov

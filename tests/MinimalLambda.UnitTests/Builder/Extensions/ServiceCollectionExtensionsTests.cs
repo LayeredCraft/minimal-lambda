@@ -31,8 +31,7 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void
-        AddLambdaHostCoreServices_WithoutLambdaSerializer_ThrowsWhenResolvingContextFactory()
+    public void AddLambdaHostCoreServices_DoesNotRequireLambdaSerializerUntilInvocation()
     {
         // Arrange
         using var serviceProvider = new ServiceCollection()
@@ -43,10 +42,7 @@ public class ServiceCollectionExtensionsTests
         var act = () => serviceProvider.GetRequiredService<ILambdaInvocationContextFactory>();
 
         // Assert
-        act
-            .Should()
-            .ThrowExactly<InvalidOperationException>()
-            .WithMessage("*Amazon.Lambda.Core.ILambdaSerializer*");
+        act.Should().NotThrow();
     }
 
     [Theory]
