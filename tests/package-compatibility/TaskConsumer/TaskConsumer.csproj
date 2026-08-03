@@ -9,7 +9,9 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="MinimalLambda" Version="$(CorePackageVersion)" />
-    <PackageReference Include="MinimalLambda.DurableExecution" Version="$(DurablePackageVersion)" />
+    <PackageReference Include="MinimalLambda" Version="$(CorePackageVersion)"
+                      Condition="'$(CorePackageVersion)' != ''" />
+    <PackageReference Include="MinimalLambda.DurableExecution" Version="$(DurablePackageVersion)"
+                      Condition="'$(DurablePackageVersion)' != ''" />
   </ItemGroup>
 </Project>
