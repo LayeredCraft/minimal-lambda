@@ -80,8 +80,8 @@ public class MiddlewareOpenTelemetryExtensionsTest
         builder.Services.Returns(serviceProvider);
         builder
             .Use(
-                Arg.Do<Func<LambdaInvocationDelegate, LambdaInvocationDelegate>>(m
-                    => capturedMiddleware = m))
+                Arg.Do<Func<LambdaInvocationDelegate, LambdaInvocationDelegate>>(m =>
+                    capturedMiddleware = m))
             .Returns(builder);
 
         context.Features.Returns(features);
