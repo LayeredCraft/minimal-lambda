@@ -223,15 +223,16 @@ internal static class DurableMethodInfoExtensions
 
             var handlerDelegateType = GetHandlerDelegateType(
                 handlerArgument,
+                methodSymbol,
                 compilation,
                 context.CancellationToken,
-                out var inaccessibleDelegateType);
-            if (inaccessibleDelegateType is not null)
+                out var unsupportedDelegateType);
+            if (unsupportedDelegateType is not null)
                 diagnostics.Add(
                     CreateDiagnostic(
                         Diagnostics.UnsupportedDurableHandlerSignature,
                         handlerArgumentLocation,
-                        inaccessibleDelegateType.QualifiedNullableName));
+                        unsupportedDelegateType.QualifiedNullableName));
 
             return new DurableMethodInfo(
                 InterceptableLocationAttribute: interceptableLocation.Attribute,
@@ -254,11 +255,12 @@ internal static class DurableMethodInfoExtensions
 
     private static string? GetHandlerDelegateType(
         IArgumentOperation handlerArgument,
+        IMethodSymbol methodSymbol,
         Compilation compilation,
         CancellationToken cancellationToken,
-        out INamedTypeSymbol? inaccessibleDelegateType)
+        out ITypeSymbol? unsupportedDelegateType)
     {
-        inaccessibleDelegateType = null;
+        unsupportedDelegateType = null;
         var operation = UnwrapHandlerOperation(handlerArgument.Value);
 
         if (operation is IFieldReferenceOperation field
@@ -274,13 +276,24 @@ internal static class DurableMethodInfoExtensions
                 or IDelegateCreationOperation { IsImplicit: false }
                 or IFieldReferenceOperation;
 
-        if (!hasExplicitDelegateType
-            || operation.Type is not INamedTypeSymbol { TypeKind: TypeKind.Delegate, } delegateType)
+        if (!hasExplicitDelegateType)
             return null;
 
-        if (!IsAccessibleDelegateType(delegateType, compilation))
+        if (operation.Type is not INamedTypeSymbol { TypeKind: TypeKind.Delegate, } delegateType)
         {
-            inaccessibleDelegateType = delegateType;
+            if (operation is IConversionOperation
+                {
+                    IsImplicit: false, Type.SpecialType: SpecialType.System_Delegate,
+                })
+                unsupportedDelegateType = operation.Type;
+
+            return null;
+        }
+
+        if (!IsAccessibleDelegateType(delegateType, compilation)
+            || !HasMatchingInvokeSignature(delegateType, methodSymbol))
+        {
+            unsupportedDelegateType = delegateType;
             return null;
         }
 
@@ -334,6 +347,29 @@ internal static class DurableMethodInfoExtensions
         return true;
     }
 
+    private static bool HasMatchingInvokeSignature(
+        INamedTypeSymbol delegateType,
+        IMethodSymbol methodSymbol)
+    {
+        var invoke = delegateType.DelegateInvokeMethod;
+        if (invoke is null
+            || invoke.RefKind != methodSymbol.RefKind
+            || !SymbolEqualityComparer.Default.Equals(invoke.ReturnType, methodSymbol.ReturnType)
+            || invoke.Parameters.Length != methodSymbol.Parameters.Length)
+            return false;
+
+        return invoke
+            .Parameters
+            .Zip(
+                methodSymbol.Parameters,
+                static (delegateParameter, methodParameter) =>
+                    delegateParameter.RefKind == methodParameter.RefKind
+                    && SymbolEqualityComparer.Default.Equals(
+                        delegateParameter.Type,
+                        methodParameter.Type))
+            .All(static matches => matches);
+    }
+
     private static bool IsAccessibleFromGeneratedAdapter(ITypeSymbol type) =>
         !ContainsTypeParameter(type) && IsAccessibleFromGeneratedAdapterCore(type);
 
@@ -350,7 +386,7 @@ internal static class DurableMethodInfoExtensions
 
     private static bool IsNamedTypeAccessibleFromGeneratedAdapter(INamedTypeSymbol type)
     {
-        if (type.IsRefLikeType)
+        if (type.IsAnonymousType || type.IsRefLikeType)
             return false;
 
         for (INamedTypeSymbol? current = type;

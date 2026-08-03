@@ -131,6 +131,7 @@ One registered `ILambdaSerializer` handles MinimalLambda outer envelopes and AWS
 - [ ] Add `DurableExecutionInvocationInput` root.
 - [ ] Add `DurableExecutionInvocationOutput` root.
 - [ ] Add the event type if the handler declares one.
+- [ ] For event-less handlers, add `[JsonSerializable(typeof(object))]`; generated adapters use it for ignored workflow input.
 - [ ] For `Task<TOutput>`, add `TOutput` when required by the configured serializer.
 - [ ] Add every operation payload, result, and state root used by steps, callbacks, invokes, child workflows, waits, maps, or parallel branches.
 - [ ] Publish intended runtime and architecture with NativeAOT enabled; restore/build alone does not compile native code.

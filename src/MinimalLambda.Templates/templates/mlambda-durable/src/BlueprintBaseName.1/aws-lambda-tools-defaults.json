@@ -11,6 +11,7 @@
   "function-memory-size": 512,
   "function-timeout": 30,
   "function-handler": "BlueprintBaseName.1",
+  "function-publish": true,
   "durable-execution-timeout": 86400,
   "durable-retention-period": 7
 }

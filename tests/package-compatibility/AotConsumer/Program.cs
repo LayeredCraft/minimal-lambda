@@ -14,18 +14,14 @@ await using var lambda = builder.Build();
 lambda.MapDurableHandler(HandleAsync);
 await lambda.RunAsync();
 
-static Task<WorkflowOutput> HandleAsync(
-    [FromEvent] WorkflowInput input,
+static Task HandleAsync(
     IDurableContext durable,
     [FromServices] GreetingService greetingService)
 {
     _ = durable.GetInvocationContext();
-    return Task.FromResult(new WorkflowOutput(greetingService.Create(input.Name)));
+    _ = greetingService.Create("durable");
+    return Task.CompletedTask;
 }
-
-internal sealed record WorkflowInput(string Name);
-
-internal sealed record WorkflowOutput(string Message);
 
 internal sealed class GreetingService
 {
@@ -34,6 +30,5 @@ internal sealed class GreetingService
 
 [JsonSerializable(typeof(DurableExecutionInvocationInput))]
 [JsonSerializable(typeof(DurableExecutionInvocationOutput))]
-[JsonSerializable(typeof(WorkflowInput))]
-[JsonSerializable(typeof(WorkflowOutput))]
+[JsonSerializable(typeof(object))]
 internal partial class AotJsonContext : JsonSerializerContext;

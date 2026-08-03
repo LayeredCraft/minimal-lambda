@@ -6,7 +6,15 @@ Typed durable handler with dependency injection, execution metadata, checkpointe
 dotnet build examples/MinimalLambda.Example.DurableExecution/MinimalLambda.Example.DurableExecution.csproj
 ```
 
-`dotnet run` expects Lambda Runtime API and is not a standalone local workflow runner. Deployment assets are included for static validation. `dotnet lambda deploy-function` creates an execution role when one does not exist and attaches AWS managed policy `AWSLambdaBasicDurableExecutionRolePolicy`. If you pass a custom role with `--function-role`, attach that policy before deployment and add application-specific permissions as needed. Consult current [AWS Durable Execution documentation](https://docs.aws.amazon.com/lambda/latest/dg/durable-getting-started.html) for deployment and IAM requirements. No AWS deployment was run for this example.
+`dotnet run` expects Lambda Runtime API and is not a standalone local workflow runner. Deployment assets are included for static validation. `dotnet lambda deploy-function` creates an execution role when one does not exist and attaches AWS managed policy `AWSLambdaBasicDurableExecutionRolePolicy`. If you pass a custom role with `--function-role`, attach that policy before deployment and add application-specific permissions as needed. Durable invocations require a qualified function identifier: a published version, alias, or `$LATEST`; prefer a published version or alias for stable routing. Start and poll an execution with Amazon.Lambda.Tools 7.0.0 or later:
+
+```bash
+dotnet lambda invoke-function <function-name>:<version-or-alias> \
+  --invoke-mode DurableExecution \
+  --payload '{"OrderId":"order-123"}'
+```
+
+Consult current [AWS Durable Execution documentation](https://docs.aws.amazon.com/lambda/latest/dg/durable-getting-started.html) for deployment and IAM requirements. No AWS deployment was run for this example.
 
 ## Advanced low-level escape hatch
 
