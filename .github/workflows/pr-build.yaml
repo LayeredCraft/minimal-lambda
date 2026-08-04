@@ -21,11 +21,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    uses: LayeredCraft/devops-templates/.github/workflows/pr-build.yaml@fa7aa89e829a2b7bb947f5c38ba456189831534a # v10.3
+  pr-build:
+    uses: LayeredCraft/devops-templates/.github/workflows/pr-build.yaml@v10.1
     with:
       solution: MinimalLambda.sln
-      dotnetVersion: 11.0.100-preview.6.26359.118
+      dotnetVersion: 11.0.x
       buildConfiguration: Release
       hasTests: false
       useMtpRunner: true

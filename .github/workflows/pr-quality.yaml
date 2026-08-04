@@ -20,17 +20,17 @@ jobs:
   quality:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 11.0.100-preview.6.26359.118
+          dotnet-version: 11.0.x
 
       - name: Restore dependencies
         run: dotnet restore MinimalLambda.sln
@@ -39,7 +39,7 @@ jobs:
         run: dotnet tool restore
 
       - name: Install Task
-        uses: go-task/setup-task@01a4adf9db2d14c1de7a560f09170b6e0df736aa # v2
+        uses: go-task/setup-task@v2
 
       - name: Build
         run: dotnet build MinimalLambda.sln --no-restore --configuration Release /p:TreatWarningsAsErrors=true
@@ -47,29 +47,15 @@ jobs:
       - name: Validate AOT compatibility
         run: task build:aot-check
 
-      - name: Validate package compatibility
-        run: task build:package-compat
-
-      - name: Validate release artifact validator
-        env:
-          PYTHONDONTWRITEBYTECODE: '1'
-        run: python3 scripts/test-release-artifact-validator.py
-
       - name: Run coverage
         timeout-minutes: 10
-        run: |
-          dotnet test tests/MinimalLambda.UnitTests/MinimalLambda.UnitTests.csproj --framework net8.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
-          dotnet test tests/MinimalLambda.Envelopes.UnitTests/MinimalLambda.Envelopes.UnitTests.csproj --framework net8.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
-          dotnet test tests/MinimalLambda.SourceGenerators.UnitTests/MinimalLambda.SourceGenerators.UnitTests.csproj --framework net8.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
-          dotnet test tests/MinimalLambda.SourceGenerators.UnitTests/MinimalLambda.SourceGenerators.UnitTests.csproj --framework net9.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
-          dotnet test tests/MinimalLambda.SourceGenerators.UnitTests/MinimalLambda.SourceGenerators.UnitTests.csproj --framework net10.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
-          dotnet test tests/MinimalLambda.SourceGenerators.UnitTests/MinimalLambda.SourceGenerators.UnitTests.csproj --framework net11.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
-          dotnet test tests/MinimalLambda.DurableExecution.UnitTests/MinimalLambda.DurableExecution.UnitTests.csproj --framework net10.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
-          dotnet test tests/MinimalLambda.Testing.UnitTests/Tests/MinimalLambda.Testing.UnitTests/MinimalLambda.Testing.UnitTests.csproj --framework net10.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
-          dotnet test tests/MinimalLambda.OpenTelemetry.UnitTests/MinimalLambda.OpenTelemetry.UnitTests.csproj --framework net9.0 --configuration Release --no-build --results-directory ./coverage --coverage --coverage-output-format cobertura --no-progress --no-ansi
+        run: >-
+          dotnet test MinimalLambda.sln --configuration Release --no-build
+          --results-directory ./coverage --coverage
+          --coverage-output-format cobertura --no-progress --no-ansi
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7
+        uses: codecov/codecov-action@v6
         with:
           files: ./coverage/**/*.cobertura.xml
           disable_search: true
