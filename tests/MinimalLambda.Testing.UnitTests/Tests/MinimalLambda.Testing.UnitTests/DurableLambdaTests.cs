@@ -1,3 +1,4 @@
+#if NET10_0_OR_GREATER
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -100,3 +101,4 @@ public class DurableLambdaTests
         probe.Events.Should().Equal("before", "after");
     }
 }
+#endif

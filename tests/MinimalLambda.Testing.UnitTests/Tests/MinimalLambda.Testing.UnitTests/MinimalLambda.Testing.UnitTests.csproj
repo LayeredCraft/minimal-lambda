@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net8.0;net9.0;net10.0;net11.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -40,7 +40,8 @@
     <ProjectReference
       Include="..\..\Lambdas\MinimalLambda.Testing.UnitTests.DiLambda\MinimalLambda.Testing.UnitTests.DiLambda.csproj" />
     <ProjectReference
-      Include="..\..\Lambdas\MinimalLambda.Testing.UnitTests.DurableLambda\MinimalLambda.Testing.UnitTests.DurableLambda.csproj" />
+      Include="..\..\Lambdas\MinimalLambda.Testing.UnitTests.DurableLambda\MinimalLambda.Testing.UnitTests.DurableLambda.csproj"
+      Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp' And $([MSBuild]::VersionGreaterThanOrEquals('$(TargetFrameworkVersion)', 'v10.0'))" />
     <ProjectReference
       Include="..\..\Lambdas\MinimalLambda.Testing.UnitTests.NoEventLambda\MinimalLambda.Testing.UnitTests.NoEventLambda.csproj" />
     <ProjectReference
