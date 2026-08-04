@@ -55,7 +55,7 @@ Examples:
 - Do not publish NuGet packages manually.
 - Do not create GitHub releases directly.
 
-Packages version synchronously:
+Core packages version synchronously:
 
 - `MinimalLambda`
 - `MinimalLambda.Abstractions`
@@ -71,4 +71,5 @@ Packages version synchronously:
 - `MinimalLambda.OpenTelemetry`
 - `MinimalLambda.Templates`
 - `MinimalLambda.Testing`
-- `MinimalLambda.DurableExecution`
+
+`MinimalLambda.DurableExecution` publishes independently from `durable-v<semver>` releases. Its package declares minimum compatible core version.

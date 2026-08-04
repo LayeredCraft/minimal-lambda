@@ -9,14 +9,16 @@ Typed AWS Lambda Durable Execution handlers for MinimalLambda.
 Package ships assets for exactly `net10.0`. NuGet may select a compatible asset for other TFMs, but
 those combinations are not supported.
 
-`MinimalLambda.DurableExecution` releases on same synchronous version cadence as `MinimalLambda`.
-Current minimum compatible core version is `MinimalLambda` `2.6.0-beta.2`.
+`MinimalLambda.DurableExecution` releases independently from `MinimalLambda`. Install latest durable
+prerelease or stable package compatible with selected core version. Its package dependency enforces
+`MinimalLambda` `2.6.0-beta.2` as current minimum compatible core version; do not require matching
+core and durable package versions.
 
 Reference all three packages directly:
 
 ```bash
 dotnet add package MinimalLambda --version 2.6.0-beta.2
-dotnet add package MinimalLambda.DurableExecution --version 2.6.0-beta.2
+dotnet add package MinimalLambda.DurableExecution --prerelease
 dotnet add package Amazon.Lambda.DurableExecution --version 1.0.0
 ```
 
@@ -102,7 +104,7 @@ provide exactly-once execution.
 ## Handler, cancellation, and context contract
 
 Durable handlers return `Task` or `Task<TOutput>`. `[FromEvent] TInput` and AWS `IDurableContext`
-are optional; a handler may use either, both, or neither. Parameter order is unrestricted. Other
+are optional; a handler may use either, both, or neither. Each can occur at most once. Parameter order is unrestricted. Other
 parameters are resolved using normal handler binding rules. `ref`, `in`, and `out` parameters are
 unsupported; handler parameter and output types must be accessible from generated code and closed over
 all type parameters. The generator does not validate serializer roots or impose a durable-specific
@@ -141,6 +143,13 @@ fit; response caches, response fabrication, and exception-to-response translatio
 
 `MapDurableHandler` requires MinimalLambda compile-time interception. If source generation does not
 replace mapping call, runtime fallback throws `InvalidOperationException` instead of running handler.
+
+## Deployment
+
+`MapDurableHandler` supplies host integration only; deployment must configure Lambda Durable Execution,
+its IAM policy, and a qualified function target. Follow [sample package recipe](https://github.com/LayeredCraft/minimal-lambda/tree/main/examples/MinimalLambda.Example.DurableExecution#package-for-deployment) to produce a Lambda ZIP and deploy that ZIP with Amazon.Lambda.Tools durable defaults. For a custom role, grant equivalent durable execution permissions plus application-specific permissions. Versions, aliases, and `$LATEST` are supported qualified targets; prefer immutable versions or aliases for stable routing.
+
+No managed-service deployment was run for this package. Consult current [AWS Durable Execution deployment documentation](https://docs.aws.amazon.com/lambda/latest/dg/durable-getting-started.html) before production use.
 
 ## Testing
 

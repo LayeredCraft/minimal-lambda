@@ -6,7 +6,27 @@ Typed durable handler with dependency injection, execution metadata, checkpointe
 dotnet build examples/MinimalLambda.Example.DurableExecution/MinimalLambda.Example.DurableExecution.csproj
 ```
 
-`dotnet run` expects Lambda Runtime API and is not a standalone local workflow runner. Deployment assets are included for static validation. `dotnet lambda deploy-function` creates an execution role when one does not exist and attaches AWS managed policy `AWSLambdaBasicDurableExecutionRolePolicy`. If you pass a custom role with `--function-role`, attach that policy before deployment and add application-specific permissions as needed. Durable invocations require a qualified function identifier: a published version, alias, or `$LATEST`; prefer a published version or alias for stable routing. Start and poll an execution with Amazon.Lambda.Tools 7.0.0 or later:
+`dotnet run` expects Lambda Runtime API and is not a standalone local workflow runner.
+
+## Package for deployment
+
+Install Amazon.Lambda.Tools. From this directory, produce deployment ZIP:
+
+```bash
+dotnet lambda package \
+  --configuration Release \
+  --output-package artifacts/MinimalLambda.Example.DurableExecution.zip
+```
+
+This sample uses Amazon.Lambda.Tools deployment defaults rather than SAM. Deploy with Amazon.Lambda.Tools 7.0.0 or later; `aws-lambda-tools-defaults.json` supplies managed `dotnet10`, `durable-execution-timeout`, retention, and `function-publish` settings. Supply a function name and execution role with `AWSLambdaBasicDurableExecutionRolePolicy` plus application-specific permissions:
+
+```bash
+dotnet lambda deploy-function <function-name> \
+  --package artifacts/MinimalLambda.Example.DurableExecution.zip \
+  --function-role arn:aws:iam::<account-id>:role/<durable-execution-role>
+```
+
+AWS configures `DurableConfig` from durable deployment settings. Follow AWS [Durable Execution deployment guide](https://docs.aws.amazon.com/lambda/latest/dg/durable-getting-started.html) for current IAM and deployment requirements. Durable invocations support a published version, alias, or `$LATEST`; prefer immutable version or alias for stable routing. Start and poll an execution with Amazon.Lambda.Tools 7.0.0 or later:
 
 ```bash
 dotnet lambda invoke-function <function-name>:<version-or-alias> \

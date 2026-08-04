@@ -84,6 +84,7 @@ internal static class DurableMethodInfoExtensions
             var parameters = methodSymbol.Parameters;
             var durable = new bool[parameters.Length];
             var candidates = new List<int>();
+            var durableContextOrdinals = new List<int>();
 
             for (var i = 0; i < parameters.Length; i++)
             {
@@ -96,6 +97,8 @@ internal static class DurableMethodInfoExtensions
                 durable[i] = context.WellKnownTypes.IsType(
                     parameter.Type,
                     WellKnownType.Amazon_Lambda_DurableExecution_IDurableContext);
+                if (durable[i])
+                    durableContextOrdinals.Add(i);
                 if (!reserved && parameter.IsFromEvent(context))
                     candidates.Add(i);
             }
@@ -181,6 +184,13 @@ internal static class DurableMethodInfoExtensions
 
             diagnostics.AddRange(
                 ReportMultipleEvents(candidates, parameters, handlerArgumentLocation, context));
+            diagnostics.AddRange(
+                durableContextOrdinals
+                    .Skip(1)
+                    .Select(ordinal => CreateDiagnostic(
+                        Diagnostics.UnsupportedDurableHandlerSignature,
+                        GetParameterLocation(parameters[ordinal], handlerArgumentLocation),
+                        "IDurableContext (only one parameter is supported)")));
 
             var hasOutput = false;
             ITypeSymbol? outputType = null;

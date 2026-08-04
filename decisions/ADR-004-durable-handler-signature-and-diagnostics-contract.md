@@ -16,9 +16,7 @@ Func<TInput, IDurableContext, Task<TOutput>>
 ```
 
 The generated terminal handler owns outer `DurableExecutionInvocationInput` and
-`DurableExecutionInvocationOutput` transport. It resolves `ILambdaSerializer` from invocation
-services for outer transport. `ILambdaInvocationContext` forwards runtime `ILambdaContext.Serializer` or falls back to invocation
-services, which AWS `DurableFunction.WrapAsync` requires for inner durable payload transport.
+`DurableExecutionInvocationOutput` transport. It uses `ILambdaInvocationContext.Serializer` for both outer transport and AWS `DurableFunction.WrapAsync` inner durable payload transport. `ILambdaInvocationContext` forwards runtime `ILambdaContext.Serializer` or falls back to the invocation services serializer.
 
 ## Decision
 

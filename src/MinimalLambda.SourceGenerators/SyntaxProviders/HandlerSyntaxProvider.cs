@@ -173,11 +173,12 @@ internal static class HandlerSyntaxProvider
         && (method.Name switch
         {
             "MapDurableHandler" => method is
-            {
-                ContainingType.ContainingType.Name:
-                "MapDurableHandlerLambdaApplicationExtensions",
-                ContainingAssembly.Name: "MinimalLambda.DurableExecution",
-            },
+                {
+                    ContainingAssembly.Name: "MinimalLambda.DurableExecution",
+                }
+                && (method.ContainingType.Name == "MapDurableHandlerLambdaApplicationExtensions"
+                    || method.ContainingType.ContainingType?.Name
+                    == "MapDurableHandlerLambdaApplicationExtensions"),
             "MapHandler" or "OnInit" or "OnShutdown" => method.ContainingAssembly.Name
                 == "MinimalLambda",
             _ => false,

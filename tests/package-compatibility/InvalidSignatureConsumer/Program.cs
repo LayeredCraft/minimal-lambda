@@ -12,9 +12,9 @@ await using var lambda = builder.Build();
 lambda.MapDurableHandler(HandleAsync);
 await lambda.RunAsync();
 
-static Task HandleAsync(IDurableContext durable)
+static Task HandleAsync(ref int value)
 {
-    _ = durable;
+    _ = value;
     return Task.CompletedTask;
 }
 

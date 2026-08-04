@@ -12,13 +12,19 @@ Target `net10.0`. Reference all three packages directly:
 
 ```bash
 dotnet add package MinimalLambda --version 2.6.0-beta.2
-dotnet add package MinimalLambda.DurableExecution --version 2.6.0-beta.2
+dotnet add package MinimalLambda.DurableExecution --prerelease
 dotnet add package Amazon.Lambda.DurableExecution --version 1.0.0
 ```
 
-`MinimalLambda.DurableExecution` and `MinimalLambda` release on same synchronous version cadence. `2.6.0-beta.2` is current minimum compatible core version. Direct `MinimalLambda` reference supplies source generator for `MapHandler` and `MapDurableHandler`. Direct AWS package reference supplies DE001-DE004 analyzers, which do not flow through transitive dependencies.
+`MinimalLambda.DurableExecution` releases independently from `MinimalLambda`. Install latest durable prerelease or stable package compatible with selected core version. Its package dependency enforces `2.6.0-beta.2` as current minimum compatible core version; do not require matching core and durable package versions. Direct `MinimalLambda` reference supplies source generator for `MapHandler` and `MapDurableHandler`. Direct AWS package reference supplies DE001-DE004 analyzers, which do not flow through transitive dependencies.
 
 NuGet fallback may select an asset for another target framework, but only `net10.0` is supported.
+
+## Deploy durable function
+
+`MapDurableHandler` does not configure AWS infrastructure. Deployment must configure Lambda `DurableConfig`, durable IAM permissions, and a qualified target. Use sample [package recipe](https://github.com/LayeredCraft/minimal-lambda/tree/main/examples/MinimalLambda.Example.DurableExecution#package-for-deployment); it produces Lambda ZIP and deploys with Amazon.Lambda.Tools durable defaults. Custom roles require equivalent durable permissions plus application-specific permissions. Versions, aliases, and `$LATEST` are supported qualified targets; prefer immutable versions or aliases for stable routing.
+
+No managed-service deployment was run. Consult current [AWS Durable Execution deployment documentation](https://docs.aws.amazon.com/lambda/latest/dg/durable-getting-started.html) before production use.
 
 ## Build typed workflow
 
@@ -97,7 +103,7 @@ Durable handlers support two return forms:
 | `Task`          | Workflow with no typed result |
 | `Task<TOutput>` | Workflow with typed result    |
 
-`[FromEvent] TInput` and AWS `IDurableContext` are optional; a handler may use either, both, or neither. Parameter order is unrestricted. Other parameters use normal handler binding rules, but `ref`, `in`, and `out` parameters are unsupported. Types referenced by handler parameters or output must be accessible from generated code and cannot contain unbound type parameters. See [Dependency Injection](../guides/dependency-injection.md) for service lifetimes.
+`[FromEvent] TInput` and AWS `IDurableContext` are optional; a handler may use either, both, or neither. Each can occur at most once. Parameter order is unrestricted. Other parameters use normal handler binding rules, but `ref`, `in`, and `out` parameters are unsupported. Types referenced by handler parameters or output must be accessible from generated code and cannot contain unbound type parameters. See [Dependency Injection](../guides/dependency-injection.md) for service lifetimes.
 
 Do not expose `DurableExecutionInvocationInput`, `DurableExecutionInvocationOutput`, streams, or AWS client in high-level handler. MinimalLambda directly deserializes and serializes hidden outer envelopes through its configured Lambda serializer; durable envelopes are not available through `IEventFeature` or `IResponseFeature`. It also owns raw-stream hosting, middleware, DI scope, and physical invocation context. AWS runtime owns workflow payloads, `IDurableContext`, checkpoints, replay, suspension, waits, and durable status/result mapping.
 

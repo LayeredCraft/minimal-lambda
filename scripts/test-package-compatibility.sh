@@ -325,9 +325,11 @@ TYPED="$CONSUMERS/TypedConsumer/TypedConsumer.csproj"
 TASK="$CONSUMERS/TaskConsumer/TaskConsumer.csproj"
 OLD="$CONSUMERS/OldCoreConsumer/OldCoreConsumer.csproj"
 AOT="$CONSUMERS/AotConsumer/AotConsumer.csproj"
+INVALID="$CONSUMERS/InvalidSignatureConsumer/InvalidSignatureConsumer.csproj"
 
 restore_consumer typed "$TYPED" "$CORE_VERSION"
 restore_consumer task "$TASK" "$CORE_VERSION"
+restore_consumer invalid-signature "$INVALID" "$CORE_VERSION"
 
 python3 - "$NUGET_PACKAGES" "$CORE_VERSION" "$DURABLE_VERSION" \
   "$CONSUMERS/TypedConsumer/obj/project.assets.json" \
@@ -354,6 +356,24 @@ PY
 rm -rf "$CONSUMERS/TypedConsumer/obj/generated" "$CONSUMERS/TaskConsumer/obj/generated"
 build_consumer typed "$TYPED"
 build_consumer task "$TASK"
+
+rm -f "$LOGS/build-invalid-signature-net10.0.log"
+set +e
+dotnet build "$INVALID" \
+  --configuration Release \
+  --framework net10.0 \
+  --no-restore \
+  --nologo \
+  "/p:CorePackageVersion=$CORE_VERSION" \
+  "/p:DurablePackageVersion=$DURABLE_VERSION" \
+  >"$LOGS/build-invalid-signature-net10.0.log" 2>&1
+invalid_status=$?
+set -e
+cat "$LOGS/build-invalid-signature-net10.0.log"
+[ "$invalid_status" -ne 0 ] || fail "invalid-signature consumer unexpectedly built"
+invalid_ids=$(grep -Eo 'LH[0-9]{4}' "$LOGS/build-invalid-signature-net10.0.log" | sort -u | tr '\n' ' ' | sed 's/ $//')
+[ "$invalid_ids" = "LH0007" ] || fail "invalid-signature consumer emitted unexpected generator diagnostics: ${invalid_ids:-none}"
+grep -Fq "LH0007" "$LOGS/build-invalid-signature-net10.0.log" || fail "invalid-signature consumer did not emit LH0007"
 
 rm -f "$LOGS/restore-old-core.log"
 set +e

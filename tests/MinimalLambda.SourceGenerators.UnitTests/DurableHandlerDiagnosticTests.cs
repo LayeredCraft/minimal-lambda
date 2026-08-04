@@ -1,4 +1,4 @@
-#if NET10_0_OR_GREATER
+#if MINIMALLAMBDA_DURABLE
 using AwesomeAssertions;
 using Microsoft.CodeAnalysis;
 using MinimalLambda.SourceGenerators.Models;
@@ -46,6 +46,29 @@ public class DurableHandlerDiagnosticTests
             .Select(parameter => parameter.Source)
             .Should()
             .Equal(ParameterSource.Event, ParameterSource.DurableContext);
+    }
+
+    [Fact]
+    public void ReportsMultipleDurableContextsAndSuppressesDurableAdapter()
+    {
+        var (driver, _) = GeneratorTestHelpers.GenerateFromSource(
+            """
+            using System.Threading.Tasks;
+            using Amazon.Lambda.DurableExecution;
+            using MinimalLambda.Builder;
+
+            var app = LambdaApplication.CreateBuilder().Build();
+            app.MapDurableHandler(Handle);
+            static Task Handle(IDurableContext first, IDurableContext second) => Task.CompletedTask;
+            """,
+            includeDurableReferences: true);
+
+        // Act
+        var result = driver.GetRunResult();
+
+        // Assert
+        result.Diagnostics.Should().ContainSingle(diagnostic => diagnostic.Id == "LH0007");
+        result.GeneratedTrees.Should().BeEmpty();
     }
 
     [Fact]

@@ -22,7 +22,9 @@
     <None Include="README.md" Pack="true" PackagePath="\" />
     <Content
       Include="templates\**\*"
-      Exclude="templates\**\bin\**;templates\**\obj\**;templates\Directory.Build.props;templates\Directory.Build.targets;templates\Directory.Packages.props" />
+      Exclude="templates\**\bin\**;templates\**\obj\**;templates\Directory.Build.props;templates\Directory.Build.targets;templates\Directory.Packages.props;templates\mlambda-durable\**"
+      PackagePath="content"
+      TargetPath="templates\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <UsingTask
@@ -66,10 +68,6 @@
         Include="templates/mlambda-aot/src/BlueprintBaseName.1/README.md" />
       <TemplatePackageReferenceFile
         Include="templates/mlambda-aot/test/BlueprintBaseName.1.Tests/BlueprintBaseName.1.Tests.csproj" />
-      <TemplatePackageReferenceFile
-        Include="templates/mlambda-durable/src/BlueprintBaseName.1/BlueprintBaseName.1.csproj" />
-      <TemplatePackageReferenceFile
-        Include="templates/mlambda-durable/src/BlueprintBaseName.1/README.md" />
     </ItemGroup>
     <StampTemplatePackageReferencesTask Files="@(TemplatePackageReferenceFile)"
                                         Version="$(Version)" />

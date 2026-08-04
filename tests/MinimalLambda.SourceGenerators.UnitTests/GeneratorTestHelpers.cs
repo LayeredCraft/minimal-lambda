@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Amazon.Lambda.Core;
-#if NET10_0_OR_GREATER
+#if MINIMALLAMBDA_DURABLE
 using Amazon.Lambda.DurableExecution;
 #endif
 using Amazon.Lambda.RuntimeSupport;
@@ -163,7 +163,7 @@ internal static class GeneratorTestHelpers
             MetadataReference.CreateFromFile(typeof(ILambdaInvocationContext).Assembly.Location),
         ];
 
-#if NET10_0_OR_GREATER
+#if MINIMALLAMBDA_DURABLE
         if (includeDurableReferences)
         {
             references.Add(

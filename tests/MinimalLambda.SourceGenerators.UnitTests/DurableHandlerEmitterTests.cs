@@ -1,4 +1,4 @@
-#if NET10_0_OR_GREATER
+#if MINIMALLAMBDA_DURABLE
 using AwesomeAssertions;
 using Microsoft.CodeAnalysis;
 
@@ -268,6 +268,11 @@ public class DurableHandlerEmitterTests
             "serializer.Serialize(output, invocationData.ResponseStream);",
             StringComparison.Ordinal);
 
+        source.Should().Contain("var serializer = context.Serializer;");
+        source
+            .Should()
+            .NotContain(
+                "context.ServiceProvider.GetRequiredService<Amazon.Lambda.Core.ILambdaSerializer>()");
         deserialize.Should().BeGreaterThanOrEqualTo(0);
         wrap.Should().BeGreaterThan(deserialize);
         serialize.Should().BeGreaterThan(wrap);

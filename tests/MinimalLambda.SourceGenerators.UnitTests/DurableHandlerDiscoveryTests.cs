@@ -1,4 +1,4 @@
-#if NET10_0_OR_GREATER
+#if MINIMALLAMBDA_DURABLE
 using AwesomeAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -47,6 +47,31 @@ public class DurableHandlerDiscoveryTests
         TransformDurableCall(source, includeDurableReferences: true)
             .Should()
             .BeOfType<DurableMethodInfo>();
+    }
+
+    [Fact]
+    public void EmitsDurableAdapterForKnownExtensionMethod()
+    {
+        const string source = """
+                              using System.Threading.Tasks;
+                              using MinimalLambda;
+                              using MinimalLambda.Builder;
+
+                              var lambda = LambdaApplication.CreateBuilder().Build();
+                              lambda.MapDurableHandler(() => Task.CompletedTask);
+                              """;
+
+        var (driver, _) = GeneratorTestHelpers.GenerateFromSource(
+            source,
+            includeDurableReferences: true);
+
+        driver
+            .GetRunResult()
+            .GeneratedTrees
+            .Should()
+            .ContainSingle(tree => tree.FilePath.EndsWith(
+                "MinimalLambda.DurableHandlers.g.cs",
+                StringComparison.Ordinal));
     }
 
     [Fact]

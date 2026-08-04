@@ -50,7 +50,7 @@ namespace MinimalLambda.Generated
             async Task InvocationDelegate(ILambdaInvocationContext context)
             {
                 var invocationData = context.Features.GetRequired<IInvocationDataFeature>();
-                var serializer = context.ServiceProvider.GetRequiredService<Amazon.Lambda.Core.ILambdaSerializer>();
+                var serializer = context.Serializer;
                 var envelope = serializer.Deserialize<DurableExecutionInvocationInput>(
                     invocationData.EventStream);
                 var output = await DurableFunction.WrapAsync<global::Container<string?>.Nested<global::Container<string?>.Nested<int?>?>, global::System.Collections.Generic.Dictionary<string, global::Container<string?>.Nested<int?>?[]>>(

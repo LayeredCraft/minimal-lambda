@@ -1,4 +1,4 @@
-#if NET10_0_OR_GREATER
+#if MINIMALLAMBDA_DURABLE
 using AwesomeAssertions;
 
 namespace MinimalLambda.SourceGenerators.UnitTests;

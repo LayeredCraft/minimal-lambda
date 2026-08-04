@@ -16,23 +16,25 @@ MinimalLambda reference activates MinimalLambda source generation.
 
 ## Framework and runtime support
 
-| Area                                   | `net10.0` / `dotnet10`           | Other frameworks/runtimes |
-| -------------------------------------- | -------------------------------- | ------------------------- |
-| MinimalLambda durable package          | Supported                        | Unsupported               |
-| Durable template and canonical example | Supported                        | Unsupported               |
-| Local restore/build and test coverage  | Required                         | Out of scope              |
-| NativeAOT publish                      | Experimental local evidence only | Unsupported               |
-| Managed Durable Execution deployment   | Not cloud-verified               | Unsupported               |
+| Area                                  | `net10.0` / `dotnet10`           | Other frameworks/runtimes |
+| ------------------------------------- | -------------------------------- | ------------------------- |
+| MinimalLambda durable package         | Supported                        | Unsupported               |
+| Canonical example                     | Supported                        | Unsupported               |
+| Candidate durable template            | Deferred from published package  | Unsupported               |
+| Local restore/build and test coverage | Required                         | Out of scope              |
+| NativeAOT publish                     | Experimental local evidence only | Unsupported               |
+| Managed Durable Execution deployment  | Not cloud-verified               | Unsupported               |
 
 `MinimalLambda.DurableExecution` targets only `net10.0`. NuGet asset fallback is not a support
-claim. `mlambda-durable` uses managed `dotnet10`; existing ordinary templates remain unchanged.
+claim. Candidate `mlambda-durable` source uses managed `dotnet10`; it is deferred from the published template package and existing ordinary templates remain unchanged.
 
 ## Evidence boundary
 
 Verified locally:
 
 - Package metadata, source generation, serializer roots, and unit/integration tests.
-- Template packing, installation, generation, restore, and build.
+- Standard-template packing, installation, generation, restore, and build.
+- Candidate durable template source is excluded from published template-package contents.
 - Durable package and testing package dependency graph.
 
 Requires AWS cloud verification:
