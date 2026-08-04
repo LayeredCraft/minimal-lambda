@@ -7,23 +7,23 @@ guidelines and instructions for contributing.
 
 <!-- TOC -->
 
-* [Contributing to MinimalLambda](#contributing-to-minimal-lambda)
-  * [Table of Contents](#table-of-contents)
-  * [Code of Conduct](#code-of-conduct)
-  * [Getting Started](#getting-started)
-  * [Development Setup](#development-setup)
-  * [Code Formatting](#code-formatting)
-  * [Making Changes](#making-changes)
-  * [Commit Guidelines](#commit-guidelines)
-  * [Pull Request Process](#pull-request-process)
-  * [Code Style](#code-style)
-  * [Testing](#testing)
-  * [Documentation](#documentation)
-  * [Target Frameworks](#target-frameworks)
-  * [Central Package Management](#central-package-management)
-  * [CI/CD Integration](#cicd-integration)
-  * [Questions or Need Help?](#questions-or-need-help)
-  * [License](#license)
+- [Contributing to MinimalLambda](#contributing-to-minimal-lambda)
+  - [Table of Contents](#table-of-contents)
+  - [Code of Conduct](#code-of-conduct)
+  - [Getting Started](#getting-started)
+  - [Development Setup](#development-setup)
+  - [Code Formatting](#code-formatting)
+  - [Making Changes](#making-changes)
+  - [Commit Guidelines](#commit-guidelines)
+  - [Pull Request Process](#pull-request-process)
+  - [Code Style](#code-style)
+  - [Testing](#testing)
+  - [Documentation](#documentation)
+  - [Target Frameworks](#target-frameworks)
+  - [Central Package Management](#central-package-management)
+  - [CI/CD Integration](#cicd-integration)
+  - [Questions or Need Help?](#questions-or-need-help)
+  - [License](#license)
 
 <!-- TOC -->
 
@@ -119,8 +119,7 @@ task format:csharpier
 ```
 
 Always run `task format` before committing changes. Failing to format code may cause CI/CD checks to
-fail, as the GitHub Actions workflow (`pr-build.yaml`) includes a code quality check that runs
-`task format` and validates no files were modified.
+fail, as the GitHub Actions workflow (`pr-quality.yaml`) runs CleanupCode and validates no files were modified.
 
 ### IDE Integration
 
@@ -192,12 +191,14 @@ when using extension method syntax.
 ## Pull Request Process
 
 1. **Ensure your branch is up to date**:
+
    ```bash
    git fetch upstream
    git rebase upstream/main
    ```
 
 2. **Push to your fork**:
+
    ```bash
    git push origin your-branch-name
    ```
@@ -350,7 +351,7 @@ This project supports multiple .NET versions:
 
 - **.NET 8.0** (supported)
 - **.NET 9.0** (supported)
-- **.NET 10.0 ** (primary target)
+- \*\*.NET 10.0 \*\* (primary target)
 
 Test your changes against all supported frameworks:
 
@@ -387,6 +388,6 @@ Ensure your changes pass all checks before requesting review.
 By contributing to this project, you agree that your contributions will be licensed under the same
 MIT License as the project.
 
----
+______________________________________________________________________
 
 **Thank you for contributing to MinimalLambda!** 🚀

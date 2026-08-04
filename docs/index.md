@@ -4,7 +4,7 @@ title: ''
 
 # MinimalLambda: ASP.NET Core Patterns for AWS Lambda
 
-[![PR Build](https://github.com/LayeredCraft/minimal-lambda/actions/workflows/pr-build.yaml/badge.svg)](https://github.com/LayeredCraft/minimal-lambda/actions/workflows/pr-build.yaml)
+[![PR Quality Gates](https://github.com/LayeredCraft/minimal-lambda/actions/workflows/pr-quality.yaml/badge.svg)](https://github.com/LayeredCraft/minimal-lambda/actions/workflows/pr-quality.yaml)
 [![codecov](https://codecov.io/gh/LayeredCraft/minimal-lambda/graph/badge.svg?token=BWORPTQ0UK)](https://codecov.io/gh/LayeredCraft/minimal-lambda)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/LayeredCraft/minimal-lambda/blob/main/LICENSE)
 
