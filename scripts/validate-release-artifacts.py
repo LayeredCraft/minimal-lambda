@@ -17,6 +17,7 @@ CORE_PACKAGE_IDS = frozenset(
     {
         "MinimalLambda",
         "MinimalLambda.Abstractions",
+        "MinimalLambda.DurableExecution",
         "MinimalLambda.Envelopes",
         "MinimalLambda.Envelopes.Alb",
         "MinimalLambda.Envelopes.ApiGateway",
@@ -32,7 +33,6 @@ CORE_PACKAGE_IDS = frozenset(
     }
 )
 CORE_SYMBOL_PACKAGE_IDS = CORE_PACKAGE_IDS - {"MinimalLambda.Templates"}
-DURABLE_PACKAGE_ID = "MinimalLambda.DurableExecution"
 SEMVER = re.compile(
     r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
     r"(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)"
@@ -45,7 +45,7 @@ def fail(message: str) -> None:
 
 
 def version_from_tag(lane: str, tag: str) -> str:
-    prefix = "v" if lane == "core" else "durable-v"
+    prefix = "v"
     if not tag.startswith(prefix):
         fail(f"{lane} lane rejects tag {tag!r}; expected {prefix}<semver>")
     version = tag.removeprefix(prefix)
@@ -78,32 +78,6 @@ def read_identity(package: Path) -> tuple[str, str, ET.Element]:
     return package_id, version, root
 
 
-def durable_project_data() -> tuple[str, int]:
-    project = (
-        Path(__file__).resolve().parents[1]
-        / "src/MinimalLambda.DurableExecution/MinimalLambda.DurableExecution.csproj"
-    )
-    root = ET.parse(project).getroot()
-    minimum = next(
-        (item.text for item in root.iter() if local_name(item) == "MinimalLambdaMinimumVersion"),
-        None,
-    )
-    target_frameworks = next(
-        (item.text for item in root.iter() if local_name(item) == "TargetFrameworks"),
-        None,
-    )
-    target_framework = next(
-        (item.text for item in root.iter() if local_name(item) == "TargetFramework"),
-        None,
-    )
-    if not minimum:
-        fail(f"{project}: MinimalLambdaMinimumVersion is missing")
-    frameworks = [framework for framework in (target_frameworks or target_framework or "").split(";") if framework]
-    if not frameworks:
-        fail(f"{project}: TargetFramework or TargetFrameworks is missing")
-    return minimum, len(frameworks)
-
-
 def validate_templates_content(package: Path) -> None:
     try:
         with zipfile.ZipFile(package) as archive:
@@ -119,33 +93,6 @@ def validate_templates_content(package: Path) -> None:
             "MinimalLambda.Templates must not ship deferred mlambda-durable template; "
             f"found={durable_template_entries}"
         )
-
-
-def validate_durable_dependencies(nuspec: ET.Element, minimum: str, expected_groups: int) -> None:
-    dependencies = next(
-        (item for item in nuspec.iter() if local_name(item) == "dependencies"),
-        None,
-    )
-    groups = [] if dependencies is None else [item for item in dependencies if local_name(item) == "group"]
-    if len(groups) != expected_groups:
-        fail(f"durable nuspec must contain {expected_groups} TFM dependency groups; found={len(groups)}")
-
-    seen_frameworks: set[str] = set()
-    for group in groups:
-        framework = group.attrib.get("targetFramework", "")
-        if not framework or framework in seen_frameworks:
-            fail(f"durable nuspec has missing/duplicate dependency targetFramework {framework!r}")
-        seen_frameworks.add(framework)
-        versions = [
-            item.attrib.get("version")
-            for item in group
-            if local_name(item) == "dependency" and item.attrib.get("id") == "MinimalLambda"
-        ]
-        if versions != [minimum]:
-            fail(
-                f"MinimalLambda dependency in {framework} must occur once at minimum "
-                f"{minimum!r}; found={versions}"
-            )
 
 
 def nuget_version_exists(package_id: str, version: str) -> bool:
@@ -176,7 +123,6 @@ def validate_artifacts(
     artifacts: Path,
     expected_version: str | None,
     preview_run_number: str | None,
-    expected_minimum: str | None,
 ) -> tuple[set[str] | frozenset[str], str]:
     if not artifacts.is_dir():
         fail(f"artifact directory does not exist: {artifacts}")
@@ -195,7 +141,7 @@ def validate_artifacts(
             fail(f"duplicate package ID: {package_id}")
         identities[package_id] = (version, package, nuspec)
 
-    expected_ids = CORE_PACKAGE_IDS if lane in {"core", "core-preview"} else {DURABLE_PACKAGE_ID}
+    expected_ids = CORE_PACKAGE_IDS
     actual_ids = set(identities)
     if actual_ids != expected_ids:
         missing = sorted(expected_ids - actual_ids)
@@ -219,7 +165,7 @@ def validate_artifacts(
     if actual_primary_names != expected_primary_names:
         fail(f"primary filenames differ; expected={sorted(expected_primary_names)}, actual={sorted(actual_primary_names)}")
 
-    expected_symbol_ids = CORE_SYMBOL_PACKAGE_IDS if lane in {"core", "core-preview"} else {DURABLE_PACKAGE_ID}
+    expected_symbol_ids = CORE_SYMBOL_PACKAGE_IDS
     symbol_identities: dict[str, tuple[str, Path]] = {}
     for package in symbols:
         package_id, version, _ = read_identity(package)
@@ -237,12 +183,7 @@ def validate_artifacts(
         if path.name != expected_name:
             fail(f"symbol filename differs; expected={expected_name!r}, actual={path.name!r}")
 
-    if lane == "durable":
-        project_minimum, expected_groups = durable_project_data()
-        minimum = expected_minimum or project_minimum
-        validate_durable_dependencies(identities[DURABLE_PACKAGE_ID][2], minimum, expected_groups)
-    else:
-        validate_templates_content(identities["MinimalLambda.Templates"][1])
+    validate_templates_content(identities["MinimalLambda.Templates"][1])
 
     manifest = ", ".join(f"{package_id}@{identities[package_id][0]}" for package_id in sorted(identities))
     print(f"validated {lane} manifest: {manifest}; symbols={len(symbols)}")
@@ -251,19 +192,18 @@ def validate_artifacts(
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--lane", choices=("core", "core-preview", "durable"), required=True)
+    parser.add_argument("--lane", choices=("core", "core-preview"), required=True)
     parser.add_argument("--tag")
     parser.add_argument("--artifacts", type=Path)
     parser.add_argument("--tag-only", action="store_true")
     parser.add_argument("--preview-run-number")
     parser.add_argument("--expected-version")
-    parser.add_argument("--expected-minimum-version")
     parser.add_argument("--check-nuget", action="store_true")
     args = parser.parse_args()
 
     try:
         expected_version = args.expected_version
-        if args.lane in {"core", "durable"}:
+        if args.lane == "core":
             if not args.tag:
                 fail(f"{args.lane} validation requires --tag")
             tagged_version = version_from_tag(args.lane, args.tag)
@@ -285,7 +225,6 @@ def main() -> int:
             args.artifacts,
             expected_version,
             args.preview_run_number,
-            args.expected_minimum_version,
         )
         if args.check_nuget:
             validate_no_nuget_collisions(package_ids, actual_version)

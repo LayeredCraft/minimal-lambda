@@ -5,7 +5,7 @@ ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 FIXTURES="$ROOT/tests/package-compatibility"
 OLD_CORE_VERSION=56.0.0-x56-old
 CORE_VERSION=56.1.0-x56-core
-DURABLE_VERSION=56.2.0-x56-durable
+DURABLE_VERSION=$CORE_VERSION
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/minimal-lambda-package-compat.XXXXXX")
 FEED="$WORK/feed"
 CONSUMERS="$WORK/consumers"
@@ -138,8 +138,7 @@ pack abstractions-old "$ROOT/src/MinimalLambda.Abstractions/MinimalLambda.Abstra
 pack core-old "$ROOT/src/MinimalLambda/MinimalLambda.csproj" "$OLD_CORE_VERSION"
 pack abstractions-compatible "$ROOT/src/MinimalLambda.Abstractions/MinimalLambda.Abstractions.csproj" "$CORE_VERSION"
 pack core-compatible "$ROOT/src/MinimalLambda/MinimalLambda.csproj" "$CORE_VERSION"
-pack durable "$ROOT/src/MinimalLambda.DurableExecution/MinimalLambda.DurableExecution.csproj" "$DURABLE_VERSION" \
-  "/p:MinimalLambdaMinimumVersion=$CORE_VERSION"
+pack durable "$ROOT/src/MinimalLambda.DurableExecution/MinimalLambda.DurableExecution.csproj" "$DURABLE_VERSION"
 
 python3 - "$FEED" "$OLD_CORE_VERSION" "$CORE_VERSION" "$DURABLE_VERSION" <<'PY'
 import sys
@@ -262,9 +261,9 @@ for filename, (package_id, version, kind) in expected.items():
                 if abstractions[0].attrib.get("exclude") != "Build,Analyzers":
                     raise AssertionError(f"{filename}: abstractions dependency exclusion mismatch")
 
-if durable == core:
-    raise AssertionError("durable and compatible core versions must differ")
-print("Package archives and nuspecs match compatibility contract.")
+if durable != core:
+    raise AssertionError("durable and core versions must match")
+print("Package archives and nuspecs match shared-version contract.")
 PY
 
 cp -R "$FIXTURES/." "$CONSUMERS/"

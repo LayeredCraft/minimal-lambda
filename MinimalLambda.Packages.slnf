@@ -12,6 +12,7 @@
       "src/Envelopes/MinimalLambda.Envelopes.Sqs/MinimalLambda.Envelopes.Sqs.csproj",
       "src/Envelopes/MinimalLambda.Envelopes/MinimalLambda.Envelopes.csproj",
       "src/MinimalLambda.Abstractions/MinimalLambda.Abstractions.csproj",
+      "src/MinimalLambda.DurableExecution/MinimalLambda.DurableExecution.csproj",
       "src/MinimalLambda.OpenTelemetry/MinimalLambda.OpenTelemetry.csproj",
       "src/MinimalLambda.Templates/MinimalLambda.Templates.csproj",
       "src/MinimalLambda.Testing/MinimalLambda.Testing.csproj",

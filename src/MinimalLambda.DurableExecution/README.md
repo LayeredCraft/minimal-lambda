@@ -9,16 +9,13 @@ Typed AWS Lambda Durable Execution handlers for MinimalLambda.
 Package ships assets for exactly `net10.0`. NuGet may select a compatible asset for other TFMs, but
 those combinations are not supported.
 
-`MinimalLambda.DurableExecution` releases independently from `MinimalLambda`. Install latest durable
-prerelease or stable package compatible with selected core version. Its package dependency enforces
-`MinimalLambda` `2.6.0-beta.2` as current minimum compatible core version; do not require matching
-core and durable package versions.
+`MinimalLambda.DurableExecution` releases with `MinimalLambda`; use matching package versions.
 
 Reference all three packages directly:
 
 ```bash
 dotnet add package MinimalLambda --version 2.6.0-beta.2
-dotnet add package MinimalLambda.DurableExecution --prerelease
+dotnet add package MinimalLambda.DurableExecution --version 2.6.0-beta.2
 dotnet add package Amazon.Lambda.DurableExecution --version 1.0.0
 ```
 

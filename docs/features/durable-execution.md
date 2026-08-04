@@ -12,11 +12,11 @@ Target `net10.0`. Reference all three packages directly:
 
 ```bash
 dotnet add package MinimalLambda --version 2.6.0-beta.2
-dotnet add package MinimalLambda.DurableExecution --prerelease
+dotnet add package MinimalLambda.DurableExecution --version 2.6.0-beta.2
 dotnet add package Amazon.Lambda.DurableExecution --version 1.0.0
 ```
 
-`MinimalLambda.DurableExecution` releases independently from `MinimalLambda`. Install latest durable prerelease or stable package compatible with selected core version. Its package dependency enforces `2.6.0-beta.2` as current minimum compatible core version; do not require matching core and durable package versions. Direct `MinimalLambda` reference supplies source generator for `MapHandler` and `MapDurableHandler`. Direct AWS package reference supplies DE001-DE004 analyzers, which do not flow through transitive dependencies.
+`MinimalLambda.DurableExecution` releases with `MinimalLambda`; use matching versions. Direct `MinimalLambda` reference supplies source generator for `MapHandler` and `MapDurableHandler`. Direct AWS package reference supplies DE001-DE004 analyzers, which do not flow through transitive dependencies.
 
 NuGet fallback may select an asset for another target framework, but only `net10.0` is supported.
 

@@ -12,8 +12,7 @@ ______________________________________________________________________
 ## Context
 
 Durable support adds optional AWS dependencies and needs source generation for
-`MapDurableHandler`. Durable package releases must remain isolated from core package releases while
-preserving an explicit core-compatibility contract.
+`MapDurableHandler`. Durable package releases use the same workflow and version as core packages.
 
 MinimalLambda currently ships one source generator inside the core `MinimalLambda` package. We need
 to decide where durable runtime APIs and generation should live.
@@ -21,7 +20,7 @@ to decide where durable runtime APIs and generation should live.
 ## Decision Drivers
 
 - Keep durable dependencies optional.
-- Keep durable dependency optional with an independently publishable release lane.
+- Release all MinimalLambda packages together with one version.
 - Avoid duplicate generators and generated output.
 - Reuse existing MinimalLambda handler-generation behavior.
 - Keep package compatibility understandable.
@@ -84,28 +83,26 @@ minimal-lambda-durable-execution
 ## Decision
 
 We will use **Option A: a separate `MinimalLambda.DurableExecution` package with durable generation
-implemented by the existing core `MinimalLambda.SourceGenerators` assembly**. It publishes from an
-independent `durable-v<semver>` release lane and declares its minimum compatible core version as a
-package dependency.
+implemented by the existing core `MinimalLambda.SourceGenerators` assembly**. It publishes with all
+other MinimalLambda packages from the shared `v<semver>` release lane.
 
 A durable application references both packages:
 
 ```xml
 <PackageReference Include="MinimalLambda" Version="X.Y.Z" />
-<PackageReference Include="MinimalLambda.DurableExecution" Version="A.B.C" />
+<PackageReference Include="MinimalLambda.DurableExecution" Version="X.Y.Z" />
 ```
 
 - `MinimalLambda.DurableExecution` owns `MapDurableHandler`, context extensions, and the AWS durable
   dependency.
 - Core source generator recognizes `MapDurableHandler` from the durable package.
-- Durable package declares the minimum compatible `MinimalLambda` version.
-- Durable runtime changes release independently; generator changes remain coupled to a compatible core release.
+- Durable package declares the matching `MinimalLambda` version.
+- Durable runtime and generator changes release together with core.
 
 ## Rationale
 
 This keeps durable dependencies outside core while retaining one generator and one handler-binding
-model. Compatibility is explicit through the durable package's minimum core dependency, without
-requiring matching package versions.
+model. Compatibility is explicit through matching package versions in each shared release.
 
 ## Consequences
 
@@ -114,13 +111,11 @@ requiring matching package versions.
 - Durable dependencies remain optional.
 - Only one MinimalLambda generator runs.
 - Durable and ordinary handlers share generation behavior.
-- Core and durable trusted-publishing lanes publish independently.
+- One trusted-publishing lane publishes all packages with one version.
 
 ### Negative / trade-offs
 
-- Durable generator changes require a compatible core release.
-- Package compatibility must be tested and documented.
-- Durable runtime fixes can publish without a core package release.
+- Durable runtime fixes require a core package release.
 
 ## References
 

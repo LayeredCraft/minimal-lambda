@@ -61,6 +61,7 @@ Core packages version synchronously:
 
 - `MinimalLambda`
 - `MinimalLambda.Abstractions`
+- `MinimalLambda.DurableExecution`
 - `MinimalLambda.Envelopes`
 - `MinimalLambda.Envelopes.Alb`
 - `MinimalLambda.Envelopes.ApiGateway`
@@ -73,5 +74,3 @@ Core packages version synchronously:
 - `MinimalLambda.OpenTelemetry`
 - `MinimalLambda.Templates`
 - `MinimalLambda.Testing`
-
-`MinimalLambda.DurableExecution` publishes independently from `durable-v<semver>` releases. Its package declares minimum compatible core version.
