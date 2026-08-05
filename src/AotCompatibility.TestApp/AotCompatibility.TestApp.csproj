@@ -12,30 +12,14 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <EnvelopeRootAssembly Include="MinimalLambda.Envelopes.Alb"/>
-    <EnvelopeRootAssembly Include="MinimalLambda.Envelopes.ApiGateway"/>
-    <EnvelopeRootAssembly Include="MinimalLambda.Envelopes.CloudWatchLogs"/>
-    <EnvelopeRootAssembly Include="MinimalLambda.Envelopes.Kafka"/>
-    <EnvelopeRootAssembly Include="MinimalLambda.Envelopes.KinesisFirehose"/>
-    <EnvelopeRootAssembly Include="MinimalLambda.Envelopes.Kinesis"/>
-    <EnvelopeRootAssembly Include="MinimalLambda.Envelopes.Sns"/>
-    <EnvelopeRootAssembly Include="MinimalLambda.Envelopes.Sqs"/>
-    <EnvelopeRootAssembly Include="MinimalLambda.Envelopes"/>
-    <CoreRootAssembly Include="MinimalLambda.Abstractions"/>
-    <CoreRootAssembly Include="MinimalLambda.OpenTelemetry"/>
-    <CoreRootAssembly Include="MinimalLambda"/>
-  </ItemGroup>
-  <ItemGroup>
-    <TrimmerRootAssembly Include="@(EnvelopeRootAssembly)"/>
-    <TrimmerRootAssembly Include="@(CoreRootAssembly)"/>
-    <TrimmerRootAssembly
-      Update="@(EnvelopeRootAssembly)"
-      Path="$(MSBuildThisFileDirectory)..\..\src\Envelopes\%(Identity)\%(Identity).csproj"
-    />
-    <TrimmerRootAssembly
-      Update="@(CoreRootAssembly)"
-      Path="$(MSBuildThisFileDirectory)..\..\src\%(Identity)\%(Identity).csproj"
-    />
-    <ProjectReference Include="@(TrimmerRootAssembly->'%(Path)')"/>
+    <AotRootProject
+      Include="MinimalLambda.Envelopes.Alb;MinimalLambda.Envelopes.ApiGateway;MinimalLambda.Envelopes.CloudWatchLogs;MinimalLambda.Envelopes.Kafka;MinimalLambda.Envelopes.KinesisFirehose;MinimalLambda.Envelopes.Kinesis;MinimalLambda.Envelopes.Sns;MinimalLambda.Envelopes.Sqs;MinimalLambda.Envelopes"
+      ProjectPath="$(MSBuildThisFileDirectory)..\..\src\Envelopes\%(Identity)\%(Identity).csproj" />
+    <AotRootProject
+      Include="MinimalLambda.Abstractions;MinimalLambda.OpenTelemetry;MinimalLambda;MinimalLambda.DurableExecution"
+      ProjectPath="$(MSBuildThisFileDirectory)..\..\src\%(Identity)\%(Identity).csproj" />
+
+    <ProjectReference Include="@(AotRootProject->'%(ProjectPath)')" />
+    <TrimmerRootAssembly Include="@(AotRootProject)" />
   </ItemGroup>
 </Project>

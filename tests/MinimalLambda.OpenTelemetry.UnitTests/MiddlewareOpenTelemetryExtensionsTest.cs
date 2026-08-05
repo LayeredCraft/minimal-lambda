@@ -26,7 +26,7 @@ public class MiddlewareOpenTelemetryExtensionsTest
         ILambdaInvocationBuilder builder)
     {
         // Arrange
-        serviceProvider.GetService(typeof(TracerProvider)).Returns(null);
+        serviceProvider.GetService(typeof(TracerProvider)).Returns(null!);
         builder.Services.Returns(serviceProvider);
 
         // Act

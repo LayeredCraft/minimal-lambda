@@ -127,7 +127,7 @@ This creates `src/MyLambda` and `test/MyLambda.Tests` beside your existing solut
 
 ## Template Options
 
-Both templates support AWS profile and region replacement in `aws-lambda-tools-defaults.json`:
+All templates support AWS profile and region replacement in `aws-lambda-tools-defaults.json`:
 
 ```bash
 dotnet new mlambda -n MyLambda --profile default --region us-east-1
@@ -149,8 +149,8 @@ Add or update these package versions at the repository root:
 
 ```xml
 <ItemGroup>
-  <PackageVersion Include="MinimalLambda" Version="2.6.0-beta.1" />
-  <PackageVersion Include="MinimalLambda.Testing" Version="2.6.0-beta.1" />
+  <PackageVersion Include="MinimalLambda" Version="2.6.0-beta.2" />
+  <PackageVersion Include="MinimalLambda.Testing" Version="2.6.0-beta.2" />
   <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
   <PackageVersion Include="xunit" Version="2.9.3" />
   <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />

@@ -1,6 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Amazon.Lambda.Core;
+#if MINIMALLAMBDA_DURABLE
+using Amazon.Lambda.DurableExecution;
+#endif
 using Amazon.Lambda.RuntimeSupport;
 using Amazon.Lambda.Serialization.SystemTextJson;
 using AwesomeAssertions;
@@ -16,31 +19,56 @@ namespace MinimalLambda.SourceGenerators.UnitTests;
 
 internal static class GeneratorTestHelpers
 {
-    internal static Task Verify(string source, int expectedTrees = -1)
+    internal static Task Verify(
+        string source,
+        int expectedTrees = -1,
+        bool includeDurableReferences = false,
+        IReadOnlyList<(string FilePath, string Source)>? additionalSources = null,
+        IReadOnlyCollection<string>? expectedDiagnosticIds = null)
     {
-        var (driver, originalCompilation) = GenerateFromSource(source);
+        var (driver, originalCompilation) = GenerateFromSource(
+            source,
+            includeDurableReferences: includeDurableReferences,
+            additionalSources: additionalSources);
 
         driver.Should().NotBeNull();
 
         var result = driver.GetRunResult();
 
-        result
-            .Diagnostics
-            .Should()
-            .BeEmpty(
-                "code should be generated without errors, but found:\n"
-                + string.Join(
-                    "\n---\n",
-                    result.Diagnostics.Select(e =>
-                        $"  - {e.Id}: {e.GetMessage()} at {e.Location}")));
+        if (expectedDiagnosticIds is null)
+        {
+            result
+                .Diagnostics
+                .Should()
+                .BeEmpty(
+                    "code should be generated without errors, but found:\n"
+                    + string.Join(
+                        "\n---\n",
+                        result.Diagnostics.Select(e =>
+                            $"  - {e.Id}: {e.GetMessage()} at {e.Location}")));
+        }
+        else
+        {
+            result
+                .Diagnostics
+                .Select(diagnostic => diagnostic.Id)
+                .Should()
+                .BeEquivalentTo(expectedDiagnosticIds);
+            result
+                .Diagnostics
+                .Should()
+                .OnlyContain(diagnostic => diagnostic.Severity != DiagnosticSeverity.Error);
+        }
 
         // Reparse generated trees with the same parse options as the original compilation
         // to ensure consistent syntax tree features (e.g., InterceptorsNamespaces)
         var parseOptions = originalCompilation.SyntaxTrees.First().Options;
         var reparsedTrees = result
             .GeneratedTrees
-            .Select(tree =>
-                CSharpSyntaxTree.ParseText(tree.GetText(), (CSharpParseOptions)parseOptions))
+            .Select(tree => CSharpSyntaxTree.ParseText(
+                tree.GetText(),
+                (CSharpParseOptions)parseOptions,
+                tree.FilePath))
             .ToArray();
 
         // Add generated trees to original compilation
@@ -88,7 +116,11 @@ internal static class GeneratorTestHelpers
     internal static (GeneratorDriver driver, Compilation compilation) GenerateFromSource(
         string source,
         Dictionary<string, ReportDiagnostic>? diagnosticsToSuppress = null,
-        LanguageVersion languageVersion = LanguageVersion.CSharp14)
+        LanguageVersion languageVersion = LanguageVersion.CSharp14,
+        bool includeDurableReferences = false,
+        IReadOnlyList<(string FilePath, string Source)>? additionalSources = null,
+        bool treatWarningsAsErrors = false,
+        bool allowUnsafe = false)
     {
         IEnumerable<KeyValuePair<string, string>> features =
         [
@@ -100,7 +132,14 @@ internal static class GeneratorTestHelpers
             .WithLanguageVersion(languageVersion)
             .WithFeatures(features);
 
-        var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions, "InputFile.cs");
+        var syntaxTrees = new List<SyntaxTree>
+        {
+            CSharpSyntaxTree.ParseText(source, parseOptions, "InputFile.cs"),
+        };
+        if (additionalSources is not null)
+            syntaxTrees.AddRange(
+                additionalSources.Select(item =>
+                    CSharpSyntaxTree.ParseText(item.Source, parseOptions, item.FilePath)));
 
         List<MetadataReference> references =
         [
@@ -124,9 +163,25 @@ internal static class GeneratorTestHelpers
             MetadataReference.CreateFromFile(typeof(ILambdaInvocationContext).Assembly.Location),
         ];
 
+#if MINIMALLAMBDA_DURABLE
+        if (includeDurableReferences)
+        {
+            references.Add(
+                MetadataReference.CreateFromFile(
+                    typeof(MinimalLambda.DurableExecution.DurableContextExtensions).Assembly
+                        .Location));
+            references.Add(
+                MetadataReference.CreateFromFile(typeof(IDurableContext).Assembly.Location));
+        }
+#endif
+
         var compilationOptions = new CSharpCompilationOptions(
             OutputKind.ConsoleApplication,
-            nullableContextOptions: NullableContextOptions.Enable);
+            nullableContextOptions: NullableContextOptions.Enable,
+            generalDiagnosticOption: treatWarningsAsErrors
+                ? ReportDiagnostic.Error
+                : ReportDiagnostic.Default,
+            allowUnsafe: allowUnsafe);
 
         if (diagnosticsToSuppress is not null)
             compilationOptions =
@@ -134,7 +189,7 @@ internal static class GeneratorTestHelpers
 
         var compilation = CSharpCompilation.Create(
             "Tests",
-            [syntaxTree],
+            syntaxTrees,
             references,
             compilationOptions);
 

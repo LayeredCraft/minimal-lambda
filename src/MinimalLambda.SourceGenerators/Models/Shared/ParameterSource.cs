@@ -4,6 +4,7 @@ internal enum ParameterSource
 {
     Event,
     Context,
+    DurableContext,
     CancellationToken,
     KeyedServices,
     Services,

@@ -12,6 +12,10 @@ ______________________________________________________________________
 
 The Envelope pattern provides type-safe wrappers for various AWS event sources like SQS, SNS, and API Gateway. Instead of manually parsing JSON, you can work with strongly-typed objects, improving code quality and developer productivity.
 
+### [Durable Execution](./durable-execution.md)
+
+Build typed, checkpointed AWS Lambda Durable Execution workflows with source-generated handler binding, dependency injection, and replay-aware guidance.
+
 ### [Observability (OpenTelemetry)](./open_telemetry.md)
 
 This feature provides comprehensive observability through OpenTelemetry integration. It enables distributed tracing and metrics collection, offering deep insights into your Lambda function's performance and behavior.

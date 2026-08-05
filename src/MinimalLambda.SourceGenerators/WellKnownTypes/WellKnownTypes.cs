@@ -96,6 +96,11 @@ internal class WellKnownTypes
         if (types.Length == 1)
             return types[0];
 
+        if (metadataName.StartsWith("Amazon.Lambda.DurableExecution.", StringComparison.Ordinal))
+            foreach (var type in types)
+                if (type.ContainingAssembly.Identity.Name == "Amazon.Lambda.DurableExecution")
+                    return type;
+
         // Multiple types match the name. This is most likely caused by someone reusing the
         // namespace + type name in their apps or libraries.
         // Workaround this situation by prioritizing types in System and Microsoft assemblies.

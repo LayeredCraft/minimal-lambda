@@ -42,6 +42,10 @@ internal static class WellKnownTypeData
         System_AttributeUsageAttribute,
         System_Collections_Generic_Dictionary_2,
         Amazon_Lambda_Core_ILambdaContext,
+        Amazon_Lambda_DurableExecution_IDurableContext,
+        Amazon_Lambda_DurableExecution_DurableFunction,
+        Amazon_Lambda_DurableExecution_DurableExecutionInvocationInput,
+        Amazon_Lambda_DurableExecution_DurableExecutionInvocationOutput,
         System_Action,
         System_Func,
         System_IAsyncDisposable,
@@ -57,6 +61,13 @@ internal static class WellKnownTypeData
         MinimalLambda_Builder_MiddlewareConstructorAttribute,
         System_Boolean,
         MinimalLambda_ILambdaMiddleware,
+        System_Text_Json_Serialization_JsonSerializableAttribute,
+        System_Text_Json_Serialization_JsonSerializerContext,
+        Amazon_Lambda_Core_ILambdaSerializer,
+        Microsoft_Extensions_DependencyInjection_SerializerServiceCollectionExtensions,
+        MinimalLambda_Builder_LambdaApplicationBuilder,
+        MinimalLambda_Builder_BuilderLambdaApplicationExtensions,
+        MinimalLambda_Builder_LambdaApplication,
     }
 
     public static readonly string[] WellKnownTypeNames =
@@ -89,6 +100,10 @@ internal static class WellKnownTypeData
         "System.AttributeUsageAttribute",
         "System.Collections.Generic.Dictionary`2",
         "Amazon.Lambda.Core.ILambdaContext",
+        "Amazon.Lambda.DurableExecution.IDurableContext",
+        "Amazon.Lambda.DurableExecution.DurableFunction",
+        "Amazon.Lambda.DurableExecution.DurableExecutionInvocationInput",
+        "Amazon.Lambda.DurableExecution.DurableExecutionInvocationOutput",
         "System.Action",
         "System.Func",
         "System.IAsyncDisposable",
@@ -104,5 +119,12 @@ internal static class WellKnownTypeData
         "MinimalLambda.Builder.MiddlewareConstructorAttribute",
         "System.Boolean",
         "MinimalLambda.ILambdaMiddleware",
+        "System.Text.Json.Serialization.JsonSerializableAttribute",
+        "System.Text.Json.Serialization.JsonSerializerContext",
+        "Amazon.Lambda.Core.ILambdaSerializer",
+        "Microsoft.Extensions.DependencyInjection.SerializerServiceCollectionExtensions",
+        "MinimalLambda.Builder.LambdaApplicationBuilder",
+        "MinimalLambda.Builder.BuilderLambdaApplicationExtensions",
+        "MinimalLambda.Builder.LambdaApplication",
     ];
 }

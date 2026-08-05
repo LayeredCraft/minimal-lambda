@@ -120,6 +120,7 @@ nav:
   - Features:
       - features/index.md
       - Envelopes: features/envelopes.md
+      - Durable Execution: features/durable-execution.md
       - OpenTelemetry: features/open_telemetry.md
   - Advanced (Coming Soon):
       - advanced/index.md

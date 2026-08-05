@@ -22,7 +22,9 @@
     <None Include="README.md" Pack="true" PackagePath="\" />
     <Content
       Include="templates\**\*"
-      Exclude="templates\**\bin\**;templates\**\obj\**;templates\Directory.Build.props;templates\Directory.Build.targets;templates\Directory.Packages.props" />
+      Exclude="templates\**\bin\**;templates\**\obj\**;templates\Directory.Build.props;templates\Directory.Build.targets;templates\Directory.Packages.props;templates\mlambda-durable\**"
+      PackagePath="content"
+      TargetPath="templates\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <UsingTask
@@ -37,7 +39,7 @@
       <Using Namespace="System.IO" />
       <Using Namespace="System.Text.RegularExpressions" />
       <Code Type="Fragment" Language="cs"><![CDATA[
-        var pattern = "(<(?:PackageReference|PackageVersion) Include=\"MinimalLambda(?:\\.Testing)?\" Version=\")[^\"]+(\")";
+        var pattern = "(<(?:PackageReference|PackageVersion) Include=\"MinimalLambda(?:\\.(?:Testing|DurableExecution))?\" Version=\")[^\"]+(\")";
         foreach (var item in Files)
         {
             var path = item.ItemSpec;

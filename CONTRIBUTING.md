@@ -119,8 +119,7 @@ task format:csharpier
 ```
 
 Always run `task format` before committing changes. Failing to format code may cause CI/CD checks to
-fail, as the GitHub Actions workflow (`pr-build.yaml`) includes a code quality check that runs
-`task format` and validates no files were modified.
+fail, as the GitHub Actions workflow (`pr-quality.yaml`) runs CleanupCode and validates no files were modified.
 
 ### IDE Integration
 

@@ -30,6 +30,21 @@ public class ServiceCollectionExtensionsTests
         result.Should().BeSameAs(serviceCollection);
     }
 
+    [Fact]
+    public void AddLambdaHostCoreServices_DoesNotRequireLambdaSerializerUntilInvocation()
+    {
+        // Arrange
+        using var serviceProvider = new ServiceCollection()
+            .AddLambdaHostCoreServices()
+            .BuildServiceProvider();
+
+        // Act
+        var act = () => serviceProvider.GetRequiredService<ILambdaInvocationContextFactory>();
+
+        // Assert
+        act.Should().NotThrow();
+    }
+
     [Theory]
     [InlineData(14)]
     public void AddLambdaHostCoreServices_RegistersExactlyNServices(int servicesCount)

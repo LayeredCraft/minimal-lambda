@@ -12,7 +12,7 @@ dotnet new mlambda -n MyLambda
 dotnet new mlambda-aot -n MyAotLambda
 ```
 
-Templates create `src/` and `test/` projects, include `aws-lambda-tools-defaults.json`, use inline handlers, and test through `MinimalLambda.Testing`.
+Templates create source and test projects, include `aws-lambda-tools-defaults.json`, use inline handlers, and test through `MinimalLambda.Testing`.
 
 When adding a function to an existing repository or solution folder, create the solution first if needed and generate into the current directory with `-o .`:
 

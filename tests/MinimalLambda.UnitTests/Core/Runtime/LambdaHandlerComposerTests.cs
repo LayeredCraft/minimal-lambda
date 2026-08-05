@@ -1,3 +1,5 @@
+using Amazon.Lambda.DurableExecution;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace MinimalLambda.UnitTests.Core.Runtime;
@@ -46,6 +48,8 @@ public class LambdaHandlerComposerTests
             CancellationTokenSource = new CancellationTokenSource();
             LambdaContext = Substitute.For<ILambdaContext>();
             ResponseFeature = Substitute.For<IResponseFeature>();
+            Features = Substitute.For<IFeatureCollection>();
+            InvocationDataFeature = Substitute.For<IInvocationDataFeature>();
             LambdaInvocationContext = Substitute.For<ILambdaInvocationContext, IAsyncDisposable>();
 
             SetupDefaults();
@@ -55,8 +59,10 @@ public class LambdaHandlerComposerTests
         public CancellationTokenSource CancellationTokenSource { get; }
         public ILambdaInvocationBuilder InvocationBuilder { get; }
         public IInvocationDataFeatureFactory InvocationDataFeatureFactory { get; }
+        public IFeatureCollection Features { get; }
+        public IInvocationDataFeature InvocationDataFeature { get; }
         public ILambdaContext LambdaContext { get; }
-        public ILambdaInvocationContext LambdaInvocationContext { get; }
+        public ILambdaInvocationContext LambdaInvocationContext { get; private set; }
         public ILambdaInvocationContextFactory LambdaInvocationContextFactory { get; }
         public ILambdaInvocationBuilderFactory LambdaInvocationBuilderFactory { get; }
         public IOptions<LambdaHostedServiceOptions> Options { get; }
@@ -74,31 +80,23 @@ public class LambdaHandlerComposerTests
                 .Returns(CancellationTokenSource);
 
             // Create a mock features collection
-            var mockFeatures = Substitute.For<IFeatureCollection>();
-            mockFeatures.Get<IResponseFeature>().Returns(ResponseFeature);
+            Features.Get<IResponseFeature>().Returns(ResponseFeature);
 
             // Create a mock invocation data feature with response stream
-            var mockInvocationDataFeature = Substitute.For<IInvocationDataFeature>();
-            mockInvocationDataFeature.ResponseStream.Returns(new MemoryStream());
-            InvocationDataFeatureFactory
-                .Create(Arg.Any<Stream>())
-                .Returns(mockInvocationDataFeature);
+            InvocationDataFeature.ResponseStream.Returns(new MemoryStream());
+            InvocationDataFeatureFactory.Create(Arg.Any<Stream>()).Returns(InvocationDataFeature);
 
-            // Set up the context factory to return a mock context for any Create call
+            // Set up the context factory to return the current context for any Create call
+            LambdaInvocationContext.Features.Returns(Features);
+            ((IAsyncDisposable)LambdaInvocationContext)
+                .DisposeAsync()
+                .Returns(ValueTask.CompletedTask);
             LambdaInvocationContextFactory
                 .Create(
                     Arg.Any<ILambdaContext>(),
                     Arg.Any<IDictionary<string, object?>>(),
                     Arg.Any<CancellationToken>())
-                .Returns(_ =>
-                {
-                    // Create a new mock context for each call
-                    LambdaInvocationContext.Features.Returns(mockFeatures);
-                    ((IAsyncDisposable)LambdaInvocationContext)
-                        .DisposeAsync()
-                        .Returns(ValueTask.CompletedTask);
-                    return LambdaInvocationContext;
-                });
+                .Returns(_ => LambdaInvocationContext);
         }
 
         /// <summary>Creates a LambdaHandlerComposer with the configured mocks.</summary>
@@ -319,6 +317,41 @@ public class LambdaHandlerComposerTests
         // After invocation, the cancellation token source should have been disposed
         var act = () => cancellationTokenSource.Token;
         act.Should().ThrowExactly<ObjectDisposedException>();
+    }
+
+    [Theory]
+    [InlineData(InvocationStatus.Succeeded)]
+    [InlineData(InvocationStatus.Failed)]
+    [InlineData(InvocationStatus.Pending)]
+    public async Task RequestHandler_DurableEnvelope_PreservesTypedResponseAndSerializes(
+        InvocationStatus status)
+    {
+        // Arrange
+        var serializer = Substitute.For<ILambdaSerializer>();
+        var responseFeature =
+            new DefaultResponseFeature<DurableExecutionInvocationOutput>(serializer);
+        _fixture.Features.Get<IResponseFeature>().Returns(responseFeature);
+        _fixture.Features.Get<IInvocationDataFeature>().Returns(_fixture.InvocationDataFeature);
+        var expected = new DurableExecutionInvocationOutput { Status = status };
+        _fixture.SetInvocationHandler(_ =>
+        {
+            responseFeature.SetResponse(expected);
+            return Task.CompletedTask;
+        });
+        var composer = _fixture.CreateComposer();
+        var handler = composer.CreateHandler(CancellationToken.None);
+
+        // Act
+        await handler(new MemoryStream(), _fixture.LambdaContext);
+
+        // Assert
+        responseFeature.GetResponse().Should().BeSameAs(expected);
+        serializer
+            .Received(1)
+            .Serialize(
+                Arg.Is<DurableExecutionInvocationOutput>(output =>
+                    ReferenceEquals(output, expected)),
+                _fixture.InvocationDataFeature.ResponseStream);
     }
 
     #endregion
