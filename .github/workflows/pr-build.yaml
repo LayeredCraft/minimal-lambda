@@ -16,37 +16,34 @@ concurrency:
   group: pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
-permissions: write-all
-
 jobs:
   build:
-    uses: LayeredCraft/devops-templates/.github/workflows/pr-build.yaml@v10.3
-    with:
-      solution: MinimalLambda.sln
-      buildConfiguration: Release
-      dotnetVersion: 11.0.x
-      hasTests: true
-      runCdk: false
-    secrets: inherit
-
-  quality:
-    needs: build
+    name: build / build
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 11.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore MinimalLambda.sln
 
       - name: Install dotnet tools
         run: dotnet tool restore
 
       - name: Install Task
         uses: go-task/setup-task@v2
+
+      - name: Build
+        run: dotnet build MinimalLambda.sln --no-restore --configuration Release /p:TreatWarningsAsErrors=true
 
       - name: Validate AOT compatibility
         run: task build:aot-check
