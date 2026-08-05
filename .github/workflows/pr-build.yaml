@@ -26,8 +26,6 @@ jobs:
       buildConfiguration: Release
       dotnetVersion: 11.0.x
       hasTests: true
-      useMtpRunner: true
-      enableCodeCoverage: true
       runCdk: false
     secrets: inherit
 
@@ -52,6 +50,21 @@ jobs:
 
       - name: Validate AOT compatibility
         run: task build:aot-check
+
+      - name: Run coverage
+        timeout-minutes: 10
+        run: >-
+          dotnet test MinimalLambda.sln --configuration Release --no-build
+          --results-directory ./coverage --coverage
+          --coverage-output-format cobertura --no-progress --no-ansi
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v6
+        with:
+          files: ./coverage/**/*.cobertura.xml
+          disable_search: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
 
       - name: Run formatting
         run: task format:cleanupcode
