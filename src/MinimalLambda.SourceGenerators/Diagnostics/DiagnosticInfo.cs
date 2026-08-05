@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using LayeredCraft.SourceGeneratorTools.Utilities;
 using Microsoft.CodeAnalysis;
 

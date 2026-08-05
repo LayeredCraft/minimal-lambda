@@ -72,3 +72,8 @@ tasks:
       - echo "📖 Building Docs"
       - uv run zensical build -f mkdocs.yml
       - echo "✅ Docs built"
+
+  release-dry-run:
+    desc: Pack and validate isolated core and durable release manifests
+    cmds:
+      - ./scripts/dry-run-release-manifests.sh

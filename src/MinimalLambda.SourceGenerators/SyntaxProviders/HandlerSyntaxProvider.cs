@@ -20,7 +20,10 @@ namespace MinimalLambda.SourceGenerators;
 
 internal static class HandlerSyntaxProvider
 {
-    private static readonly string[] TargetMethodNames = ["MapHandler", "OnInit", "OnShutdown"];
+    private static readonly string[] TargetMethodNames =
+    [
+        "MapHandler", "MapDurableHandler", "OnInit", "OnShutdown"
+    ];
 
     internal static bool Predicate(SyntaxNode node, CancellationToken _) =>
         !node.IsGeneratedFile()
@@ -29,19 +32,29 @@ internal static class HandlerSyntaxProvider
 
     internal static IMethodInfo? Transformer(
         GeneratorSyntaxContext syntaxContext,
+        CancellationToken cancellationToken) =>
+        Transform(syntaxContext.Node, syntaxContext.SemanticModel, cancellationToken);
+
+    internal static IMethodInfo? Transform(
+        SyntaxNode node,
+        SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
-        var context = new GeneratorContext(syntaxContext, cancellationToken);
+        var context = new GeneratorContext(node, semanticModel, cancellationToken);
 
         if (!TryGetInvocationOperation(context, out var targetOperation))
             return null;
 
-        if (!targetOperation.TryGetHandlerMethod(context.SemanticModel, out var method))
+        if (!targetOperation.TryGetHandlerMethod(
+            context.SemanticModel,
+            out var method,
+            out var handlerArgument))
             return null;
 
         return targetOperation.TargetMethod.Name switch
         {
             "MapHandler" => MapHandlerMethodInfo.Create(method, context),
+            "MapDurableHandler" => DurableMethodInfo.Create(method, handlerArgument, context),
             "OnInit" => LifecycleMethodInfo.CreateForInit(method, context),
             "OnShutdown" => LifecycleMethodInfo.CreateForShutdown(method, context),
             var methodName => throw new InvalidOperationException($"Unknown method '{methodName}"),
@@ -56,21 +69,13 @@ internal static class HandlerSyntaxProvider
 
         var operation = context.SemanticModel.GetOperation(context.Node, context.CancellationToken);
 
-        if (operation is IInvocationOperation
-            {
-                TargetMethod.ContainingNamespace:
-                {
-                    Name: "Builder",
-                    ContainingNamespace
-                    : { Name: "MinimalLambda", ContainingNamespace.IsGlobalNamespace: true, },
-                },
-            } targetOperation
-            && targetOperation.TargetMethod.ContainingAssembly.Name == "MinimalLambda"
-            && targetOperation.TryGetRouteHandlerArgument(out var routeHandlerParameter)
-            && routeHandlerParameter is { Parameter.Type: { } delegateType }
-            && SymbolEqualityComparer.Default.Equals(
-                delegateType,
-                context.WellKnownTypes.Get(WellKnownType.System_Delegate)))
+        if (operation is IInvocationOperation targetOperation
+            && targetOperation.TargetMethod.GetDeclaredMethod() is { } declaredMethod
+            && IsKnownTarget(declaredMethod)
+            && targetOperation.TryGetRouteHandlerArgument(
+                declaredMethod,
+                context.WellKnownTypes.Get(WellKnownType.System_Delegate),
+                out _))
         {
             invocationOperation = targetOperation;
             return true;
@@ -82,12 +87,22 @@ internal static class HandlerSyntaxProvider
     private static bool TryGetHandlerMethod(
         this IInvocationOperation invocation,
         SemanticModel semanticModel,
-        [NotNullWhen(true)] out IMethodSymbol? method)
+        [NotNullWhen(true)] out IMethodSymbol? method,
+        [NotNullWhen(true)] out IArgumentOperation? handlerArgument)
     {
         method = null;
-        if (invocation.TryGetRouteHandlerArgument(out var argument))
+        handlerArgument = null;
+        var declaredMethod = invocation.TargetMethod.GetDeclaredMethod();
+        var delegateType = semanticModel.Compilation.GetTypeByMetadataName("System.Delegate");
+
+        if (delegateType is not null
+            && invocation.TryGetRouteHandlerArgument(
+                declaredMethod,
+                delegateType,
+                out var argument))
         {
             method = ResolveMethodFromOperation(argument, semanticModel);
+            handlerArgument = argument;
             return method is not null;
         }
 
@@ -118,13 +133,23 @@ internal static class HandlerSyntaxProvider
 
     private static bool TryGetRouteHandlerArgument(
         this IInvocationOperation invocation,
+        IMethodSymbol declaredMethod,
+        ITypeSymbol delegateType,
         [NotNullWhen(true)] out IArgumentOperation? argumentOperation)
     {
         argumentOperation = null;
-        var routeHandlerArgumentOrdinal = invocation.Arguments.Length - 1;
+        var handlerParameter = declaredMethod.Parameters.FirstOrDefault(parameter =>
+            SymbolEqualityComparer.Default.Equals(parameter.Type, delegateType));
+
+        if (handlerParameter is null)
+            return false;
+
+        var targetOrdinal = invocation.TargetMethod.ReducedFrom is null
+            ? handlerParameter.Ordinal
+            : handlerParameter.Ordinal - 1;
 
         foreach (var argument in invocation.Arguments)
-            if (argument.Parameter?.Ordinal == routeHandlerArgumentOrdinal)
+            if (argument.Parameter?.Ordinal == targetOrdinal)
             {
                 argumentOperation = argument;
                 return true;
@@ -132,6 +157,32 @@ internal static class HandlerSyntaxProvider
 
         return false;
     }
+
+    private static IMethodSymbol GetDeclaredMethod(this IMethodSymbol method) =>
+        method.ReducedFrom ?? method;
+
+    private static bool IsKnownTarget(IMethodSymbol method) =>
+        method.ContainingNamespace is
+        {
+            Name: "Builder",
+            ContainingNamespace:
+            {
+                Name: "MinimalLambda", ContainingNamespace.IsGlobalNamespace: true,
+            },
+        }
+        && (method.Name switch
+        {
+            "MapDurableHandler" => method is
+                {
+                    ContainingAssembly.Name: "MinimalLambda.DurableExecution",
+                }
+                && (method.ContainingType.Name == "MapDurableHandlerLambdaApplicationExtensions"
+                    || method.ContainingType.ContainingType?.Name
+                    == "MapDurableHandlerLambdaApplicationExtensions"),
+            "MapHandler" or "OnInit" or "OnShutdown" => method.ContainingAssembly.Name
+                == "MinimalLambda",
+            _ => false,
+        });
 
     private static IOperation? ResolveDeclarationOperation(
         ISymbol symbol,

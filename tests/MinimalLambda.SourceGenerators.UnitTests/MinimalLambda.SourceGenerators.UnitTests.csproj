@@ -9,45 +9,50 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Amazon.Lambda.Core"/>
-    <PackageReference Include="Amazon.Lambda.RuntimeSupport"/>
-    <PackageReference Include="Amazon.Lambda.Serialization.SystemTextJson"/>
-    <PackageReference Include="AutoFixture"/>
-    <PackageReference Include="AwesomeAssertions"/>
-    <PackageReference Include="Basic.Reference.Assemblies.Net100"/>
+    <PackageReference Include="Amazon.Lambda.Core" />
+    <PackageReference Include="Amazon.Lambda.RuntimeSupport" />
+    <PackageReference Include="Amazon.Lambda.Serialization.SystemTextJson" />
+    <PackageReference Include="AutoFixture" />
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="Basic.Reference.Assemblies.Net100" />
     <PackageReference Include="Basic.Reference.Assemblies.Net110" />
-    <PackageReference Include="Basic.Reference.Assemblies.Net80"/>
-    <PackageReference Include="Basic.Reference.Assemblies.Net90"/>
-    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage"/>
-    <PackageReference Include="JetBrains.Annotations"/>
-    <PackageReference Include="Microsoft.CodeAnalysis"/>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing"/>
-    <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+    <PackageReference Include="Basic.Reference.Assemblies.Net80" />
+    <PackageReference Include="Basic.Reference.Assemblies.Net90" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+    <PackageReference Include="JetBrains.Annotations" />
+    <PackageReference Include="Microsoft.CodeAnalysis" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="NSubstitute.Analyzers.CSharp">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Verify.SourceGenerators"/>
-    <PackageReference Include="Verify.XunitV3"/>
+    <PackageReference Include="Verify.SourceGenerators" />
+    <PackageReference Include="Verify.XunitV3" />
     <PackageReference Include="xunit.runner.visualstudio">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="xunit.v3.mtp-v2"/>
+    <PackageReference Include="xunit.v3.mtp-v2" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\MinimalLambda\MinimalLambda.csproj"/>
-    <ProjectReference Include="..\..\src\MinimalLambda.SourceGenerators\MinimalLambda.SourceGenerators.csproj"/>
+    <ProjectReference Include="..\..\src\MinimalLambda\MinimalLambda.csproj" />
+    <ProjectReference
+      Include="..\..\src\MinimalLambda.DurableExecution\MinimalLambda.DurableExecution.csproj"
+      Condition="'$(TargetFramework)' == 'net10.0' Or '$(TargetFramework)' == 'net11.0'" />
+    <ProjectReference
+      Include="..\..\src\MinimalLambda.SourceGenerators\MinimalLambda.SourceGenerators.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Snapshots\"/>
-    <Folder Include="\Snapshots\"/>
+    <Folder Include="Snapshots\" />
+    <Folder Include="\Snapshots\" />
   </ItemGroup>
   <PropertyGroup>
     <ExcludeByFile>**/Scriban/**/*.cs</ExcludeByFile>
+    <DefineConstants Condition="'$(TargetFramework)' == 'net10.0' Or '$(TargetFramework)' == 'net11.0'">$(DefineConstants);MINIMALLAMBDA_DURABLE</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
-    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest"/>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

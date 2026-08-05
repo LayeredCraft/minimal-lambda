@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using MinimalLambda.SourceGenerators.Emitters;
@@ -49,6 +50,12 @@ public class MinimalLambdaGenerator : IIncrementalGenerator
             .Select(static (c, _) => (MapHandlerMethodInfo)c)
             .Collect();
 
+        var durableHandlerModels = registrationCalls
+            .Where(static c => c is DurableMethodInfo)
+            .Select(static (c, _) => (DurableMethodInfo)c);
+
+        var validDurableHandlerCalls = durableHandlerModels.WhereNoErrors().Collect();
+
         var onInitHandlerCalls = registrationCalls
             .WhereNoErrors()
             .Where(static c => c is LifecycleMethodInfo { MethodType: MethodType.OnInit })
@@ -64,14 +71,20 @@ public class MinimalLambdaGenerator : IIncrementalGenerator
         var middlewareTCallsCollected = useMiddlewareTCalls.WhereNoErrors().Collect();
 
         context.RegisterSourceOutput(
-            registrationCalls,
+            registrationCalls.Where(static call => call is not DurableMethodInfo),
             (ctx, call) => call.DiagnosticInfos.ForEach(d => d.ReportDiagnostic(ctx)));
+
+        context.RegisterSourceOutput(
+            durableHandlerModels,
+            (ctx, call) =>
+                call.DiagnosticInfos.ForEach(diagnostic => diagnostic.ReportDiagnostic(ctx)));
 
         context.RegisterSourceOutput(
             useMiddlewareTCalls,
             (ctx, call) => call.DiagnosticInfos.ForEach(d => d.ReportDiagnostic(ctx)));
 
         context.RegisterSourceOutput(invocationHandlerCalls, InvocationHandlerEmitter.Emit);
+        context.RegisterSourceOutput(validDurableHandlerCalls, DurableHandlerEmitter.Emit);
         context.RegisterSourceOutput(onInitHandlerCalls, LifecycleHandlerEmitter.Emit);
         context.RegisterSourceOutput(onShutdownHandlerCalls, LifecycleHandlerEmitter.Emit);
         context.RegisterSourceOutput(middlewareTCallsCollected, MiddlewareClassEmitter.Emit);

@@ -66,6 +66,9 @@ internal sealed class LambdaInvocationContext : ILambdaInvocationContext, IAsync
 
     public int MemoryLimitInMB => _lambdaContext.MemoryLimitInMB;
 
+    public ILambdaSerializer Serializer =>
+        _lambdaContext.Serializer ?? ServiceProvider.GetRequiredService<ILambdaSerializer>();
+
     public TimeSpan RemainingTime => _lambdaContext.RemainingTime;
 
     public string TenantId => _lambdaContext.TenantId;

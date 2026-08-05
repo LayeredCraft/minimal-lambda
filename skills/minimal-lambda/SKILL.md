@@ -1,6 +1,6 @@
 ---
 name: minimal-lambda
-description: Work effectively with MinimalLambda, the Lambda-first .NET hosting framework in this repo and in client projects. Use this skill whenever the user asks to build, debug, migrate, test, document, scaffold, template, package, or review code using MinimalLambda APIs, `dotnet new mlambda` templates, envelopes, middleware, lifecycle hooks, source-generated handlers, AOT/trimming, OpenTelemetry, or MinimalLambda.Testing. Trigger even when the user only mentions AWS Lambda with Minimal API-style .NET patterns, MapHandler, FromEvent, LambdaApplication, MinimalLambda package names, MinimalLambda.Templates, or adding a Lambda to an existing solution.
+description: Work effectively with MinimalLambda, the Lambda-first .NET hosting framework in this repo and in client projects. Use this skill whenever the user asks to build, debug, migrate, test, document, scaffold, template, package, or review code using MinimalLambda APIs, `dotnet new mlambda` templates, envelopes, middleware, lifecycle hooks, source-generated handlers, AOT/trimming, OpenTelemetry, or MinimalLambda.Testing. Trigger even when the user only mentions AWS Lambda with Minimal API-style .NET patterns, MapHandler, FromEvent, LambdaApplication, MinimalLambda package names, MinimalLambda.Templates, Durable Execution, MapDurableHandler, IDurableContext, or adding a Lambda to an existing solution.
 ---
 
 # MinimalLambda skill
@@ -12,6 +12,7 @@ Use this skill to give agents enough MinimalLambda project context without loadi
 1. Identify task area:
    - client project setup/package/config/template usage or `dotnet new mlambda` → read `references/client-project-setup.md`
    - app setup/handler/DI/lifecycle → read `references/core-hosting.md` and `references/best-practices.md`
+   - AWS Lambda Durable Execution, `MapDurableHandler`, `IDurableContext`, replay, or checkpoints → read `references/durable-execution.md` before general handler/cancellation advice
    - handler shape/unit-testable handlers → read `references/patterns/handler-patterns.md`
    - middleware/features/context → read `references/core-hosting.md` and `references/patterns/middleware-patterns.md`
    - lifecycle hooks (`OnInit`/`OnShutdown`) → read `references/core-hosting.md` and
@@ -44,8 +45,9 @@ await lambda.RunAsync();
 Core pieces:
 
 - `LambdaApplication.CreateBuilder()` creates standard .NET host/config/DI defaults.
-- `MapHandler(...)` registers one Lambda handler. Source generator intercepts it at compile time.
-- `[FromEvent]` marks deserialized event payload. At most one payload parameter.
+- `MapHandler(...)` registers one ordinary Lambda handler. Source generator intercepts it at compile time.
+- `MapDurableHandler(...)` registers one durable workflow with stricter signature, cancellation, replay, middleware, and serializer rules; read `references/durable-execution.md`.
+- `[FromEvent]` marks deserialized event payload. Ordinary handlers allow at most one; durable handlers allow zero or one. `IDurableContext` is optional for durable handlers.
 - Other handler parameters resolve from DI/context/keyed services/cancellation token.
 - Middleware wraps invocation pipeline via inline `UseMiddleware(...)` or class `UseMiddleware<T>()`.
 - `OnInit(...)` runs once during cold start; `OnShutdown(...)` runs during teardown.
@@ -71,7 +73,7 @@ Read `references/best-practices.md` before giving architectural advice.
 - Allow simple inline logic in `Program.cs` when logic is tiny and Lambda remains easy to read.
 - Extract middleware classes only when middleware is complex, reusable, stateful, or worth testing
   separately.
-- Prefer `CancellationToken` in async handlers and downstream calls.
+- Prefer `CancellationToken` in ordinary async handlers and downstream calls. A durable root handler may declare one only for physical invocation cancellation; use SDK-provided durable-operation callback tokens for durable steps.
 - Prefer scoped services for per-invocation state; singleton for reusable clients/caches.
 - Avoid storing scoped services in singletons.
 - Prefer typed records/responses/envelopes over anonymous response contracts.
@@ -84,7 +86,8 @@ Read `references/best-practices.md` before giving architectural advice.
 
 Before final answer or patch:
 
-- Does code compile with source generation? `MapHandler` signature has 0 or 1 `[FromEvent]`.
+- Does code compile with source generation? `MapHandler` has 0 or 1 `[FromEvent]`; `MapDurableHandler` has 0 or 1 `[FromEvent]`, 0 or 1 `IDurableContext`, and returns `Task`/`Task<T>`.
+- Does durable code treat optional root `CancellationToken` as physical invocation cancellation, use SDK operation-callback tokens for durable steps, register explicit serializer roots, and obey replay-safe middleware rules?
 - Does runtime call only one handler mapping path?
 - Are packages matched (`MinimalLambda.Testing` same version as `MinimalLambda`)?
 - Are envelope package/type and AWS trigger type aligned?

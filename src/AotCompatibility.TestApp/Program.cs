@@ -1,3 +1,3 @@
-﻿// See https://aka.ms/new-console-template for more information
+// This executable exists only to root MinimalLambda assemblies for Native AOT publish analysis.
 
-Console.WriteLine("Hello, World!");
+return;
