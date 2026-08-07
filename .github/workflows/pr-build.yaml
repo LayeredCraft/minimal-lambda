@@ -1,4 +1,4 @@
-name: PR Quality Gates
+name: PR Build
 
 on:
   pull_request:
@@ -13,11 +13,12 @@ on:
       - '**.md'
 
 concurrency:
-  group: pr-quality-${{ github.event.pull_request.number }}
+  group: pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
-  quality:
+  build:
+    name: build / build
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -75,6 +76,6 @@ jobs:
             echo "Run the following commands locally to fix:"
             echo "  task format:all"
             exit 1
-          else
-            echo "✅ All code is properly formatted!"
           fi
+
+          echo "✅ All code is properly formatted!"
