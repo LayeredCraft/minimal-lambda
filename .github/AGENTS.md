@@ -43,7 +43,7 @@ Examples:
 - Use `LayeredCraft/devops-templates` reusable workflows whenever they support required behavior. Do not replace them with custom workflow logic for package building, publishing, or standard PR checks.
 - If a local workflow or step is required, document why DevOps templates cannot support it in the PR and keep exception narrowly scoped.
 - PR title check, release drafter, preview publishing, and release publishing use `LayeredCraft/devops-templates` reusable workflows.
-- `pr-quality.yaml` is intentionally local: it preserves MinimalLambda-specific build, AOT, test/Codecov, and CleanupCode formatting gates.
+- `pr-build.yaml` is intentionally local: shared build output paths merge project artifacts and break MinimalLambda's multi-project test run. Its `build / build` check name matches main branch protection.
 - `docs.yaml` is intentionally local: it builds/deploys the Zensical docs site with `uv` and GitHub Pages.
 
 ## Releases
