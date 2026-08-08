@@ -12,7 +12,7 @@
     <PackageVersion Include="Amazon.Lambda.KafkaEvents" Version="3.0.0" />
     <PackageVersion Include="Amazon.Lambda.KinesisEvents" Version="4.0.0" />
     <PackageVersion Include="Amazon.Lambda.KinesisFirehoseEvents" Version="3.0.0" />
-    <PackageVersion Include="Amazon.Lambda.RuntimeSupport" Version="2.1.3" />
+    <PackageVersion Include="Amazon.Lambda.RuntimeSupport" Version="2.2.0" />
     <PackageVersion Include="Amazon.Lambda.Serialization.SystemTextJson" Version="3.0.0" />
     <PackageVersion Include="Amazon.Lambda.TestUtilities" Version="4.2.0" />
     <PackageVersion Include="Autofac.Extensions.DependencyInjection" Version="11.0.2" />
@@ -39,7 +39,7 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.4" />
     <PackageVersion Include="NSubstitute.Analyzers.CSharp" Version="1.0.17" />
     <PackageVersion Include="PolySharp" Version="1.16.0" />
-    <PackageVersion Include="Scriban" Version="7.2.5" />
+    <PackageVersion Include="Scriban" Version="7.2.6" />
     <!-- OTEL Libraries -->
     <PackageVersion Include="NSubstitute" Version="6.0.0" />
     <PackageVersion Include="OpenTelemetry.Exporter.InMemory" Version="1.17.0" />
