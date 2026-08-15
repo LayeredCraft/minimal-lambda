@@ -11,7 +11,7 @@ jobs:
   build:
     permissions:
       contents: write
-    uses: LayeredCraft/devops-templates/.github/workflows/publish-release.yml@v10.3
+    uses: LayeredCraft/devops-templates/.github/workflows/publish-release.yml@v10.5
     with:
       solution: MinimalLambda.sln
       dotnetVersion: 11.0.x
@@ -25,6 +25,6 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - uses: LayeredCraft/devops-templates/.github/actions/nuget-push@v10.3
+      - uses: LayeredCraft/devops-templates/.github/actions/nuget-push@v10.5
         with:
           nuget_user: ${{ secrets.NUGET_USER }}
