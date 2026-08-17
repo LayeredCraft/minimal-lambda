@@ -54,6 +54,7 @@ jobs:
           dotnet test MinimalLambda.sln --configuration Release --no-build
           --results-directory ./coverage --coverage
           --coverage-output-format cobertura --no-progress --no-ansi
+          -p:TestTfmsInParallel=false
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v6
