@@ -115,6 +115,8 @@ public class SimpleLambdaTests
         response.WasSuccess.Should().BeFalse();
         response.Error.Should().NotBeNull();
         response.Error.ErrorMessage.Should().Be("Name is required");
+
+        await factory.TestServer.DisposeAsync();
     }
 
     [Fact]
