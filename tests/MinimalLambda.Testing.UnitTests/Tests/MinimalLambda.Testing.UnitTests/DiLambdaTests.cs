@@ -104,15 +104,16 @@ public class DiLambdaTests
         var initResult = await factory.TestServer.StartAsync(TestContext.Current.CancellationToken);
         initResult.InitStatus.Should().Be(InitStatus.InitCompleted);
 
-        var act = async () =>
-            // ReSharper disable once AccessToDisposedClosure
-            await factory.TestServer.StopAsync(TestContext.Current.CancellationToken);
+        var act = async () => await factory.DisposeAsync();
 
         (await act.Should().ThrowAsync<AggregateException>())
             .WithInnerException<AggregateException>()
             .WithInnerException<AggregateException>()
             .WithInnerException<Exception>()
             .WithMessage("Test init error");
+
+        var getService = () => factory.Services.GetRequiredService<ILifecycleService>();
+        getService.Should().Throw<ObjectDisposedException>();
     }
 
     [Theory]
