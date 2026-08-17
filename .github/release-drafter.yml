@@ -103,6 +103,4 @@ template: |
 
   $CHANGES
 
-prerelease: true
-prerelease-identifier: 'preview'
 commitish: 'main'
