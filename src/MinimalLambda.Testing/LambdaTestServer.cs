@@ -381,7 +381,6 @@ public class LambdaTestServer : IAsyncDisposable
     ///     <para>This method performs the following shutdown sequence:</para>
     ///     <list type="number">
     ///         <item><description>Stops the application host via <see cref="IHostApplicationLifetime" /></description></item>
-    ///         <item><description>Waits for the entry point or processing task to complete</description></item>
     ///         <item><description>Cancels the internal shutdown token to stop transaction processing</description></item>
     ///         <item><description>Waits for the entry point and processing tasks to complete</description></item>
     ///         <item><description>Transitions the server state to <see cref="ServerState.Stopped" /></description></item>
@@ -401,16 +400,7 @@ public class LambdaTestServer : IAsyncDisposable
 
         _applicationLifetime?.StopApplication();
 
-        try
-        {
-            await TaskHelpers
-                .WhenAny(_entryPointCompletion, _processingTask ?? Task.CompletedTask)
-                .WaitAsync(cancellationToken);
-        }
-        finally
-        {
-            await _shutdownCts.CancelAsync();
-        }
+        await _shutdownCts.CancelAsync();
 
         await TaskHelpers
             .WhenAll(_entryPointCompletion, _processingTask ?? Task.CompletedTask)
@@ -478,7 +468,7 @@ public class LambdaTestServer : IAsyncDisposable
         {
             var requestId = await _pendingInvocationIds.Reader.ReadAsync(_shutdownCts.Token);
             _pendingInvocations.GetRequired(requestId, out var pendingInvocation);
-            transaction.ResponseTcs.SetResult(pendingInvocation.EventResponse);
+            transaction.Respond(pendingInvocation.EventResponse);
         }
     }
 
