@@ -14,8 +14,9 @@ public class DurableLambdaTests
     {
         // Arrange
         await using var factory =
-            new LambdaApplicationFactory<DurableLambda>().WithCancellationToken(
-                TestContext.Current.CancellationToken);
+            LambdaTestFactory
+                .Create<DurableLambda>()
+                .WithCancellationToken(TestContext.Current.CancellationToken);
         var input = CreateInvocationInput(shouldFail: false);
 
         // Act
@@ -45,8 +46,9 @@ public class DurableLambdaTests
     {
         // Arrange
         await using var factory =
-            new LambdaApplicationFactory<DurableLambda>().WithCancellationToken(
-                TestContext.Current.CancellationToken);
+            LambdaTestFactory
+                .Create<DurableLambda>()
+                .WithCancellationToken(TestContext.Current.CancellationToken);
         var input = CreateInvocationInput(shouldFail: true);
 
         // Act
