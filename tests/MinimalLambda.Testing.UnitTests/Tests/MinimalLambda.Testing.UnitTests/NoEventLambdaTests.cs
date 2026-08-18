@@ -29,8 +29,8 @@ public class NoEventLambdaTests
             LambdaTestFactory
                 .Create<NoEventLambda>()
                 .WithCancellationToken(TestContext.Current.CancellationToken)
-                .WithHostBuilder(builder => builder.ConfigureAppConfiguration((_, config)
-                    => config.AddInMemoryCollection(
+                .WithHostBuilder(builder => builder.ConfigureAppConfiguration((_, config) =>
+                    config.AddInMemoryCollection(
                         new Dictionary<string, string> { ["MESSAGE"] = "Hello Mars!" }!)));
 
         var response =
