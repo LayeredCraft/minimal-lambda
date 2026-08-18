@@ -9,8 +9,9 @@ public class SimpleLambdaTests
     public async Task SimpleLambda_ReturnsExpectedValue()
     {
         await using var factory =
-            new LambdaApplicationFactory<SimpleLambda>().WithCancellationToken(
-                TestContext.Current.CancellationToken);
+            LambdaTestFactory
+                .Create<SimpleLambda>()
+                .WithCancellationToken(TestContext.Current.CancellationToken);
         var setup = await factory.TestServer.StartAsync(TestContext.Current.CancellationToken);
         setup.InitStatus.Should().Be(InitStatus.InitCompleted);
 
@@ -27,8 +28,9 @@ public class SimpleLambdaTests
     public async Task SimpleLambda_WorksWhenStartIsNotCalled()
     {
         await using var factory =
-            new LambdaApplicationFactory<SimpleLambda>().WithCancellationToken(
-                TestContext.Current.CancellationToken);
+            LambdaTestFactory
+                .Create<SimpleLambda>()
+                .WithCancellationToken(TestContext.Current.CancellationToken);
 
         var response = await factory.TestServer.InvokeAsync<string, string>(
             "World",
@@ -43,8 +45,9 @@ public class SimpleLambdaTests
     public async Task SimpleLambda_WorksWhenInvokeCalledMultipleTimes()
     {
         await using var factory =
-            new LambdaApplicationFactory<SimpleLambda>().WithCancellationToken(
-                TestContext.Current.CancellationToken);
+            LambdaTestFactory
+                .Create<SimpleLambda>()
+                .WithCancellationToken(TestContext.Current.CancellationToken);
 
         // Launch 5 concurrent invocations
         var tasks = Enumerable
@@ -73,8 +76,9 @@ public class SimpleLambdaTests
     public async Task SimpleLambda_WorksWhenInvokeCalledMultipleTimes_WithoutStart()
     {
         await using var factory =
-            new LambdaApplicationFactory<SimpleLambda>().WithCancellationToken(
-                TestContext.Current.CancellationToken);
+            LambdaTestFactory
+                .Create<SimpleLambda>()
+                .WithCancellationToken(TestContext.Current.CancellationToken);
         await factory.TestServer.StartAsync(TestContext.Current.CancellationToken);
 
         // Launch 5 concurrent invocations
@@ -104,8 +108,9 @@ public class SimpleLambdaTests
     public async Task SimpleLambda_ReturnsError()
     {
         await using var factory =
-            new LambdaApplicationFactory<SimpleLambda>().WithCancellationToken(
-                TestContext.Current.CancellationToken);
+            LambdaTestFactory
+                .Create<SimpleLambda>()
+                .WithCancellationToken(TestContext.Current.CancellationToken);
 
         var response = await factory.TestServer.InvokeAsync<string, string>(
             "",
@@ -115,12 +120,15 @@ public class SimpleLambdaTests
         response.WasSuccess.Should().BeFalse();
         response.Error.Should().NotBeNull();
         response.Error.ErrorMessage.Should().Be("Name is required");
+
+        await factory.TestServer.DisposeAsync();
     }
 
     [Fact]
     public async Task SimpleLambda_ErrorsArePropagated()
     {
-        await using var factory = new LambdaApplicationFactory<SimpleLambda>()
+        await using var factory = LambdaTestFactory
+            .Create<SimpleLambda>()
             .WithCancellationToken(TestContext.Current.CancellationToken)
             .WithHostBuilder(builder =>
             {
@@ -148,8 +156,9 @@ public class SimpleLambdaTests
     public async Task SimpleLambda_WithPreCanceledToken_CancelsInvocation()
     {
         await using var factory =
-            new LambdaApplicationFactory<SimpleLambda>().WithCancellationToken(
-                TestContext.Current.CancellationToken);
+            LambdaTestFactory
+                .Create<SimpleLambda>()
+                .WithCancellationToken(TestContext.Current.CancellationToken);
         await factory.TestServer.StartAsync(TestContext.Current.CancellationToken);
 
         using var cts = new CancellationTokenSource();

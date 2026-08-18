@@ -80,6 +80,39 @@ public class LambdaHostedServiceTests
 
     [Theory]
     [AutoNSubstituteData]
+    internal async Task StartAsync_CancelsBootstrapWhenApplicationStops(
+        [Frozen] ILambdaBootstrapOrchestrator bootstrap,
+        [Frozen] IHostApplicationLifetime lifetime,
+        LambdaHostedService service)
+    {
+        // Arrange
+        using var applicationStoppingCts = new CancellationTokenSource();
+        var bootstrapToken = new TaskCompletionSource<CancellationToken>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        lifetime.ApplicationStopping.Returns(applicationStoppingCts.Token);
+        bootstrap
+            .RunAsync(
+                Arg.Any<Func<Stream, ILambdaContext, Task<Stream>>>(),
+                Arg.Any<Func<CancellationToken, Task<bool>>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var cancellationToken = callInfo.ArgAt<CancellationToken>(2);
+                bootstrapToken.SetResult(cancellationToken);
+                return Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            });
+
+        // Act
+        await service.StartAsync(CancellationToken.None);
+        applicationStoppingCts.Cancel();
+
+        // Assert
+        (await bootstrapToken.Task).IsCancellationRequested.Should().BeTrue();
+        await service.StopAsync(CancellationToken.None);
+    }
+
+    [Theory]
+    [AutoNSubstituteData]
     internal async Task StartAsync_CreatesRequestHandler(
         [Frozen] ILambdaHandlerFactory handlerFactory,
         LambdaHostedService service)

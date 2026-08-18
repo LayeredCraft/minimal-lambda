@@ -177,32 +177,38 @@ public class LambdaApplicationTests
     }
 
     [Fact]
-    public void StartAsync_ReturnsAwaitableTask()
+    public async Task StartAsync_DelegatesToHost()
     {
         // Arrange
-        var host = CreateHostWithServices();
+        using var servicesHost = CreateHostWithServices();
+        var host = Substitute.For<IHost>();
+        host.Services.Returns(servicesHost.Services);
+        host.StartAsync(TestContext.Current.CancellationToken).Returns(Task.CompletedTask);
         var app = new LambdaApplication(host);
 
         // Act
-        var task = app.StartAsync(TestContext.Current.CancellationToken);
+        await app.StartAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        task.Should().NotBeNull();
+        await host.Received(1).StartAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
-    public void StartAsync_WithCancellationToken_ReturnsAwaitableTask()
+    public async Task StartAsync_PassesCancellationTokenToHost()
     {
         // Arrange
-        var host = CreateHostWithServices();
+        using var servicesHost = CreateHostWithServices();
+        var host = Substitute.For<IHost>();
+        host.Services.Returns(servicesHost.Services);
+        using var cts = new CancellationTokenSource();
+        host.StartAsync(cts.Token).Returns(Task.CompletedTask);
         var app = new LambdaApplication(host);
 
         // Act
-        using var cts = new CancellationTokenSource();
-        var task = app.StartAsync(cts.Token);
+        await app.StartAsync(cts.Token);
 
         // Assert
-        task.Should().NotBeNull();
+        await host.Received(1).StartAsync(cts.Token);
     }
 
     [Fact]

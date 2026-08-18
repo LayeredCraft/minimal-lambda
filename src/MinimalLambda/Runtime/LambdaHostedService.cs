@@ -18,6 +18,7 @@ internal sealed class LambdaHostedService : IHostedService, IDisposable
     private readonly LambdaHostedServiceOptions _options;
     private bool _disposed;
 
+    private CancellationTokenRegistration _applicationStoppingRegistration;
     private Task? _executeTask;
     private Func<CancellationToken, Task>? _shutdownHandler;
     private CancellationTokenSource? _stoppingCts;
@@ -48,6 +49,7 @@ internal sealed class LambdaHostedService : IHostedService, IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
+        _applicationStoppingRegistration.Dispose();
         _stoppingCts?.Cancel();
 
         if (_disposed)
@@ -68,6 +70,9 @@ internal sealed class LambdaHostedService : IHostedService, IDisposable
     {
         // Create a linked token to allow cancelling the executing task from the provided token
         _stoppingCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+        _applicationStoppingRegistration =
+            _lifetime.ApplicationStopping.Register(_stoppingCts.Cancel);
 
         // Create a fully composed handler with middleware and request processing.
         var requestHandler = _handlerFactory.CreateHandler(_stoppingCts.Token);

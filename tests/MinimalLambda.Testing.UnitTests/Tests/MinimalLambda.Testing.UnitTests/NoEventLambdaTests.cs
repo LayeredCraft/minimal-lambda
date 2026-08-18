@@ -8,8 +8,9 @@ public class NoEventLambdaTests
     public async Task NoEvent_ReturnsExpectedValue()
     {
         await using var factory =
-            new LambdaApplicationFactory<NoEventLambda>().WithCancellationToken(
-                TestContext.Current.CancellationToken);
+            LambdaTestFactory
+                .Create<NoEventLambda>()
+                .WithCancellationToken(TestContext.Current.CancellationToken);
 
         var response =
             await factory.TestServer.InvokeNoEventAsync<NoEventLambdaResponse>(
@@ -24,11 +25,13 @@ public class NoEventLambdaTests
     [Fact]
     public async Task NoEvent_ConfigurationCanBeOverwritten()
     {
-        await using var factory = new LambdaApplicationFactory<NoEventLambda>()
-            .WithCancellationToken(TestContext.Current.CancellationToken)
-            .WithHostBuilder(builder => builder.ConfigureAppConfiguration((_, config) =>
-                config.AddInMemoryCollection(
-                    new Dictionary<string, string> { ["MESSAGE"] = "Hello Mars!" }!)));
+        await using var factory =
+            LambdaTestFactory
+                .Create<NoEventLambda>()
+                .WithCancellationToken(TestContext.Current.CancellationToken)
+                .WithHostBuilder(builder => builder.ConfigureAppConfiguration((_, config) =>
+                    config.AddInMemoryCollection(
+                        new Dictionary<string, string> { ["MESSAGE"] = "Hello Mars!" }!)));
 
         var response =
             await factory.TestServer.InvokeNoEventAsync<NoEventLambdaResponse>(

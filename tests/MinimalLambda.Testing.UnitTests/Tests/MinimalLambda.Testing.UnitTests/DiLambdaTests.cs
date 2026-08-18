@@ -2,6 +2,7 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using MinimalLambda.UnitTests;
 using NSubstitute.ExceptionExtensions;
 
@@ -13,8 +14,9 @@ public class DiLambdaTests
     public async Task DiLambda_ReturnsExpectedValue()
     {
         await using var factory =
-            new LambdaApplicationFactory<DiLambda>().WithCancellationToken(
-                TestContext.Current.CancellationToken);
+            LambdaTestFactory
+                .Create<DiLambda>()
+                .WithCancellationToken(TestContext.Current.CancellationToken);
 
         var response = await factory.TestServer.InvokeAsync<DiLambdaRequest, DiLambdaResponse>(
             new DiLambdaRequest("World"),
@@ -27,10 +29,25 @@ public class DiLambdaTests
     }
 
     [Fact]
+    public async Task DiLambda_HostLoggingIsDisabled()
+    {
+        await using var factory =
+            LambdaTestFactory
+                .Create<DiLambda>()
+                .WithCancellationToken(TestContext.Current.CancellationToken);
+
+        var logger = factory.Services.GetRequiredService<ILogger<DiLambda>>();
+
+        foreach (var level in Enum.GetValues<LogLevel>())
+            logger.IsEnabled(level).Should().BeFalse();
+    }
+
+    [Fact]
     internal async Task DiLambda_InitStopped()
     {
         var lifecycleService = Substitute.For<ILifecycleService>();
-        await using var factory = new LambdaApplicationFactory<DiLambda>()
+        await using var factory = LambdaTestFactory
+            .Create<DiLambda>()
             .WithCancellationToken(TestContext.Current.CancellationToken)
             .WithHostBuilder(builder => builder.ConfigureServices((_, services) =>
             {
@@ -59,7 +76,8 @@ public class DiLambdaTests
     {
         var lifecycleService = Substitute.For<ILifecycleService>();
 
-        await using var factory = new LambdaApplicationFactory<DiLambda>()
+        await using var factory = LambdaTestFactory
+            .Create<DiLambda>()
             .WithCancellationToken(TestContext.Current.CancellationToken)
             .WithHostBuilder(builder => builder.ConfigureServices((_, services) =>
             {
@@ -90,7 +108,8 @@ public class DiLambdaTests
     [AutoNSubstituteData]
     internal async Task DiLambda_ShutdownThrowsException(ILifecycleService lifecycleService)
     {
-        await using var factory = new LambdaApplicationFactory<DiLambda>()
+        await using var factory = LambdaTestFactory
+            .Create<DiLambda>()
             .WithCancellationToken(TestContext.Current.CancellationToken)
             .WithHostBuilder(builder => builder.ConfigureServices((_, services) =>
             {
@@ -104,15 +123,16 @@ public class DiLambdaTests
         var initResult = await factory.TestServer.StartAsync(TestContext.Current.CancellationToken);
         initResult.InitStatus.Should().Be(InitStatus.InitCompleted);
 
-        var act = async () =>
-            // ReSharper disable once AccessToDisposedClosure
-            await factory.TestServer.StopAsync(TestContext.Current.CancellationToken);
+        var act = async () => await factory.DisposeAsync();
 
         (await act.Should().ThrowAsync<AggregateException>())
             .WithInnerException<AggregateException>()
             .WithInnerException<AggregateException>()
             .WithInnerException<Exception>()
             .WithMessage("Test init error");
+
+        var getService = () => factory.Services.GetRequiredService<ILifecycleService>();
+        getService.Should().Throw<ObjectDisposedException>();
     }
 
     [Theory]
@@ -121,7 +141,8 @@ public class DiLambdaTests
         ILifecycleService lifecycleService,
         IService service)
     {
-        await using var factory = new LambdaApplicationFactory<DiLambda>()
+        await using var factory = LambdaTestFactory
+            .Create<DiLambda>()
             .WithCancellationToken(TestContext.Current.CancellationToken)
             .WithHostBuilder(builder => builder
                 .ConfigureContainer<ContainerBuilder>((_, containerBuilder) =>
@@ -149,7 +170,8 @@ public class DiLambdaTests
         ILifecycleService lifecycleService,
         IService service)
     {
-        await using var factory = new LambdaApplicationFactory<DiLambda>()
+        await using var factory = LambdaTestFactory
+            .Create<DiLambda>()
             .WithCancellationToken(TestContext.Current.CancellationToken)
             .WithHostBuilder(builder => builder
                 .ConfigureContainer<ContainerBuilder>((_, containerBuilder) =>

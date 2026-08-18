@@ -11,8 +11,9 @@ public class NoResponseLambdaTests
     public async Task NoResponseLambda_ReturnsExpectedValue()
     {
         await using var factory =
-            new LambdaApplicationFactory<NoResponseLambda>().WithCancellationToken(
-                TestContext.Current.CancellationToken);
+            LambdaTestFactory
+                .Create<NoResponseLambda>()
+                .WithCancellationToken(TestContext.Current.CancellationToken);
 
         var response = await factory.TestServer.InvokeNoResponseAsync(
             new NoResponseLambdaRequest("World"),
@@ -26,8 +27,9 @@ public class NoResponseLambdaTests
     public async Task NoResponseLambda_ServicesIsAccessible()
     {
         await using var factory =
-            new LambdaApplicationFactory<NoResponseLambda>().WithCancellationToken(
-                TestContext.Current.CancellationToken);
+            LambdaTestFactory
+                .Create<NoResponseLambda>()
+                .WithCancellationToken(TestContext.Current.CancellationToken);
 
         var act = () => factory.TestServer.Services.GetRequiredService<IHostApplicationLifetime>();
 
@@ -38,8 +40,9 @@ public class NoResponseLambdaTests
     public async Task NoResponseLambda_DisposeCanBeCalledMultipleTimes()
     {
         await using var factory =
-            new LambdaApplicationFactory<NoResponseLambda>().WithCancellationToken(
-                TestContext.Current.CancellationToken);
+            LambdaTestFactory
+                .Create<NoResponseLambda>()
+                .WithCancellationToken(TestContext.Current.CancellationToken);
 
         var act = async () =>
         {

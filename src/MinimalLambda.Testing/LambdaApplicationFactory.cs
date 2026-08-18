@@ -105,20 +105,24 @@ public class LambdaApplicationFactory<TEntryPoint> : IDisposable, IAsyncDisposab
         if (_disposedAsync)
             return;
 
-        foreach (var factory in _derivedFactories)
-            await ((IAsyncDisposable)factory).DisposeAsync().ConfigureAwait(false);
+        try
+        {
+            foreach (var factory in _derivedFactories)
+                await ((IAsyncDisposable)factory).DisposeAsync().ConfigureAwait(false);
 
-        // TestServer handles disposing both processor and host
-        if (_server != null)
-            await _server.DisposeAsync().ConfigureAwait(false);
+            // TestServer handles disposing its processor.
+            if (_server != null)
+                await _server.DisposeAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            _host?.Dispose();
+            _disposedAsync = true;
 
-        _host?.Dispose();
+            Dispose(true);
 
-        _disposedAsync = true;
-
-        Dispose(true);
-
-        GC.SuppressFinalize(this);
+            GC.SuppressFinalize(this);
+        }
     }
 
     /// <inheritdoc />
