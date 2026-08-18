@@ -1,12 +1,18 @@
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace MinimalLambda.UnitTests.Application.Extensions;
 
 [TestSubject(typeof(OutputFormattingLambdaApplicationExtensions))]
 public class OutputFormattingLambdaApplicationExtensionsTests
 {
-    private static IHost CreateHostWithServices() =>
-        new LambdaApplicationBuilder(new LambdaApplicationOptions()).Build();
+    private static IHost CreateHostWithServices()
+    {
+        var builder = new LambdaApplicationBuilder(new LambdaApplicationOptions());
+        builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.None);
+
+        return builder.Build();
+    }
 
     [Fact]
     public void OnInitClearLambdaOutputFormatting_WithNullApplication_ThrowsArgumentNullException()
