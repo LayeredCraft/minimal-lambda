@@ -43,6 +43,12 @@
       "skillPath": "skills/caveman-stats/SKILL.md",
       "computedHash": "57c7db449641379e2afd1389fdb17cec8f33d9c8e25b1d28093937b4431895e8"
     },
+    "compono": {
+      "source": "LayeredCraft/compono",
+      "sourceType": "github",
+      "skillPath": "skills/compono/SKILL.md",
+      "computedHash": "75ed01298ff370af33744ff231a71e02a3df967daad671e5dcd02b5e0aa863d1"
+    },
     "git-workflow": {
       "source": "LayeredCraft/skills",
       "sourceType": "github",
