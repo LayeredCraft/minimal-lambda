@@ -19,8 +19,7 @@ Use this page when rendering behavior may change due to navigation/runtime confi
 - Keep link syntax compatible with docs-relative navigation.
 - Avoid relying on fragile runtime-only behavior unless confirmed.
 - Mention caveats when the user asks for advanced interactive behavior.
-- If the user needs the exact TOML flags involved, pair this page
-  with [Configuration Reference](configuration-reference.md).
+- If the user needs the exact TOML flags involved, pair this page with [Configuration Reference](configuration-reference.md).
 
 ## Fallback policy
 

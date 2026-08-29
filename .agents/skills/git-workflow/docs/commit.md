@@ -25,11 +25,9 @@ Create a commit representing the user's current working changes using a conventi
 [optional footer(s)]
 ```
 
-The description must immediately follow the colon and space. Scope is wrapped in parentheses when
-present: `feat(parser): add CSV support`.
+The description must immediately follow the colon and space. Scope is wrapped in parentheses when present: `feat(parser): add CSV support`.
 
-For breaking changes, append `!` after the type/scope and/or include a `BREAKING CHANGE:` footer.
-See [Conventional Types](../shared/conventional-types.md) for details.
+For breaking changes, append `!` after the type/scope and/or include a `BREAKING CHANGE:` footer. See [Conventional Types](../shared/conventional-types.md) for details.
 
 ## Workflow
 
@@ -37,8 +35,7 @@ See [Conventional Types](../shared/conventional-types.md) for details.
 2. Identify all modified files
 3. Stage all user-modified files (see [File Inclusion Policy](../shared/file-inclusion-policy.md))
 4. Exclude only obvious junk artifacts
-5. Infer `<type>` and `<scope>` (see [Conventional Types](../shared/conventional-types.md)
-   and [Scope Detection](../shared/scope-detection.md))
+5. Infer `<type>` and `<scope>` (see [Conventional Types](../shared/conventional-types.md) and [Scope Detection](../shared/scope-detection.md))
 6. Generate and create the commit
 
 ## Output

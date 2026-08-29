@@ -38,6 +38,25 @@ implicitly returning composed values from unstubbed members, expect
 explicitly, per-test, rather than looking for a global auto-configure
 switch (there isn't one).
 
+## Configure and verify calls
+
+Use ordinary NSubstitute syntax after Compono supplies the bare substitute:
+
+```csharp
+repository.CountAsync().Returns(Task.FromResult(4));
+repository.Save(Arg.Any<Order>()).Throws(new InvalidOperationException());
+
+await service.PlaceAsync(order);
+repository.Received(1).Save(Arg.Is<Order>(x => x.Id == order.Id));
+```
+
+`Arg.Any<T>()` and `Arg.Is<T>(...)` select argument-aware setup or
+verification in NSubstitute. They are not compatible with
+`Compono.TestDoubles`, whose `Configure()`/`Verify()` surface is
+argument-independent. Configure async members with their actual return
+value (`Task.FromResult(...)`, `ValueTask<T>`, and so on), then verify the
+call through `Received(...)`/`DidNotReceive()`.
+
 ## Combining with `[Shared]`
 
 ```csharp

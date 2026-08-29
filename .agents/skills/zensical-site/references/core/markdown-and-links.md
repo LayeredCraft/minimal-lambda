@@ -51,8 +51,7 @@ In practice, title resolution follows this order:
 ## Interactions / caveats
 
 - front matter can override visible title behavior ([Front Matter](front-matter.md)).
-- URL mode impacts generated
-  paths ([Navigation and Runtime Caveats](../dependencies/navigation-runtime-caveats.md)).
+- URL mode impacts generated paths ([Navigation and Runtime Caveats](../dependencies/navigation-runtime-caveats.md)).
 
 ## Deeper docs
 

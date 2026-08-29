@@ -119,6 +119,14 @@ rows on one method.** If a test needs several independent inline+composed
 combinations, split into separate `[Theory]`/`[InlineData]` methods —
 don't try to layer multiple Compose-family attributes to get that effect.
 
+## Disposal
+
+`Compono.XunitV3` does not dispose composed values automatically. The test
+owns any `IDisposable` or `IAsyncDisposable` root, shared value, or nested
+dependency it creates and must dispose resources when their lifetime
+matters. Do not copy `Compono.TUnit` disposal assumptions here: TUnit owns
+composed root method arguments, while xUnit v3 does not.
+
 ## No fixture object
 
 There's nothing like AutoFixture's `IFixture` to hold onto across a test

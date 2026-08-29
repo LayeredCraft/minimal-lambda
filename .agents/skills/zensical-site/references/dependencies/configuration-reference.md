@@ -5,14 +5,12 @@ Use this page when the task depends on how Zensical is configured, not just on m
 ## Default configuration model
 
 - Prefer `zensical.toml` examples and guidance.
-- Zensical can read `mkdocs.yml`, but this skill should default to TOML unless the user is
-  explicitly migrating or maintaining YAML.
+- Zensical can read `mkdocs.yml`, but this skill should default to TOML unless the user is explicitly migrating or maintaining YAML.
 - Most settings live under `[project]`.
 - `site_name` is required in the project config.
 - Theme flags usually live under `[project.theme]`.
 - Markdown features usually live under `[project.markdown_extensions...]`.
-- Template and behavior overrides often use `[project.extra]`, `extra_css`, `extra_javascript`, and
-  `custom_dir`.
+- Template and behavior overrides often use `[project.extra]`, `extra_css`, `extra_javascript`, and `custom_dir`.
 
 ## Core TOML patterns to recognize
 
@@ -92,17 +90,14 @@ deprecated = "Deprecated"
 
 - `navigation.instant` requires `site_url` to be set.
 - Instant previews also require `site_url`.
-- Instant preview automation uses `[project.markdown_extensions.zensical.extensions.preview]` with
-  nested `configurations`.
+- Instant preview automation uses `[project.markdown_extensions.zensical.extensions.preview]` with nested `configurations`.
 - `navigation.prune` is incompatible with `navigation.expand`.
 - `navigation.indexes` is incompatible with `toc.integrate`.
 
 ### Front matter behaviors
 
-- Page status badges require `[project.extra.status]` before `status:` in front matter will mean
-  anything.
-- Page templates require `[project.theme] custom_dir = "overrides"` and a template file in that
-  overrides directory.
+- Page status badges require `[project.extra.status]` before `status:` in front matter will mean anything.
+- Page templates require `[project.theme] custom_dir = "overrides"` and a template file in that overrides directory.
 - Search exclusion for an entire page works with front matter alone.
 - Search exclusion for sections or blocks requires `attr_list`.
 
@@ -110,31 +105,25 @@ deprecated = "Deprecated"
 
 - Base admonitions need `[project.markdown_extensions.admonition]`.
 - Collapsible admonitions need `[project.markdown_extensions.pymdownx.details]`.
-- Nested admonitions or nested rich blocks need
-  `[project.markdown_extensions.pymdownx.superfences]`.
+- Nested admonitions or nested rich blocks need `[project.markdown_extensions.pymdownx.superfences]`.
 - Admonition icon changes use `[project.theme.icon.admonition]`.
 
 ### Buttons and attribute-driven styling
 
 - Buttons require `[project.markdown_extensions.attr_list]`.
-- Any advice that uses classes like `.md-button`, `.copy`, `.select`, or `data-search-exclude`
-  depends on `attr_list` support.
+- Any advice that uses classes like `.md-button`, `.copy`, `.select`, or `data-search-exclude` depends on `attr_list` support.
 
 ### Content tabs
 
-- Content tabs need `[project.markdown_extensions.pymdownx.superfences]` and
-  `[project.markdown_extensions.pymdownx.tabbed]` with `alternate_style = true`.
+- Content tabs need `[project.markdown_extensions.pymdownx.superfences]` and `[project.markdown_extensions.pymdownx.tabbed]` with `alternate_style = true`.
 - Linked tabs across pages use `[project.theme] features = ["content.tabs.link"]`.
 - Better tab anchors can use `[project.markdown_extensions.pymdownx.tabbed.slugify]`.
 
 ### Code blocks
 
-- Recommended code-block setup uses `pymdownx.highlight`, `pymdownx.inlinehilite`,
-  `pymdownx.snippets`, and `pymdownx.superfences`.
-- Good defaults for advanced code blocks include `anchor_linenums = true`, `line_spans = "__span"`,
-  and `pygments_lang_class = true`.
-- Global copy/select/annotate controls use theme features such as `content.code.copy`,
-  `content.code.select`, and `content.code.annotate`.
+- Recommended code-block setup uses `pymdownx.highlight`, `pymdownx.inlinehilite`, `pymdownx.snippets`, and `pymdownx.superfences`.
+- Good defaults for advanced code blocks include `anchor_linenums = true`, `line_spans = "__span"`, and `pygments_lang_class = true`.
+- Global copy/select/annotate controls use theme features such as `content.code.copy`, `content.code.select`, and `content.code.annotate`.
 - Code annotations depend on Pygments-based highlighting, not generic JavaScript highlighters.
 - Extra annotation selectors use `[project.extra.annotate]`.
 
@@ -142,8 +131,7 @@ deprecated = "Deprecated"
 
 - Mermaid diagrams require `pymdownx.superfences` with a `custom_fences` entry for `mermaid`.
 - Standard Mermaid support needs no extra JavaScript beyond that fence config.
-- Advanced Mermaid customization can add `extra_javascript`, and any runtime code should work with
-  `document$.subscribe(...)` if needed.
+- Advanced Mermaid customization can add `extra_javascript`, and any runtime code should work with `document$.subscribe(...)` if needed.
 
 ### Math
 
@@ -162,18 +150,14 @@ deprecated = "Deprecated"
 ### Tables
 
 - Basic table support uses `[project.markdown_extensions.tables]`.
-- Sortable tables are not built-in config flags; they require `extra_javascript` plus a runtime
-  helper script.
+- Sortable tables are not built-in config flags; they require `extra_javascript` plus a runtime helper script.
 
 ## Safe authoring rules for this skill
 
 - When the user asks for config help, show TOML-first examples unless their repo already uses YAML.
-- Do not imply that a markdown feature works automatically if the docs say it needs extension or
-  theme setup.
-- When a feature works only with additional CSS, JS, icons, or overrides, separate the content draft
-  from the configuration snippet.
-- When a feature has compatibility caveats, mention them instead of presenting the setup as
-  universal.
+- Do not imply that a markdown feature works automatically if the docs say it needs extension or theme setup.
+- When a feature works only with additional CSS, JS, icons, or overrides, separate the content draft from the configuration snippet.
+- When a feature has compatibility caveats, mention them instead of presenting the setup as universal.
 
 ## Common gotchas
 

@@ -12,8 +12,7 @@ ______________________________________________________________________
 
 ## Goal
 
-Create a properly named branch for the current work based on inferred change intent, then switch to
-it.
+Create a properly named branch for the current work based on inferred change intent, then switch to it.
 
 ## Branch naming format
 
@@ -52,8 +51,7 @@ Examples:
 
 ## Branch-specific safety
 
-If a branch with the same name already exists, append a short numeric suffix (e.g. `-2`) rather than
-overwriting it.
+If a branch with the same name already exists, append a short numeric suffix (e.g. `-2`) rather than overwriting it.
 
 See also [Safety Rules](../shared/safety-rules.md) for general constraints.
 

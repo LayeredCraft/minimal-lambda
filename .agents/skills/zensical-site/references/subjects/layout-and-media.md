@@ -30,8 +30,7 @@ Use supported shortcode or icon notation from the active icon set.
 - some icon sets require explicit setup
 - light/dark image swaps may rely on theme conventions
 
-See [Extension Prerequisites](../dependencies/extension-prereqs.md)
-and [Customization Boundaries](../dependencies/customization-boundaries.md).
+See [Extension Prerequisites](../dependencies/extension-prereqs.md) and [Customization Boundaries](../dependencies/customization-boundaries.md).
 
 ## Common options the model may need
 

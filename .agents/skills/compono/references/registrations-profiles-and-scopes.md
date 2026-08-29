@@ -45,6 +45,53 @@ Don't reuse a member rule across unrelated types hoping it'll apply
 broadly — if a rule should really apply everywhere, use a type rule or
 `Register<T>()` instead, not a copy-pasted member rule per type.
 
+## Constructor selection — `.For<T>().UseConstructor<...>()`
+
+A type with exactly one accessible constructor never needs this — Compono
+selects it automatically. A type with more than one accessible
+constructor and no selection is `CMP0001`. Fix it by naming the intended
+constructor's own parameter types, in order:
+
+```csharp
+public sealed class Foo
+{
+    public Foo() { }
+    public Foo(IBar bar, IBaz baz) { }
+}
+
+builder.For<Foo>().UseConstructor<IBar, IBaz>();
+```
+
+Compono still composes `IBar`/`IBaz` itself, recursively, exactly like an
+unambiguous constructor's parameters — the generated code is a direct
+`new Foo(bar, baz)`, never a stored/invoked delegate, never reflection.
+Works identically for a type you own and a BCL/third-party type you don't
+(`HttpClient`, `Exception`) — nothing is annotated on `Foo` itself.
+
+**`Register<T>` vs. `UseConstructor<...>()` — do not conflate these:**
+
+| | `Register<T>` | `UseConstructor<...>()` |
+|---|---|---|
+| Who builds it | You (a real runtime factory) | Compono (the generated plan) |
+| Use when | You need a *specific, already-configured* value, or logic beyond plain construction | The type just has more than one constructor and Compono should keep composing it |
+
+Never recommend `UseConstructor<...>()` for a case that actually needs a
+specific pre-built value (e.g. an `HttpClient` wrapping a particular
+`TestHttpHandler`-created handler) — there's no parameter-type list that
+expresses "the exact instance my fixture already configured"; that stays
+`Register<T>`/an interface wrapper. Never recommend
+`[CompositionConstructor]` or any attribute on the composed type — not
+shipped, explicitly rejected as the mechanism. Never recommend picking
+"the constructor with the most parameters" or "the first one that
+resolves" — always name the exact selection.
+
+**Scope is compilation-wide, not per-profile**: a selection anywhere in
+the compilation applies to every composition of that type. A second,
+different selection for the same type anywhere in the compilation is
+`CMP0033`; an identical repeated selection is harmless. A selection
+matching no accessible constructor is `CMP0034`. Per-profile constructor
+selection isn't supported — don't imply it is.
+
 ## `ICompositionProfile`
 
 ```csharp
@@ -105,6 +152,15 @@ builder.AddSemanticProvider(new UpsellPayloadProvider());
 // or AddTestDoubleProvider(...), depending on what it produces
 ```
 
+Providers run for each matching request. Return `NotHandled` when this
+provider does not own the request so later pipeline stages can try; return
+`Handled(value)` only for a value this provider deliberately supplies.
+Keep providers stateless unless shared state is part of documented test
+setup. Use `context.DeriveSeed()` for provider-owned random generation so a
+seeded composition remains reproducible. Prefer `Register<T>()` or a
+`.For<T>()` rule whenever exact type or member selection is sufficient:
+custom providers are for request-shape decisions, not general configuration.
+
 `CompositionProviderRequest.Name` carries the requesting constructor
 parameter/required member/test-method-parameter's own name — this is a
 **global rule** ("whenever anything asks for `UpsellPayload` named
@@ -130,6 +186,58 @@ re-requested. That fails fast with a path-annotated `CompositionException`
 real self-reference with an explicit `Register<T>()` factory that
 supplies the recursive edge deliberately (e.g. `null`, or a pre-built
 instance) instead of asking Compono to silently omit it.
+
+## `Share<T>()` — graph-wide sharing (core `Compono`)
+
+`CompositionBuilder.Share<T>()` is the core, framework-independent
+graph-wide sharing declaration — see
+[ADR-0056](../../../docs/adr/0056-composition-builder-share-graph-wide-sharing.md).
+Declared once (typically in a profile), it makes *every* request for `T`
+anywhere in one root composition graph resolve to the same instance —
+**no `[Shared]` attribute needed on the retrieving parameter**:
+
+```csharp
+public sealed class OrderProfile : ICompositionProfile
+{
+    public void Configure(CompositionBuilder builder) => builder.Share<Repository>();
+}
+
+[Theory]
+[Compose<OrderProfile>]
+public void ServiceUsesTheSharedRepository(Repository repository, OrderService service)
+{
+    // `repository` is an ordinary, undecorated parameter - reference-equal
+    // to `service`'s own internally-composed Repository dependency.
+}
+```
+
+- **Lazy**: the shared instance is created on first request, not eagerly
+  when `Share<T>()` is called.
+- **Idempotent**: calling it more than once for the same type - directly,
+  or once via each of two profiles - changes nothing.
+- **Composes with `Register<T>()` in either order**: a registered value
+  plus `Share<T>()` shares the registered instance instead of a freshly
+  generated one.
+- **Lifetime boundary**: one root composition graph - one
+  `Composer.Create<T>()` call, one item of a `CreateMany<T>(count)` batch,
+  or one `CompositionRow`. Never shared across independent `Create<T>()`
+  calls or across `CreateMany` items - don't suggest it as a way to share
+  state between separate compositions.
+- **Works under a plain `Composer.Create<T>()`/`CreateMany<T>()` call with
+  no test framework involved at all**, as well as under `CompositionRow`
+  (`Composer.CreateRow`, or `[Compose]` row binding) - unlike `[Shared]`,
+  this is a core `Compono` concept, not a `Compono.XunitV3`/`Compono.TUnit`
+  attribute.
+- Disposal is explicitly out of scope, same as everywhere else in
+  `Compono` today.
+
+**Blast-radius warning**: adding `Share<T>()` to a profile several tests
+already reuse changes sharing semantics for *every* graph composed with
+that profile, silently, for any test structurally reaching the type more
+than once - a materially larger blast radius than adding `[Shared]` to one
+test method. Prefer a narrowly-scoped profile, or `[Shared]` on the one
+test that needs it, over adding `Share<T>()` to a broadly-shared profile
+without checking what else composes through it.
 
 ## `[Shared]` (`Compono.XunitV3`/`Compono.TUnit` only)
 
@@ -169,22 +277,26 @@ public async Task ServiceUsesTheSharedRepository(
   always sees it already available.
 - Two `[Shared]` parameters of the same type on one method is an error —
   there's no way to know which one is "the" shared value.
-- **Not a core `Compono` concept** — plain `composer.Create<T>()` has no
-  notion of a "row" to scope sharing to. `[Shared]` only exists inside a
-  `[Compose]` row — `Compono.XunitV3`'s `SharedAttribute` and
-  `Compono.TUnit`'s own distinct `SharedAttribute` (same binding rules,
-  duplicated rather than shared per ADR-0040's "Row-binding logic:
-  duplicated, not extracted" — see `references/tunit.md`), whichever
-  package the project references. Don't suggest `[Shared]` for a
-  programmatic (non-`[Compose]`) composition — use a `Register<T>()`
-  factory that returns the same captured instance instead.
+- `[Shared]` (unlike `Share<T>()` above) only exists inside a `[Compose]`
+  row — `Compono.XunitV3`'s `SharedAttribute` and `Compono.TUnit`'s own
+  distinct `SharedAttribute` (same binding rules, duplicated rather than
+  shared per ADR-0040's "Row-binding logic: duplicated, not extracted" —
+  see `references/tunit.md`), whichever package the project references.
+  Don't suggest `[Shared]` for a programmatic (non-`[Compose]`)
+  composition — use `Share<T>()`, or a `Register<T>()` factory that
+  returns the same captured instance, instead.
 
-**Don't overuse `[Shared]`.** It's for a real identity requirement (the
-system under test and the assertion need to reference the *same*
-instance), not "make things consistent" and not a performance
-optimization — ordinary composition is already cheap. When migrating from
-AutoFixture's `[Frozen]`, audit each usage: many `[Frozen]` interface
-parameters were only there to get a substitute in the first place, not to
-share it — once `Compono.NSubstitute`'s `UseNSubstitute()` is active,
-composing an interface already produces a substitute automatically, and
-no `[Shared]` is needed unless identity actually matters.
+**Reach for `Share<T>()` when the sharing intent is reusable** — declared
+once in a profile, applying to every test that uses it, with no
+`[Shared]` attribute needed on the retrieving parameter. **Reach for
+`[Shared]` for a one-off, single-test case** that doesn't warrant a
+profile change. The two aren't mutually exclusive. **Don't overuse
+either.** They're for a real identity requirement (the system under test
+and the assertion need to reference the *same* instance), not "make
+things consistent" and not a performance optimization — ordinary
+composition is already cheap. When migrating from AutoFixture's
+`[Frozen]`, audit each usage: many `[Frozen]` interface parameters were
+only there to get a substitute in the first place, not to share it — once
+`Compono.NSubstitute`'s `UseNSubstitute()` is active, composing an
+interface already produces a substitute automatically, and no sharing
+mechanism is needed unless identity actually matters.

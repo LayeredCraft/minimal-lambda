@@ -1,22 +1,19 @@
 # Zensical Docs Reference Outline
 
-Goal: define which docs to reference later when expanding the `zensical-site` skill, and what to
-extract from each.
+Goal: define which docs to reference later when expanding the `zensical-site` skill, and what to extract from each.
 
 ## 1) Authoring docs to reference
 
 - [Markdown](https://zensical.org/docs/authoring/markdown/)
   - Pull later: baseline markdown rules, internal linking guidance, page-title precedence.
 - [Front matter](https://zensical.org/docs/authoring/frontmatter/)
-  - Pull later: supported front matter keys, precedence/override behavior, layout/search-related
-    keys.
+  - Pull later: supported front matter keys, precedence/override behavior, layout/search-related keys.
 - [Admonitions](https://zensical.org/docs/authoring/admonitions/)
   - Pull later: syntax variants, supported admonition types, required extension/config.
 - [Buttons](https://zensical.org/docs/authoring/buttons/)
   - Pull later: button syntax/classes, icon usage in buttons, extension requirements.
 - [Code blocks](https://zensical.org/docs/authoring/code-blocks/)
-  - Pull later: fenced code options (titles/line numbers/highlights/annotations/snippets), toggles,
-    feature flags.
+  - Pull later: fenced code options (titles/line numbers/highlights/annotations/snippets), toggles, feature flags.
 - [Content tabs](https://zensical.org/docs/authoring/content-tabs/)
   - Pull later: tab syntax, linked-tab behavior, nesting/anchor constraints.
 - [Data tables](https://zensical.org/docs/authoring/data-tables/)

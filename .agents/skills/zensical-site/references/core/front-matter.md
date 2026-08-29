@@ -24,10 +24,8 @@ Page content starts here.
 ## Required config / prerequisites
 
 - Front matter support is expected in docs authoring flow.
-- Some keys influence behavior only when related setup features are enabled (search, navigation,
-  templates).
-- Use [Configuration Reference](../dependencies/configuration-reference.md) when status labels,
-  template overrides, or search behavior need matching `zensical.toml` setup.
+- Some keys influence behavior only when related setup features are enabled (search, navigation, templates).
+- Use [Configuration Reference](../dependencies/configuration-reference.md) when status labels, template overrides, or search behavior need matching `zensical.toml` setup.
 
 ## What to capture in output
 
@@ -50,10 +48,8 @@ Page content starts here.
 
 ## Interactions / caveats
 
-- title precedence is affected by navigation and markdown
-  heading ([Markdown and Links](markdown-and-links.md)).
-- search/layout behavior can depend on setup
-  configuration ([Navigation and Runtime Caveats](../dependencies/navigation-runtime-caveats.md)).
+- title precedence is affected by navigation and markdown heading ([Markdown and Links](markdown-and-links.md)).
+- search/layout behavior can depend on setup configuration ([Navigation and Runtime Caveats](../dependencies/navigation-runtime-caveats.md)).
 
 ## Deeper docs
 

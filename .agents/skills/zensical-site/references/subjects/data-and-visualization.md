@@ -21,12 +21,9 @@ Includes data tables and structured visual data presentation.
 
 - basic tables work in markdown
 - sortable/interactive behavior may require extra setup
-- use [Configuration Reference](../dependencies/configuration-reference.md) when the answer needs
-  `extra_javascript` examples or search-related caveats
+- use [Configuration Reference](../dependencies/configuration-reference.md) when the answer needs `extra_javascript` examples or search-related caveats
 
-Check [Extension Prerequisites](../dependencies/extension-prereqs.md)
-and [Navigation and Runtime Caveats](../dependencies/navigation-runtime-caveats.md) for
-setup-sensitive behavior.
+Check [Extension Prerequisites](../dependencies/extension-prereqs.md) and [Navigation and Runtime Caveats](../dependencies/navigation-runtime-caveats.md) for setup-sensitive behavior.
 
 ## Common options the model may need
 
@@ -43,8 +40,7 @@ setup-sensitive behavior.
 ## Interactions / caveats
 
 - large tables often need surrounding explanation text.
-- for complex visualizations, use diagrams guidance
-  in [Code and Technical Content](code-and-technical-content.md).
+- for complex visualizations, use diagrams guidance in [Code and Technical Content](code-and-technical-content.md).
 
 ## Deeper docs
 

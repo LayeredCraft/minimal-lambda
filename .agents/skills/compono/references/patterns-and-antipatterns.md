@@ -79,7 +79,7 @@ drawn from real dogfooding evidence
 |---|---|---|
 | `fixture.Create<T>()` | `composer.Create<T>()` | Same shape, different guarantees — see `composition-model.md` |
 | `fixture.CreateMany<T>()` | `composer.CreateMany<T>(count)` | Independent instances, not a shared `List<T>` |
-| `[Frozen]` | `[Shared]` (`Compono.XunitV3` only) | Audit each usage — see antipattern 11 above |
+| `[Frozen]` | `[Shared]` (one-off, `Compono.XunitV3`/`Compono.TUnit` only) or `Share<T>()` (reusable, core `Compono`) | Audit each usage — see antipattern 11 above |
 | `AutoNSubstituteCustomization` | `builder.UseNSubstitute()` | No `ConfigureMembers` equivalent — see antipattern 12 and `nsubstitute.md` |
 | `fixture.Customize<T>(...)` | `builder.Register<T>()` / `.For<T>().Use()` | Re-customizing the same type is a build-time conflict, not override |
 | `[AutoData]`/`[InlineAutoData]` | `[Compose]` / inline args on `[Compose(...)]` | Only one Compose-family attribute per method — see `xunit-v3.md` |

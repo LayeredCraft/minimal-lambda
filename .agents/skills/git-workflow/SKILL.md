@@ -45,10 +45,9 @@ ______________________________________________________________________
 Based on the user's request, load exactly one workflow doc:
 
 | User intent                                     | Load                             |
-|-------------------------------------------------|----------------------------------|
+| ----------------------------------------------- | -------------------------------- |
 | Commit work, save changes, stage and commit     | [docs/commit.md](docs/commit.md) |
 | Create a branch, start a feature branch         | [docs/branch.md](docs/branch.md) |
 | Create/open/draft a PR, submit the current work | [docs/pr.md](docs/pr.md)         |
 
-When intent is ambiguous, prefer the more complete workflow. If the user says "commit and open a
-PR", load `docs/pr.md` — it covers the full lifecycle including commit and branch.
+When intent is ambiguous, prefer the more complete workflow. If the user says "commit and open a PR", load `docs/pr.md` — it covers the full lifecycle including commit and branch.

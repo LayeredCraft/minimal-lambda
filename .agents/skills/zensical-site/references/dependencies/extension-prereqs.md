@@ -23,8 +23,7 @@ Use this page to check feature prerequisites before generating advanced syntax.
 
 - If prerequisite status is unknown, use a simpler markdown pattern.
 - Add an `Open Questions` note when setup is required for the requested output.
-- Use [Configuration Reference](configuration-reference.md) when the user needs actual
-  `zensical.toml` snippets.
+- Use [Configuration Reference](configuration-reference.md) when the user needs actual `zensical.toml` snippets.
 - Do not invent extension names or settings.
 
 ## Verification checklist

@@ -45,10 +45,8 @@ The API uses HTML.
 ## Required config / prerequisites
 
 - Most patterns depend on specific markdown extensions.
-- Verify extension availability in [Extension Prerequisites](../dependencies/extension-prereqs.md)
-  when behavior is uncertain.
-- Use [Configuration Reference](../dependencies/configuration-reference.md) when the answer should
-  include TOML examples for tabs, admonitions, buttons, tooltips, or linked tabs.
+- Verify extension availability in [Extension Prerequisites](../dependencies/extension-prereqs.md) when behavior is uncertain.
+- Use [Configuration Reference](../dependencies/configuration-reference.md) when the answer should include TOML examples for tabs, admonitions, buttons, tooltips, or linked tabs.
 
 ## Common options the model may need
 
@@ -66,8 +64,7 @@ The API uses HTML.
 ## Interactions / caveats
 
 - Tabs and tooltips may rely on extension support and theme behavior.
-- If interaction behavior is runtime-sensitive,
-  check [Navigation and Runtime Caveats](../dependencies/navigation-runtime-caveats.md).
+- If interaction behavior is runtime-sensitive, check [Navigation and Runtime Caveats](../dependencies/navigation-runtime-caveats.md).
 
 ## Deeper docs
 
