@@ -7,6 +7,12 @@
       "skillPath": "skills/compono/SKILL.md",
       "computedHash": "c007bb73745fa5f6a244f5af2a32a46955e4a392bf2ee3639c6db22464d05f36"
     },
+    "csharp-tunit": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "skillPath": "skills/csharp-tunit/SKILL.md",
+      "computedHash": "634bf822bdbd01c5d5a8c7c9f473f3818dfca8acca309a0af97cd90a7e39b738"
+    },
     "git-workflow": {
       "source": "LayeredCraft/skills",
       "sourceType": "github",
