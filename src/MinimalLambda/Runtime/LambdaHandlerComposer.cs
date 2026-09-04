@@ -70,9 +70,6 @@ internal sealed class LambdaHandlerComposer : ILambdaHandlerFactory
                 using var invocationDataFeature = _invocationDataFeatureFactory.Create(inputStream);
                 lambdaInvocationContext.Features.Set(invocationDataFeature);
 
-                if (invocationDataFeature is IInvocationDataBufferingFeature bufferingFeature)
-                    lambdaInvocationContext.Features.Set(bufferingFeature);
-
                 // Invoke the handler wrapped in the middleware pipeline.
                 await handler.Invoke(lambdaInvocationContext).ConfigureAwait(false);
 

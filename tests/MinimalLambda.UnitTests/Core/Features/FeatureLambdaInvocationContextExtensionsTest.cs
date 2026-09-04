@@ -561,31 +561,30 @@ public class FeatureLambdaInvocationContextExtensionsTest
 
     [Theory]
     [AutoNSubstituteData]
-    public void EnableEventBuffering_CallsEnableBufferingOnInvocationDataBufferingFeature(
+    public void EnableEventBuffering_CallsEnableBufferingWhenActiveFeatureSupportsBuffering(
         [Frozen] IFeatureCollection features,
-        ILambdaInvocationContext context,
-        IInvocationDataBufferingFeature bufferingFeature)
+        ILambdaInvocationContext context)
     {
         // Arrange
-        features.Get<IInvocationDataBufferingFeature>().Returns(bufferingFeature);
+        var invocationDataFeature =
+            Substitute.For<IInvocationDataFeature, IInvocationDataBufferingFeature>();
+        features.Get<IInvocationDataFeature>().Returns(invocationDataFeature);
 
         // Act
         context.EnableEventBuffering();
 
         // Assert
-        bufferingFeature.Received(1).EnableBuffering();
+        ((IInvocationDataBufferingFeature)invocationDataFeature).Received(1).EnableBuffering();
     }
 
     [Theory]
     [AutoNSubstituteData]
-    public void EnableEventBuffering_ThrowsInvalidOperationExceptionWhenFeatureNotFound(
+    public void EnableEventBuffering_ThrowsInvalidOperationExceptionWhenNoInvocationDataFeature(
         [Frozen] IFeatureCollection features,
         ILambdaInvocationContext context)
     {
         // Arrange
-        features
-            .Get<IInvocationDataBufferingFeature>()
-            .Returns((IInvocationDataBufferingFeature?)null);
+        features.Get<IInvocationDataFeature>().Returns((IInvocationDataFeature?)null);
 
         // Act & Assert
         var act = () => context.EnableEventBuffering();
@@ -593,7 +592,27 @@ public class FeatureLambdaInvocationContextExtensionsTest
             .Should()
             .ThrowExactly<InvalidOperationException>()
             .WithMessage(
-                $"Feature of type '{typeof(IInvocationDataBufferingFeature).FullName}' is not available in the collection.");
+                $"Feature of type '{typeof(IInvocationDataBufferingFeature).FullName}' is not available in the context.");
+    }
+
+    [Theory]
+    [AutoNSubstituteData]
+    public void
+        EnableEventBuffering_ThrowsInvalidOperationExceptionWhenActiveFeatureDoesNotSupportBuffering(
+            [Frozen] IFeatureCollection features,
+            ILambdaInvocationContext context,
+            IInvocationDataFeature invocationDataFeature)
+    {
+        // Arrange
+        features.Get<IInvocationDataFeature>().Returns(invocationDataFeature);
+
+        // Act & Assert
+        var act = () => context.EnableEventBuffering();
+        act
+            .Should()
+            .ThrowExactly<InvalidOperationException>()
+            .WithMessage(
+                $"Feature of type '{typeof(IInvocationDataBufferingFeature).FullName}' is not available in the context.");
     }
 
     #endregion

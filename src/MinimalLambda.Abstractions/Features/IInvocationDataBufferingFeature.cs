@@ -5,11 +5,16 @@ namespace MinimalLambda;
 ///     invocation event stream into memory so it can be read outside of event deserialization.
 /// </summary>
 /// <remarks>
-///     Registered in <see cref="IFeatureCollection" /> alongside <see cref="IInvocationDataFeature" />
-///     by implementations that support it. Probe for it with
-///     <c>context.Features.Get&lt;IInvocationDataBufferingFeature&gt;()</c> (or the
-///     <c>context.EnableEventBuffering()</c> convenience extension) rather than assuming every
-///     <see cref="IInvocationDataFeature" /> implementation supports buffering.
+///     Implemented alongside <see cref="IInvocationDataFeature" /> by implementations that support
+///     it, rather than registered as its own entry in <see cref="IFeatureCollection" />. Probe the
+///     currently active <see cref="IInvocationDataFeature" /> for this capability (for example,
+///     <c>context.Features.Get&lt;IInvocationDataFeature&gt;() is IInvocationDataBufferingFeature</c>,
+///     or the <c>context.EnableEventBuffering()</c> convenience extension) rather than looking this
+///     type up in the feature collection directly or assuming every
+///     <see cref="IInvocationDataFeature" /> implementation supports buffering. Looking it up
+///     separately in the feature collection risks it becoming out of sync with whichever
+///     <see cref="IInvocationDataFeature" /> is currently registered, if middleware replaces that
+///     registration.
 /// </remarks>
 public interface IInvocationDataBufferingFeature
 {

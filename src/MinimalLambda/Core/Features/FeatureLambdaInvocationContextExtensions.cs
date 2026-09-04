@@ -121,7 +121,16 @@ public static class FeatureLambdaInvocationContextExtensions
         {
             ArgumentNullException.ThrowIfNull(context);
 
-            context.Features.GetRequired<IInvocationDataBufferingFeature>().EnableBuffering();
+            if (context.Features.Get<IInvocationDataFeature>() is IInvocationDataBufferingFeature
+                bufferingFeature)
+            {
+                bufferingFeature.EnableBuffering();
+                return;
+            }
+
+            throw new InvalidOperationException(
+                $"Feature of type '{typeof(IInvocationDataBufferingFeature).FullName}' is not "
+                + "available in the context.");
         }
     }
 }
