@@ -1,4 +1,18 @@
 version: 2
+
+multi-ecosystem-groups:
+  infrastructure:
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+    open-pull-requests-limit: 25
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+
 updates:
   - package-ecosystem: "nuget"
     directory: "/"
@@ -6,7 +20,10 @@ updates:
       - "dependabot"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 10
+      day: "wednesday"
+    open-pull-requests-limit: 25
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "chore"
       prefix-development: "chore"
@@ -40,13 +57,7 @@ updates:
     directory: "/"
     labels:
       - "dependabot"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    commit-message:
-      prefix: "chore"
-      prefix-development: "chore"
-      include: "scope"
+    multi-ecosystem-group: "infrastructure"
     groups:
       minor-and-patch:
         update-types:
@@ -59,13 +70,7 @@ updates:
     directory: "/"
     labels:
       - "dependabot"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    commit-message:
-      prefix: "chore"
-      prefix-development: "chore"
-      include: "scope"
+    multi-ecosystem-group: "infrastructure"
     groups:
       minor-and-patch:
         update-types:
@@ -76,24 +81,13 @@ updates:
     directory: "/"
     labels:
       - "dependabot"
-    schedule:
-      interval: "weekly"
-    commit-message:
-      prefix: "chore"
-      prefix-development: "chore"
-      include: "scope"
+    multi-ecosystem-group: "infrastructure"
 
   - package-ecosystem: "pip"
     directory: "/"
     labels:
       - "dependabot"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    commit-message:
-      prefix: "chore"
-      prefix-development: "chore"
-      include: "scope"
+    multi-ecosystem-group: "infrastructure"
     groups:
       minor-and-patch:
         update-types:

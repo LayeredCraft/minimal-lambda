@@ -3,7 +3,6 @@
 ## PRs
 
 - PR titles must use Conventional Commits format.
-- Use `.github/pull_request_template.md` for PR descriptions.
 - Dependabot PRs are exempt from title validation.
 
 Allowed types:
