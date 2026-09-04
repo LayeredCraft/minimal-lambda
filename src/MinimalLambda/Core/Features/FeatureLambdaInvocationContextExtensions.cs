@@ -113,11 +113,15 @@ public static class FeatureLambdaInvocationContextExtensions
         ///     payload), then reset its <c>Position</c> to <c>0</c> afterward so event deserialization
         ///     can still consume it.
         /// </summary>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when no <see cref="IInvocationDataBufferingFeature" /> is available in the
+        ///     context.
+        /// </exception>
         public void EnableEventBuffering()
         {
             ArgumentNullException.ThrowIfNull(context);
 
-            context.Features.GetRequired<IInvocationDataFeature>().EnableBuffering();
+            context.Features.GetRequired<IInvocationDataBufferingFeature>().EnableBuffering();
         }
     }
 }

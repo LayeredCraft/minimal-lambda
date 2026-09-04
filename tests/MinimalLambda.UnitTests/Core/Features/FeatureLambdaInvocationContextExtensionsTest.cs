@@ -561,19 +561,39 @@ public class FeatureLambdaInvocationContextExtensionsTest
 
     [Theory]
     [AutoNSubstituteData]
-    public void EnableEventBuffering_CallsEnableBufferingOnInvocationDataFeature(
+    public void EnableEventBuffering_CallsEnableBufferingOnInvocationDataBufferingFeature(
         [Frozen] IFeatureCollection features,
         ILambdaInvocationContext context,
-        IInvocationDataFeature invocationDataFeature)
+        IInvocationDataBufferingFeature bufferingFeature)
     {
         // Arrange
-        features.Get<IInvocationDataFeature>().Returns(invocationDataFeature);
+        features.Get<IInvocationDataBufferingFeature>().Returns(bufferingFeature);
 
         // Act
         context.EnableEventBuffering();
 
         // Assert
-        invocationDataFeature.Received(1).EnableBuffering();
+        bufferingFeature.Received(1).EnableBuffering();
+    }
+
+    [Theory]
+    [AutoNSubstituteData]
+    public void EnableEventBuffering_ThrowsInvalidOperationExceptionWhenFeatureNotFound(
+        [Frozen] IFeatureCollection features,
+        ILambdaInvocationContext context)
+    {
+        // Arrange
+        features
+            .Get<IInvocationDataBufferingFeature>()
+            .Returns((IInvocationDataBufferingFeature?)null);
+
+        // Act & Assert
+        var act = () => context.EnableEventBuffering();
+        act
+            .Should()
+            .ThrowExactly<InvalidOperationException>()
+            .WithMessage(
+                $"Feature of type '{typeof(IInvocationDataBufferingFeature).FullName}' is not available in the collection.");
     }
 
     #endregion

@@ -1,6 +1,7 @@
 namespace MinimalLambda;
 
-internal sealed class InvocationDataFeature : IInvocationDataFeature
+internal sealed class InvocationDataFeature
+    : IInvocationDataFeature, IInvocationDataBufferingFeature
 {
     private Stream _eventStream = null!;
 
