@@ -57,6 +57,8 @@ updates:
     directory: "/"
     labels:
       - "dependabot"
+    patterns:
+      - "*"
     multi-ecosystem-group: "infrastructure"
     groups:
       minor-and-patch:
@@ -70,6 +72,8 @@ updates:
     directory: "/"
     labels:
       - "dependabot"
+    patterns:
+      - "*"
     multi-ecosystem-group: "infrastructure"
     groups:
       minor-and-patch:
@@ -81,12 +85,16 @@ updates:
     directory: "/"
     labels:
       - "dependabot"
+    patterns:
+      - "*"
     multi-ecosystem-group: "infrastructure"
 
   - package-ecosystem: "pip"
     directory: "/"
     labels:
       - "dependabot"
+    patterns:
+      - "*"
     multi-ecosystem-group: "infrastructure"
     groups:
       minor-and-patch:
