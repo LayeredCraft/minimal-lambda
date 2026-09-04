@@ -105,5 +105,19 @@ public static class FeatureLambdaInvocationContextExtensions
 
             return responseT;
         }
+
+        /// <summary>
+        ///     Ensures the raw Lambda event stream is seekable, buffering it into memory first if
+        ///     necessary. Call from middleware before reading
+        ///     <see cref="IInvocationDataFeature.EventStream" /> directly (for example, to log the raw
+        ///     payload), then reset its <c>Position</c> to <c>0</c> afterward so event deserialization
+        ///     can still consume it.
+        /// </summary>
+        public void EnableEventBuffering()
+        {
+            ArgumentNullException.ThrowIfNull(context);
+
+            context.Features.GetRequired<IInvocationDataFeature>().EnableBuffering();
+        }
     }
 }

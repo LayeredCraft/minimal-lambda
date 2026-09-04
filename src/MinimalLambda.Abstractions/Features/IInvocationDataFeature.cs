@@ -20,4 +20,17 @@ public interface IInvocationDataFeature : IDisposable
     ///     needed to redirect response data to a different destination.
     /// </value>
     Stream ResponseStream { get; set; }
+
+    /// <summary>
+    ///     Ensures <see cref="EventStream" /> is seekable, buffering it into memory first if
+    ///     necessary. Enables middleware to read the raw event payload (for example, to log it)
+    ///     without consuming the stream that event deserialization depends on.
+    /// </summary>
+    /// <remarks>
+    ///     Call before reading <see cref="EventStream" />. After reading, reset
+    ///     <c><see cref="EventStream" />.Position</c> to <c>0</c> so downstream event deserialization
+    ///     can still consume it. Opt in per-invocation, since it buffers the event payload into
+    ///     memory even when it is already seekable.
+    /// </remarks>
+    void EnableBuffering();
 }

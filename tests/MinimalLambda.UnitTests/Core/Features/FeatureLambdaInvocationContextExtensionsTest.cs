@@ -557,6 +557,27 @@ public class FeatureLambdaInvocationContextExtensionsTest
 
     #endregion
 
+    #region EnableEventBuffering Tests
+
+    [Theory]
+    [AutoNSubstituteData]
+    public void EnableEventBuffering_CallsEnableBufferingOnInvocationDataFeature(
+        [Frozen] IFeatureCollection features,
+        ILambdaInvocationContext context,
+        IInvocationDataFeature invocationDataFeature)
+    {
+        // Arrange
+        features.Get<IInvocationDataFeature>().Returns(invocationDataFeature);
+
+        // Act
+        context.EnableEventBuffering();
+
+        // Assert
+        invocationDataFeature.Received(1).EnableBuffering();
+    }
+
+    #endregion
+
     #region Null Context Tests
 
     [Fact]
@@ -604,6 +625,14 @@ public class FeatureLambdaInvocationContextExtensionsTest
     {
         // Act & Assert
         var act = () => ((ILambdaInvocationContext?)null)!.GetRequiredResponse<TestResponse>();
+        act.Should().ThrowExactly<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void EnableEventBuffering_ThrowsArgumentNullExceptionWhenContextIsNull()
+    {
+        // Act & Assert
+        var act = () => ((ILambdaInvocationContext?)null)!.EnableEventBuffering();
         act.Should().ThrowExactly<ArgumentNullException>();
     }
 

@@ -166,6 +166,27 @@ lambda.UseMiddleware(async (context, next) =>
 });
 ```
 
+To log the raw event payload from middleware, call `EnableEventBuffering()` first—by default the
+underlying stream may not be seekable and is meant to be read once by event deserialization:
+
+```csharp
+lambda.UseMiddleware(async (context, next) =>
+{
+    context.EnableEventBuffering();
+    var invocationData = context.Features.GetRequired<IInvocationDataFeature>();
+
+    using (var reader = new StreamReader(invocationData.EventStream, leaveOpen: true))
+        logger.LogInformation("Request: {Raw}", await reader.ReadToEndAsync());
+    invocationData.EventStream.Position = 0; // reset for event deserialization
+
+    await next(context);
+});
+```
+
+The response stream can always be replaced (for example, with a `Stream` wrapper that tees writes
+to a logger) since `IInvocationDataFeature.ResponseStream` is serialized to after the middleware
+pipeline completes.
+
 ### Lambda Lifecycle
 
 The framework manages initialization and shutdown phases automatically. Add as many callbacks as
