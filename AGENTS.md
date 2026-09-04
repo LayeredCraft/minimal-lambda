@@ -39,4 +39,3 @@ task build:aot-check
 ## Git / PR
 
 Use `git-workflow` skill for commits, branches, and PRs.
-When writing PRs, use `./.github/pull_request_template.md`.
