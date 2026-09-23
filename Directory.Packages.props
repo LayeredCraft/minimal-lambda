@@ -7,7 +7,7 @@
     <!-- Packages for all targets -->
     <PackageVersion Include="Amazon.Lambda.CloudWatchLogsEvents" Version="3.0.0" />
     <PackageVersion Include="Amazon.Lambda.Core" Version="3.3.0" />
-    <PackageVersion Include="Amazon.Lambda.DurableExecution" Version="1.0.0" />
+    <PackageVersion Include="Amazon.Lambda.DurableExecution" Version="2.0.0" />
     <PackageVersion Include="Amazon.Lambda.DurableExecution.Testing" Version="1.0.0" />
     <PackageVersion Include="Amazon.Lambda.KafkaEvents" Version="3.0.0" />
     <PackageVersion Include="Amazon.Lambda.KinesisEvents" Version="4.0.0" />
