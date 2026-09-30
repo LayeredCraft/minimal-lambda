@@ -15,4 +15,4 @@ concurrency:
 
 jobs:
   pr-title-check:
-    uses: LayeredCraft/devops-templates/.github/workflows/pr-title-check.yml@v10.7
+    uses: LayeredCraft/devops-templates/.github/workflows/pr-title-check.yml@v10.8
