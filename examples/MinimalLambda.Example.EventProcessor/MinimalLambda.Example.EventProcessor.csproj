@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+        <AWSProjectType>Lambda</AWSProjectType>
+        <!-- This property makes the build directory similar to a publish directory and helps AWS Lambda tooling find project dependencies. -->
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <!-- Generate ready-to-run images during publishing to improve cold start time. -->
+        <PublishReadyToRun>true</PublishReadyToRun>
+      <InterceptorsNamespaces>$(InterceptorsNamespaces);MinimalLambda.Generated</InterceptorsNamespaces>
+      <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\MinimalLambda\MinimalLambda.csproj"/>
+    <ProjectReference
+      Include="..\..\src\MinimalLambda.SourceGenerators\MinimalLambda.SourceGenerators.csproj"
+      ReferenceOutputAssembly="false"
+      OutputItemType="Analyzer"
+    />
+    <ProjectReference Include="..\..\src\Envelopes\MinimalLambda.Envelopes.ApiGateway\MinimalLambda.Envelopes.ApiGateway.csproj"/>
+    <ProjectReference Include="..\..\src\Envelopes\MinimalLambda.Envelopes.Sns\MinimalLambda.Envelopes.Sns.csproj"/>
+    <ProjectReference Include="..\..\src\Envelopes\MinimalLambda.Envelopes.Sqs\MinimalLambda.Envelopes.Sqs.csproj"/>
+  </ItemGroup>
+</Project>
