@@ -21,10 +21,10 @@ The processor must not know SQS, Kinesis, DynamoDB Streams, or a response format
 | --- | --- |
 | `split` | Turns the incoming event into source items. |
 | `handle` | Processes one source item with injected services. |
-| `onError` | Converts an item exception into the same result type as `handle`. |
-| `createResponse` | Converts all source items and results into the Lambda response. |
+| `onError` | Optionally converts an item exception into a value. |
+| `createResponse` | Converts collected values into the Lambda response. |
 
-The response builder receives the original source item. It can use source-specific metadata, such as an SQS `MessageId`, without making the processor source-specific.
+`onError` receives the source item. It can use source-specific metadata, such as an SQS `MessageId`, before returning a value for `createResponse`.
 
 ## Proposed API
 
@@ -38,21 +38,16 @@ lambda.MapEventHandler(
         DocumentImporter importer) =>
     {
         await importer.ImportAsync(item.BodyContent!);
-        return EventOutcome.Success;
     },
 
     onError: (item, exception, ILambdaInvocationContext _) =>
-        EventOutcome.Retry,
+        new SQSBatchResponse.BatchItemFailure
+        {
+            ItemIdentifier = item.MessageId,
+        },
 
-    createResponse: (result, ILambdaInvocationContext _) =>
-        new SQSBatchResponse(
-            result.Items
-                .Where(x => x.Result == EventOutcome.Retry)
-                .Select(x => new SQSBatchResponse.BatchItemFailure
-                {
-                    ItemIdentifier = x.Item.MessageId,
-                })
-                .ToList()));
+    createResponse: (failures, ILambdaInvocationContext _) =>
+        new SQSBatchResponse(failures.ToList()));
 ```
 
 For event sources that do not return a batch response:
@@ -66,38 +61,88 @@ lambda.MapEventHandler(
     });
 ```
 
+For a response after every item succeeds:
+
+```csharp
+lambda.MapEventHandler(
+    split: (S3Event batch, ILambdaInvocationContext _) => batch.Records,
+    handle: async (S3Event.S3EventNotificationRecord item, DocumentIndexer indexer) =>
+    {
+        await indexer.IndexAsync(item.S3.Object.Key);
+    },
+    createResponse: (items, ILambdaInvocationContext _) =>
+        new BatchSummary(items.Count()));
+```
+
 ## Type flow
 
+Without error mapping:
+
 ```text
-TEvent -> IEnumerable<TItem> -> TItemResult -> TResponse
+TEvent -> IEnumerable<TItem> -> handle every item -> IEnumerable<TItem> -> TResponse
 ```
 
 ```csharp
 Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split
 
-Func<TItem, TDependency1, ..., Task<TItemResult>> handle
+Func<TItem, TDependency1, ..., Task> handle
 
-Func<TItem, Exception, ILambdaInvocationContext, TItemResult> onError
+Func<IEnumerable<TItem>, ILambdaInvocationContext, TResponse> createResponse
+```
 
-Func<EventBatchResult<TItem, TItemResult>,
+If a handler throws, `createResponse` is not called.
+
+With error mapping:
+
+```text
+TEvent -> IEnumerable<TItem> -> TFailure -> TResponse
+```
+
+```csharp
+Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split
+
+Func<TItem, TDependency1, ..., Task> handle
+
+Func<TItem, Exception, ILambdaInvocationContext, TFailure> onError
+
+Func<IEnumerable<TFailure>,
      ILambdaInvocationContext,
      TResponse> createResponse
 ```
 
-`TItem` is always the first handler parameter. This keeps the processed source record available to `createResponse`, including SQS `MessageId` and stream sequence numbers.
+`TItem` is always the first handler parameter. This keeps the processed source record available to `onError`.
 
-`onError` returns the same `TItemResult` as `handle`. The response builder therefore consumes one result type.
+`TFailure` can be any type. SQS may return `SQSBatchResponse.BatchItemFailure`; another source may return an identifier, an error record, or a custom type. `createResponse` receives the collected failures only.
+
+## Unified item results
+
+When both `handle` and `onError` produce values for one response builder, they must return the same type:
 
 ```csharp
-public sealed record EventItemResult<TItem, TItemResult>(
-    TItem Item,
-    TItemResult Result);
+Func<TItem, TDependency1, ..., Task<TResult>> handle
 
-public sealed class EventBatchResult<TItem, TItemResult>
-{
-    public required IReadOnlyList<EventItemResult<TItem, TItemResult>> Items { get; init; }
-}
+Func<TItem, Exception, ILambdaInvocationContext, TResult> onError
+
+Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse
 ```
+
+```text
+TEvent -> IEnumerable<TItem> -> TResult -> IEnumerable<TResult> -> TResponse
+```
+
+If `handle` returns `Task` or no value, it does not contribute a result to `createResponse`. The SQS failure example above uses this shape: only `onError` returns `TFailure`.
+
+If success and failure need different data, use one shared union type for `TResult`:
+
+```csharp
+public abstract record ImportItemResult;
+
+public sealed record Imported(ImportResult Value) : ImportItemResult;
+
+public sealed record Retry(SQSBatchResponse.BatchItemFailure Value) : ImportItemResult;
+```
+
+`handle` returns `Imported`, `onError` returns `Retry`, and `createResponse` accepts `IEnumerable<ImportItemResult>`.
 
 ## Overloads
 
@@ -109,12 +154,18 @@ Func<TItem, TDependency1, Task>
 Func<TItem, TDependency1, TDependency2, Task>
 ```
 
-Use separate overloads when `onError` is present. Do not require callers to pass `null`.
+Use separate overloads for each meaningful callback combination. Do not require callers to pass `null`.
 
 ```csharp
+MapEventHandler(split, handle)
+MapEventHandler(split, handle, onError)
 MapEventHandler(split, handle, createResponse)
 MapEventHandler(split, handle, onError, createResponse)
 ```
+
+`onError` without `createResponse` is an error observer and returns `Task`. The processor invokes it before following the default error policy.
+
+The response-only overload receives successful source items. The error-and-response overload receives failure values when `handle` has no result. When both callbacks return values, the builder receives their shared result type.
 
 ## Boundaries
 

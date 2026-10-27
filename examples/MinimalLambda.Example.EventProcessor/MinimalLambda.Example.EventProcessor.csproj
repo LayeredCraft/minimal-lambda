@@ -26,4 +26,8 @@
     <ProjectReference Include="..\..\src\Envelopes\MinimalLambda.Envelopes.Sns\MinimalLambda.Envelopes.Sns.csproj"/>
     <ProjectReference Include="..\..\src\Envelopes\MinimalLambda.Envelopes.Sqs\MinimalLambda.Envelopes.Sqs.csproj"/>
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Amazon.Lambda.S3Events" />
+  </ItemGroup>
 </Project>
