@@ -145,8 +145,8 @@ Requirements and limits:
 3. pass all generic arguments:
    `lambda.MapEventHandler<Batch, Item, Dep>(split, Handler);`.
 
-A method group alone cannot supply DI parameter types - it produces `CS0411`. Do not add a `Delegate`
-catch-all.
+A method group alone cannot supply DI parameter types - it fails to compile (`CS1503` or `CS0411`).
+Do not add a `Delegate` catch-all.
 
 ## Diagnostics
 

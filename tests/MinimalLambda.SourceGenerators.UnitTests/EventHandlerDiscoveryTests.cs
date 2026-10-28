@@ -137,6 +137,76 @@ public class EventHandlerDiscoveryTests
     }
 
     [Fact]
+    public void ReportsCompileErrorForUntypedMethodGroupWithUnknownDependency()
+    {
+        var errors = CompileErrors(
+            """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            var app = LambdaApplication.CreateBuilder().Build();
+            app.MapEventHandler(
+                split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+                handle: Handle);
+
+            static Task Handle(Item item, Probe probe) => Task.CompletedTask;
+
+            internal sealed class Batch
+            {
+                public Item[] Items => [];
+            }
+
+            internal sealed class Item;
+
+            internal sealed class Probe;
+            """);
+
+        // Method groups cannot supply the dependency input type. The compiler reports the failed
+        // method-group conversion (CS1503) instead of the bare inference failure (CS0411) once the
+        // full overload set is visible, so both are accepted here.
+        errors.Should().Contain(id => id == "CS0411" || id == "CS1503");
+    }
+
+    [Fact]
+    public void RejectsConcreteTaskResultWhereAUnionResultIsRequired()
+    {
+        var errors = CompileErrors(
+            """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            var app = LambdaApplication.CreateBuilder().Build();
+            app.MapEventHandler(
+                split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+                handle: HandleSuccess,
+                createResponse: (IEnumerable<Outcome> results, ILambdaInvocationContext _) => new Response());
+
+            static Task<Success> HandleSuccess(Item item) => Task.FromResult(new Success());
+
+            internal sealed class Batch
+            {
+                public Item[] Items => [];
+            }
+
+            internal sealed class Item;
+
+            internal abstract class Outcome;
+
+            internal sealed class Success : Outcome;
+
+            internal sealed class Retry : Outcome;
+
+            internal sealed class Response;
+            """);
+
+        errors.Should().NotBeEmpty();
+    }
+
+    [Fact]
     public void IgnoresSameNamedMapEventHandlerFromConsumerAssembly()
     {
         var result = RunGenerator(
@@ -185,6 +255,17 @@ public class EventHandlerDiscoveryTests
     {
         var (driver, _) = GeneratorTestHelpers.GenerateFromSource(source);
         return driver.GetRunResult();
+    }
+
+    private static IReadOnlyList<string> CompileErrors(string source)
+    {
+        var (_, compilation) = GeneratorTestHelpers.GenerateFromSource(source);
+        return compilation
+            .GetDiagnostics(TestContext.Current.CancellationToken)
+            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .Select(diagnostic => diagnostic.Id)
+            .Distinct()
+            .ToList();
     }
 
     private static Compilation CompileWithGenerated(

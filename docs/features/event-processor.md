@@ -204,7 +204,8 @@ explicitly:
 - specify all generic arguments when nothing else works.
 
 A method group does not supply dependency parameter types for generic inference. This does not
-compile:
+compile (the compiler reports a method-group conversion or type-inference failure, `CS1503` or
+`CS0411`):
 
 ```csharp
 lambda.MapEventHandler(split, EventHandlers.HandleAsync);   // CS0411
