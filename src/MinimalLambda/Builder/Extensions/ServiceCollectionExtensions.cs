@@ -39,6 +39,11 @@ public static class ServiceCollectionExtensions
             services.AddHostedService<LambdaHostedService>();
 
             // Register options related services
+            services.AddOptions<EventHandlerOptions>().ValidateOnStart();
+            services.TryAddEnumerable(
+                ServiceDescriptor
+                    .Singleton<IValidateOptions<EventHandlerOptions>,
+                        EventHandlerOptionsValidator>());
             services.AddSingleton<IPostConfigureOptions<HostOptions>,
                 HostOptionsPostConfiguration>();
             services.AddSingleton<IPostConfigureOptions<EnvelopeOptions>,

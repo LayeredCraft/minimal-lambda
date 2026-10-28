@@ -30,7 +30,8 @@ internal static class ParameterSymbolExtensions
                         WellKnownType.MinimalLambda_Builder_FromEventAttribute));
 
         internal DiagnosticResult<(string Assignment, string? Key)> GetDiParameterAssignment(
-            GeneratorContext context)
+            GeneratorContext context,
+            string serviceProviderExpression = "context.ServiceProvider")
         {
             var paramType = parameterSymbol.Type.QualifiedNullableName;
 
@@ -43,15 +44,29 @@ internal static class ParameterSymbolExtensions
                     result.IsKeyed
                         ? (
                             isRequired
-                                ? $"context.ServiceProvider.GetKeyedService<{paramType}>({result.Key})"
-                                : $"context.ServiceProvider.GetRequiredKeyedService<{paramType}>({result.Key})",
+                                ? $"{serviceProviderExpression}.GetKeyedService<{paramType}>({result.Key})"
+                                : $"{serviceProviderExpression}.GetRequiredKeyedService<{paramType}>({result.Key})",
                             result.Key)
                         : (
                             isRequired
-                                ? $"context.ServiceProvider.GetService<{paramType}>()"
-                                : $"context.ServiceProvider.GetRequiredService<{paramType}>()",
+                                ? $"{serviceProviderExpression}.GetService<{paramType}>()"
+                                : $"{serviceProviderExpression}.GetRequiredService<{paramType}>()",
                             null));
         }
+
+        internal bool IsServiceBindingAttribute(GeneratorContext context) =>
+            parameterSymbol
+                .GetAttributes()
+                .Any(attribute =>
+                    attribute.AttributeClass is not null
+                    && context.WellKnownTypes.IsType(
+                        attribute.AttributeClass,
+                        WellKnownType.MinimalLambda_Builder_FromServicesAttribute,
+                        WellKnownType.MinimalLambda_Builder_FromArgumentsAttribute,
+                        WellKnownType
+                            .Microsoft_Extensions_DependencyInjection_FromKeyedServicesAttribute)
+                    || attribute.AttributeClass?.ToDisplayString()
+                    == "Microsoft.Extensions.DependencyInjection.FromServicesAttribute");
 
         private DiagnosticResult<(bool IsKeyed, string? Key)>
             IsFromKeyedService(GeneratorContext context) =>
