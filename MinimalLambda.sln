@@ -107,6 +107,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinimalLambda.Example.Durab
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinimalLambda.Example.EventProcessor", "examples\MinimalLambda.Example.EventProcessor\MinimalLambda.Example.EventProcessor.csproj", "{42070274-45C6-4939-87D9-AD7E70F419F9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinimalLambda.Testing.UnitTests.EventProcessorLambda", "tests\MinimalLambda.Testing.UnitTests\Lambdas\MinimalLambda.Testing.UnitTests.EventProcessorLambda\MinimalLambda.Testing.UnitTests.EventProcessorLambda.csproj", "{5BFFA5F3-9A74-4574-80B5-27968203E2F9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -561,6 +563,18 @@ Global
 		{42070274-45C6-4939-87D9-AD7E70F419F9}.Release|x64.Build.0 = Release|Any CPU
 		{42070274-45C6-4939-87D9-AD7E70F419F9}.Release|x86.ActiveCfg = Release|Any CPU
 		{42070274-45C6-4939-87D9-AD7E70F419F9}.Release|x86.Build.0 = Release|Any CPU
+		{5BFFA5F3-9A74-4574-80B5-27968203E2F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BFFA5F3-9A74-4574-80B5-27968203E2F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BFFA5F3-9A74-4574-80B5-27968203E2F9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5BFFA5F3-9A74-4574-80B5-27968203E2F9}.Debug|x64.Build.0 = Debug|Any CPU
+		{5BFFA5F3-9A74-4574-80B5-27968203E2F9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5BFFA5F3-9A74-4574-80B5-27968203E2F9}.Debug|x86.Build.0 = Debug|Any CPU
+		{5BFFA5F3-9A74-4574-80B5-27968203E2F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BFFA5F3-9A74-4574-80B5-27968203E2F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5BFFA5F3-9A74-4574-80B5-27968203E2F9}.Release|x64.ActiveCfg = Release|Any CPU
+		{5BFFA5F3-9A74-4574-80B5-27968203E2F9}.Release|x64.Build.0 = Release|Any CPU
+		{5BFFA5F3-9A74-4574-80B5-27968203E2F9}.Release|x86.ActiveCfg = Release|Any CPU
+		{5BFFA5F3-9A74-4574-80B5-27968203E2F9}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -606,5 +620,6 @@ Global
 		{189636EE-6C05-46DB-8AEB-256F2617025C} = {D9109C8A-AFA8-49C8-A19C-381500902B4D}
 		{998085AA-AEC6-45D9-9E51-26F09BD5138C} = {B36A84DF-456D-A817-6EDD-3EC3E7F6E11F}
 		{42070274-45C6-4939-87D9-AD7E70F419F9} = {B36A84DF-456D-A817-6EDD-3EC3E7F6E11F}
+		{5BFFA5F3-9A74-4574-80B5-27968203E2F9} = {D9109C8A-AFA8-49C8-A19C-381500902B4D}
 	EndGlobalSection
 EndGlobal

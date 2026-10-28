@@ -12,6 +12,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MinimalLambda.Builder;
 
@@ -160,6 +161,7 @@ internal static class GeneratorTestHelpers
             MetadataReference.CreateFromFile(typeof(DefaultLambdaJsonSerializer).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(LambdaBootstrapBuilder).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(IOptions<>).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(ILogger<>).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(ILambdaInvocationContext).Assembly.Location),
         ];
 

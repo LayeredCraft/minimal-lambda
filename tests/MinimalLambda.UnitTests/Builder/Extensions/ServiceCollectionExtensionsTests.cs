@@ -46,7 +46,11 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Theory]
-    [InlineData(14)]
+#if NET11_0_OR_GREATER
+    [InlineData(24)]
+#else
+    [InlineData(22)]
+#endif
     public void AddLambdaHostCoreServices_RegistersExactlyNServices(int servicesCount)
     {
         // Arrange

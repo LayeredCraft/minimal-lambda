@@ -49,10 +49,11 @@ assert_warning_free() {
 assert_generated_once() {
   local project_dir=$1
   local target=$2
+  local generated=${3:-MinimalLambda.DurableHandlers.g.cs}
   local count
   [ -d "$project_dir/obj/generated/$target" ] || fail "generated output missing for $(basename "$project_dir")/$target"
-  count=$(find "$project_dir/obj/generated/$target" -type f -name 'MinimalLambda.DurableHandlers.g.cs' | wc -l | tr -d ' ')
-  [ "$count" = "1" ] || fail "expected one durable generated file for $(basename "$project_dir")/$target, found $count"
+  count=$(find "$project_dir/obj/generated/$target" -type f -name "$generated" | wc -l | tr -d ' ')
+  [ "$count" = "1" ] || fail "expected one $generated for $(basename "$project_dir")/$target, found $count"
 }
 
 pack() {
@@ -95,6 +96,7 @@ restore_consumer() {
 build_consumer() {
   local name=$1
   local project=$2
+  local generated=${3:-MinimalLambda.DurableHandlers.g.cs}
   local project_dir
   project_dir=$(dirname "$project")
   run_logged "build-$name-net10.0" dotnet build "$project" \
@@ -107,7 +109,7 @@ build_consumer() {
     "/p:EmitCompilerGeneratedFiles=true" \
     "/p:CompilerGeneratedFilesOutputPath=$project_dir/obj/generated/net10.0"
   assert_warning_free "$LOGS/build-$name-net10.0.log"
-  assert_generated_once "$project_dir" net10.0
+  assert_generated_once "$project_dir" net10.0 "$generated"
 }
 
 case "${PACKAGE_COMPAT_RID:-}" in
@@ -278,8 +280,8 @@ from xml.etree import ElementTree as ET
 
 root = Path(sys.argv[1])
 projects = sorted(root.glob("*/*.csproj"))
-if len(projects) != 5:
-    raise SystemExit(f"expected five copied consumer projects, found {len(projects)}")
+if len(projects) != 6:
+    raise SystemExit(f"expected six copied consumer projects, found {len(projects)}")
 for project in projects:
     tree = ET.parse(project)
     references = [
@@ -290,6 +292,8 @@ for project in projects:
     expected = ["MinimalLambda", "MinimalLambda.DurableExecution"]
     if project.parent.name != "TaskConsumer":
         expected.append("Amazon.Lambda.DurableExecution")
+    if project.parent.name == "EventProcessorConsumer":
+        expected.append("Amazon.Lambda.SQSEvents")
     if references != expected:
         raise SystemExit(f"{project}: unexpected package references {references}")
 print("Copied consumers contain package references only.")
@@ -322,17 +326,20 @@ PY
 
 TYPED="$CONSUMERS/TypedConsumer/TypedConsumer.csproj"
 TASK="$CONSUMERS/TaskConsumer/TaskConsumer.csproj"
+EVENT="$CONSUMERS/EventProcessorConsumer/EventProcessorConsumer.csproj"
 OLD="$CONSUMERS/OldCoreConsumer/OldCoreConsumer.csproj"
 AOT="$CONSUMERS/AotConsumer/AotConsumer.csproj"
 INVALID="$CONSUMERS/InvalidSignatureConsumer/InvalidSignatureConsumer.csproj"
 
 restore_consumer typed "$TYPED" "$CORE_VERSION"
 restore_consumer task "$TASK" "$CORE_VERSION"
+restore_consumer event-processor "$EVENT" "$CORE_VERSION"
 restore_consumer invalid-signature "$INVALID" "$CORE_VERSION"
 
 python3 - "$NUGET_PACKAGES" "$CORE_VERSION" "$DURABLE_VERSION" \
   "$CONSUMERS/TypedConsumer/obj/project.assets.json" \
-  "$CONSUMERS/TaskConsumer/obj/project.assets.json" <<'PY'
+  "$CONSUMERS/TaskConsumer/obj/project.assets.json" \
+  "$CONSUMERS/EventProcessorConsumer/obj/project.assets.json" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -352,9 +359,10 @@ for filename in sys.argv[4:]:
 print("Positive consumers resolved exact synthetic versions from isolated cache.")
 PY
 
-rm -rf "$CONSUMERS/TypedConsumer/obj/generated" "$CONSUMERS/TaskConsumer/obj/generated"
+rm -rf "$CONSUMERS/TypedConsumer/obj/generated" "$CONSUMERS/TaskConsumer/obj/generated" "$CONSUMERS/EventProcessorConsumer/obj/generated"
 build_consumer typed "$TYPED"
 build_consumer task "$TASK"
+build_consumer event-processor "$EVENT" MinimalLambda.EventHandlers.g.cs
 
 rm -f "$LOGS/build-invalid-signature-net10.0.log"
 set +e
