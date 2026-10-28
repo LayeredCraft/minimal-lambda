@@ -1,156 +1,185 @@
-using Amazon.Lambda.S3Events;
+using Amazon.Lambda.SQSEvents;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MinimalLambda;
 using MinimalLambda.Builder;
 using MinimalLambda.Envelopes.Sqs;
+using MinimalLambda.Options;
+using System.Text.Json.Serialization;
 
 var builder = LambdaApplication.CreateBuilder();
 
-var lambda = builder.Build();
+builder.Services.AddLambdaSerializerWithContext<EventProcessorJsonContext>();
+builder.Services.ConfigureEnvelopeOptions(options =>
+    options.JsonOptions.TypeInfoResolver = EventProcessorJsonContext.Default);
+builder.Services.AddScoped<DocumentImporter>();
+builder.Services.Configure<EventHandlerOptions>(options => options.MaxConcurrentExecutions = 5);
 
-// No per-item result or Lambda response.
-lambda.MapEventHandler(
-    (S3Event input, ILambdaInvocationContext _) => input.Records,
-    (S3Event.S3EventNotificationRecord item) => Task.CompletedTask);
+await using var lambda = builder.Build();
 
-// One injected dependency. The splitter's TItem is the handler's first parameter.
-lambda.MapEventHandler(
-    (S3Event input, ILambdaInvocationContext _) => input.Records,
-    (S3Event.S3EventNotificationRecord item, MyService service) =>
-    {
-        service.DoStuff(item.S3.Object.Key);
-        return Task.CompletedTask;
-    });
+// The sample registers exactly one processor per run because MapEventHandler consumes the
+// single invocation handler slot. Select a family with EVENT_PROCESSOR_SAMPLE.
+switch (Environment.GetEnvironmentVariable("EVENT_PROCESSOR_SAMPLE"))
+{
+    case "n1":
+        RegisterNoResult(lambda);
+        break;
+    case "n2":
+        RegisterNoResultWithResponse(lambda);
+        break;
+    case "n3":
+        RegisterNoResultWithFailures(lambda);
+        break;
+    case "r1":
+        RegisterResults(lambda);
+        break;
+    default:
+        RegisterResultsWithRecovery(lambda);
+        break;
+}
 
-// Two injected dependencies. The item remains the first handler parameter.
-lambda.MapEventHandler(
-    (S3Event input, ILambdaInvocationContext _) => input.Records,
-    EventHandlers.HandleS3RecordAsync);
+// Registration alone roots the generated processor. This smoke path proves the Native AOT image
+// boots, registers the processor, and validates options without a Lambda runtime present.
+if (Environment.GetEnvironmentVariable("EVENT_PROCESSOR_SMOKE") == "1")
+{
+    Console.WriteLine("event processor registered");
+    return;
+}
 
-// A per-item result and a typed batch response.
-lambda.MapEventHandler(
-    (SqsEnvelope<MyEvent> input, ILambdaInvocationContext _) => input.Records,
-    (SqsEnvelope<MyEvent>.SqsMessageEnvelope item, MyService service) =>
-    {
-        service.DoStuff(item.BodyContent?.Message ?? string.Empty);
-        return Task.FromResult(EventOutcome.Success);
-    },
-    (result, _)
-        => new ExampleResponse(
-            result
-                .Items
-                .Where(item => item.Result == EventOutcome.Retry)
-                .Select(item => item.Item.MessageId)
-                .ToList()));
-
-// The error interceptor returns the same TItemResult as the item handler.
-lambda.MapEventHandler(
-    (SqsEnvelope<MyEvent> input, ILambdaInvocationContext _) => input.Records,
-    (SqsEnvelope<MyEvent>.SqsMessageEnvelope item, MyService service) =>
-    {
-        service.DoStuff(item.BodyContent?.Message ?? string.Empty);
-        return Task.FromResult(EventOutcome.Success);
-    },
-    ( _,  _,  _)
-        => EventOutcome.Retry,
-    (result, _)
-        => new ExampleResponse(
-            result
-                .Items
-                .Where(item => item.Result == EventOutcome.Retry)
-                .Select(item => item.Item.MessageId)
-                .ToList()));
-
-// Start the Lambda runtime loop.
 await lambda.RunAsync();
 
-public record MyEvent(string Message);
+// N1: no per-item value and no response. An unhandled item error fails the invocation.
+static void RegisterNoResult(LambdaApplication lambda) =>
+    lambda.MapEventHandler(
+        split: (SqsEnvelope<MyEvent> batch, ILambdaInvocationContext _) => batch.Records,
+        handle: (
+            SqsEnvelope<MyEvent>.SqsMessageEnvelope item,
+            DocumentImporter importer,
+            IEventProcessingContext processing,
+            CancellationToken token) =>
+        {
+            if (item.BodyContent is null)
+                return Task.CompletedTask;
 
-public enum EventOutcome
+            if (item.BodyContent.StopProcessing)
+                processing.StopProcessing();
+
+            return importer.ImportAsync(item.BodyContent, token);
+        });
+
+// N2: createResponse receives only successfully handled source items, in source order.
+static void RegisterNoResultWithResponse(LambdaApplication lambda) =>
+    lambda.MapEventHandler(
+        split: (ImportBatch batch, ILambdaInvocationContext _) => batch.Items,
+        handle: (ImportDocument item, DocumentImporter importer, CancellationToken token) =>
+            importer.ImportAsync(item.Event, token),
+        createResponse: (items, _) => new BatchSummary(items.Count()));
+
+// N3: successful items contribute nothing; only mapped failures reach createResponse.
+static void RegisterNoResultWithFailures(LambdaApplication lambda) =>
+    lambda.MapEventHandler(
+        split: (SqsEnvelope<MyEvent> batch, ILambdaInvocationContext _) => batch.Records,
+        handle: (
+                SqsEnvelope<MyEvent>.SqsMessageEnvelope item,
+                DocumentImporter importer,
+                CancellationToken token) =>
+            item.BodyContent is null
+                ? Task.CompletedTask
+                : importer.ImportAsync(item.BodyContent, token),
+        onError: (item, _, _) =>
+            new SQSBatchResponse.BatchItemFailure { ItemIdentifier = item.MessageId, },
+        createResponse: (failures, _) => new SQSBatchResponse(failures.ToList()));
+
+// R1: every completed item contributes one TResult; any unhandled error prevents the response.
+// A typed delegate local supplies dependency types that a bare method group cannot infer.
+static void RegisterResults(LambdaApplication lambda)
 {
-    Success,
-    Retry,
+    Func<ImportDocument, DocumentImporter, CancellationToken, Task<ImportItemResult>> handle =
+        EventHandlers.HandleImportAsync;
+
+    lambda.MapEventHandler(
+        split: (ImportBatch batch, ILambdaInvocationContext _) => batch.Items,
+        handle: handle,
+        createResponse: (results, _) =>
+            new BatchSummary(results.Count(result => result is Success)));
 }
 
-public sealed record EventItemResult<TItem, TItemResult>(TItem Item, TItemResult Result);
+// R2: SQS partial batch response. An async lambda block makes the result family unambiguous.
+// Stopping omits unstarted items from the response.
+static void RegisterResultsWithRecovery(LambdaApplication lambda) =>
+    lambda.MapEventHandler(
+        split: (SqsEnvelope<MyEvent> batch, ILambdaInvocationContext _) => batch.Records,
+        handle: async Task<ImportItemResult> (
+                SqsEnvelope<MyEvent>.SqsMessageEnvelope item,
+                DocumentImporter importer,
+                IEventProcessingContext processing,
+                CancellationToken token) =>
+            await EventHandlers.HandleSqsMessageAsync(item, importer, processing, token),
+        onError: (item, _, _) => new Retry(item.MessageId),
+        createResponse: (results, _) => new SQSBatchResponse(
+            results
+                .OfType<Retry>()
+                .Select(result =>
+                    new SQSBatchResponse.BatchItemFailure { ItemIdentifier = result.MessageId, })
+                .ToList()));
 
-public sealed class EventBatchResult<TItem, TItemResult>
+public sealed record MyEvent(string Message, bool StopProcessing = false);
+
+public sealed record ImportBatch(IReadOnlyList<ImportDocument> Items);
+
+public sealed record ImportDocument(MyEvent Event);
+
+public sealed record BatchSummary(int Count);
+
+public abstract record ImportItemResult;
+
+public sealed record Success(string MessageId) : ImportItemResult;
+
+public sealed record Retry(string MessageId) : ImportItemResult;
+
+public sealed class DocumentImporter
 {
-    public IReadOnlyList<EventItemResult<TItem, TItemResult>> Items { get; } = [];
-}
-
-public sealed record ExampleResponse(IReadOnlyList<string?> RetryMessageIds);
-
-// Required so the generated test project can reference this top-level Program.
-public partial class Program;
-
-public static class Extension
-{
-    extension(LambdaApplication lambda)
+    public Task ImportAsync(MyEvent message, CancellationToken token)
     {
-        public LambdaApplication MapEventHandler<TEvent, TItem>(
-            Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
-            Func<TItem, Task> handle,
-            EventHandlerOptions? options = null)
-            => lambda;
-
-        public LambdaApplication MapEventHandler<TEvent, TItem, TDependency>(
-            Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
-            Func<TItem, TDependency, Task> handle,
-            EventHandlerOptions? options = null)
-            => lambda;
-
-        public LambdaApplication MapEventHandler<TEvent, TItem, TDependency1, TDependency2>(
-            Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
-            Func<TItem, TDependency1, TDependency2, Task> handle,
-            EventHandlerOptions? options = null)
-            => lambda;
-
-        public LambdaApplication
-            MapEventHandler<TEvent, TItem, TItemResult, TResponse, TDependency>(
-                Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
-                Func<TItem, TDependency, Task<TItemResult>> handle,
-                Func<EventBatchResult<TItem, TItemResult>, ILambdaInvocationContext, TResponse>
-                    createResponse,
-                EventHandlerOptions? options = null)
-            => lambda;
-
-        public LambdaApplication
-            MapEventHandler<TEvent, TItem, TItemResult, TResponse, TDependency>(
-                Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
-                Func<TItem, TDependency, Task<TItemResult>> handle,
-                Func<TItem, Exception, ILambdaInvocationContext, TItemResult> onError,
-                Func<EventBatchResult<TItem, TItemResult>, ILambdaInvocationContext, TResponse>
-                    createResponse,
-                EventHandlerOptions? options = null)
-            => lambda;
+        token.ThrowIfCancellationRequested();
+        return Task.CompletedTask;
     }
-}
 
-public sealed class EventHandlerOptions
-{
-    public int MaxConcurrentExecutions { get; init; } = 10;
-}
-
-public class MyService
-{
-    public void DoStuff(string input) { }
-}
-
-public class MyOtherService
-{
-    public void DoStuff(string input) { }
+    public Task<ImportItemResult> ImportResultAsync(MyEvent message, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        return Task.FromResult<ImportItemResult>(new Success(message.Message));
+    }
 }
 
 public static class EventHandlers
 {
-    public static Task HandleS3RecordAsync(
-        S3Event.S3EventNotificationRecord item,
-        MyService service,
-        MyOtherService otherService)
+    public static Task<ImportItemResult> HandleImportAsync(
+        ImportDocument item,
+        DocumentImporter importer,
+        CancellationToken token) =>
+        importer.ImportResultAsync(item.Event, token);
+
+    public static async Task<ImportItemResult> HandleSqsMessageAsync(
+        SqsEnvelope<MyEvent>.SqsMessageEnvelope item,
+        DocumentImporter importer,
+        IEventProcessingContext processing,
+        CancellationToken token)
     {
-        service.DoStuff(item.S3.Object.Key);
-        otherService.DoStuff(item.EventName);
-        return Task.CompletedTask;
+        if (item.BodyContent is null)
+            return new Retry(item.MessageId);
+
+        if (item.BodyContent.StopProcessing)
+            processing.StopProcessing();
+
+        return await importer.ImportResultAsync(item.BodyContent, token);
     }
 }
+
+[JsonSerializable(typeof(SqsEnvelope<MyEvent>))]
+[JsonSerializable(typeof(SQSBatchResponse))]
+[JsonSerializable(typeof(MyEvent))]
+internal partial class EventProcessorJsonContext : JsonSerializerContext;
+
+// Required so the generated test project can reference this top-level Program.
+public partial class Program;

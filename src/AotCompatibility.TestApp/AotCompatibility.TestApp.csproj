@@ -10,7 +10,14 @@
     <SelfContained>true</SelfContained>
     <WarningsAsErrors>IL2026;IL2087;IL2091;IL3050;IL3051</WarningsAsErrors>
     <IsPackable>false</IsPackable>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);MinimalLambda.Generated</InterceptorsNamespaces>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference
+      Include="..\MinimalLambda.SourceGenerators\MinimalLambda.SourceGenerators.csproj"
+      ReferenceOutputAssembly="false"
+      OutputItemType="Analyzer" />
+  </ItemGroup>
   <ItemGroup>
     <AotRootProject
       Include="MinimalLambda.Envelopes.Alb;MinimalLambda.Envelopes.ApiGateway;MinimalLambda.Envelopes.CloudWatchLogs;MinimalLambda.Envelopes.Kafka;MinimalLambda.Envelopes.KinesisFirehose;MinimalLambda.Envelopes.Kinesis;MinimalLambda.Envelopes.Sns;MinimalLambda.Envelopes.Sqs;MinimalLambda.Envelopes"
