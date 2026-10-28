@@ -112,7 +112,9 @@ builder.Services.Configure<EventHandlerOptions>(options =>
 runs, at application build time. `EnableConcurrency = false` forces sequential execution even when a
 larger cap is configured.
 
-Use sequential processing when order matters, such as FIFO queues or stream shards.
+Use sequential processing when order matters, such as FIFO queues or stream shards. For a FIFO
+queue, combine `EnableConcurrency = false` with `StopProcessing()` to keep ordered processing:
+records completed before the stop commit normally while later records are intentionally abandoned.
 
 ## Stopping and cancelling
 
@@ -144,7 +146,10 @@ handlers that finish despite cancellation keep their results.
 
 Once handling closes, fan-in and response construction add no new framework cancellation checks.
 An invocation cancellation observed *during* handling still suppresses the response; one that
-arrives later does not invalidate completed work.
+arrives later does not invalidate completed work. Completion is not a completeness guarantee: an
+absent item is one the processor never produced a result for, not a claim that it was processed.
+Cancellation requested during response construction is observed past the handling boundary, so the
+completed response is still delivered.
 
 ## Response input limitations
 
@@ -192,6 +197,14 @@ lambda.MapEventHandler(
 
 The handler's declared `Task<ImportItemResult>` return type fixes the shared result type. A
 `Task<Success>` handler is not a `Task<ImportItemResult>` handler.
+
+## Stream checkpoints (Kinesis and DynamoDB)
+
+Stream sources report a checkpoint, not individual record identities. Each result carries the
+record's sequence number, and with `ReportBatchItemFailures` the checkpoint you return is the lowest
+failing sequence number. The source resumes from that checkpoint, so already-processed successes
+before it are re-delivered and the application must be idempotent. Kinesis and DynamoDB do not
+support per-record acknowledgement.
 
 ## Choosing the overload
 

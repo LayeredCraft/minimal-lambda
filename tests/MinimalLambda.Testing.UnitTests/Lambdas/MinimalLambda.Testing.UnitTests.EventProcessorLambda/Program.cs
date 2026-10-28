@@ -18,10 +18,17 @@ lambda.MapEventHandler(
     handle: async Task<ImportResult> (
         SQSEvent.SQSMessage item,
         RecordProbe probe,
+        IEventProcessingContext processing,
         CancellationToken token) =>
     {
         token.ThrowIfCancellationRequested();
         probe.Record(item.MessageId);
+
+        if (item.Body is "stop")
+        {
+            processing.StopProcessing();
+            return new Success(item.MessageId);
+        }
 
         if (item.Body is "retry" or "fatal")
             throw new InvalidOperationException("retry requested");

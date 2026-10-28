@@ -1934,6 +1934,126 @@ public class EventProcessorTests
         responseCalls.Should().Be(0);
     }
 
+    [Fact]
+    public async Task StreamResultsCarrySequenceNumbersInSourceOrderAndOnlyFailuresSurface()
+    {
+        // Arrange
+        StreamResponse? captured = null;
+        IReadOnlyList<string>? contributed = null;
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) =>
+                batch.Items.Select(item => new StreamRecord($"seq-{item.Id}", item.Id == 2)),
+            handle: (StreamRecord record) =>
+                record.ShouldFail
+                    ? Task.FromException<StreamResult>(
+                        new InvalidOperationException("stream failed"))
+                    : Task.FromResult(new StreamResult(record.SequenceNumber, Failed: false)),
+            onError: (record, _, _) => new StreamResult(record.SequenceNumber, Failed: true),
+            createResponse: (results, _) =>
+            {
+                contributed = results.Select(result => result.SequenceNumber).ToList();
+                captured = new StreamResponse(
+                    results
+                        .Where(result => result.Failed)
+                        .Select(result => result.SequenceNumber)
+                        .ToList());
+                return captured;
+            });
+
+        var harness = CreateStreamHarness<StreamResponse>(
+            app,
+            new Batch([new Item(1), new Item(2), new Item(3)]));
+        var handler = app.Build();
+
+        // Act
+        await handler(harness.Context);
+
+        // Assert
+        // One result per completed item, in source order, with the original sequence numbers, so
+        // successful records are still counted alongside the mapped failure.
+        contributed.Should().Equal("seq-1", "seq-2", "seq-3");
+        captured!.SequenceNumbers.Should().Equal("seq-2");
+        harness.ResponseFeature.Received(1).SetResponse(captured);
+    }
+
+    [Fact]
+    public async Task StreamResponseUsesLowestFailingSequenceNumberAsCheckpoint()
+    {
+        // Arrange
+        StreamResponse? captured = null;
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) =>
+                batch.Items.Select(item => new StreamRecord($"seq-{item.Id}", item.Id is 2 or 3)),
+            handle: (StreamRecord record) =>
+                record.ShouldFail
+                    ? Task.FromException<StreamResult>(
+                        new InvalidOperationException("stream failed"))
+                    : Task.FromResult(new StreamResult(record.SequenceNumber, Failed: false)),
+            onError: (record, _, _) => new StreamResult(record.SequenceNumber, Failed: true),
+            createResponse: (results, _) =>
+            {
+                captured = new StreamResponse(
+                    results
+                        .Where(result => result.Failed)
+                        .Select(result => result.SequenceNumber)
+                        .OrderBy(sequenceNumber => sequenceNumber, StringComparer.Ordinal)
+                        .Take(1)
+                        .ToList());
+                return captured;
+            });
+
+        var harness = CreateStreamHarness<StreamResponse>(
+            app,
+            new Batch([new Item(1), new Item(2), new Item(3)]));
+        var handler = app.Build();
+
+        // Act
+        await handler(harness.Context);
+
+        // Assert
+        // Kinesis and DynamoDB acknowledge from the supplied checkpoint forward, so reporting the
+        // lowest failing sequence number also re-delivers already-processed successes. Applications
+        // must stay idempotent. This is the documented semantic, not a processor guarantee.
+        captured!.SequenceNumbers.Should().Equal("seq-2");
+    }
+
+    [Fact]
+    public async Task InvocationCancellationDuringResponseConstructionStillDeliversResponseOnce()
+    {
+        // Arrange
+        var responseCalls = 0;
+        Response? captured = null;
+        var invocationCancellation = new CancellationTokenSource();
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item item) => Task.FromResult(item.Id),
+            createResponse: (results, _) =>
+            {
+                responseCalls++;
+                invocationCancellation.Cancel();
+                captured = new Response(results.ToList());
+                return captured;
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(1)]), invocationCancellation);
+        var handler = app.Build();
+
+        // Act
+        await handler(harness.Context);
+
+        // Assert
+        // Response construction sits past the handling boundary, so cancelling while the response
+        // is
+        // being built neither suppresses nor duplicates the delivered response and adds no failure.
+        invocationCancellation.IsCancellationRequested.Should().BeTrue();
+        responseCalls.Should().Be(1);
+        captured!.Ids.Should().Equal(1);
+        harness.ResponseFeature.Received(1).SetResponse(captured);
+    }
+
     private static Exception Unwrap(Exception exception) =>
         exception is AggregateException { InnerExceptions.Count: 1 } aggregate
             ? aggregate.InnerExceptions[0]
@@ -1966,9 +2086,34 @@ public class EventProcessorTests
         return new Harness(context, responseFeature, invocationCancellation);
     }
 
+    private static StreamHarness<TResponse> CreateStreamHarness<TResponse>(
+        LambdaApplication app,
+        Batch batch,
+        CancellationTokenSource? invocationCancellation = null)
+    {
+        var features = new DefaultFeatureCollection([]);
+        features.Set<IEventFeature>(new TestEventFeature<Batch>(batch));
+        var responseFeature = Substitute.For<IResponseFeature<TResponse>>();
+        features.Set<IResponseFeature>(responseFeature);
+        invocationCancellation ??= new CancellationTokenSource();
+
+        var context = Substitute.For<ILambdaInvocationContext>();
+        context.Features.Returns(features);
+        context.ServiceProvider.Returns(app.Services);
+        context.CancellationToken.Returns(invocationCancellation.Token);
+        context.Items.Returns(new Dictionary<object, object?>());
+
+        return new StreamHarness<TResponse>(context, responseFeature, invocationCancellation);
+    }
+
     private sealed record Harness(
         ILambdaInvocationContext Context,
         IResponseFeature<Response> ResponseFeature,
+        CancellationTokenSource InvocationCancellation);
+
+    private sealed record StreamHarness<TResponse>(
+        ILambdaInvocationContext Context,
+        IResponseFeature<TResponse> ResponseFeature,
         CancellationTokenSource InvocationCancellation);
 
     private sealed class TestEventFeature<T>(T value) : IEventFeature<T>
@@ -2049,6 +2194,12 @@ public class EventProcessorTests
     internal sealed record OptionalValue(int Value);
 
     internal sealed record ResultDto(int ItemId, int ScopeId);
+
+    internal sealed record StreamRecord(string SequenceNumber, bool ShouldFail);
+
+    internal sealed record StreamResult(string SequenceNumber, bool Failed);
+
+    public sealed record StreamResponse(IReadOnlyList<string> SequenceNumbers);
 
     internal sealed class UnregisteredValue;
 
