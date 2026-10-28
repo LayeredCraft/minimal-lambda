@@ -8,6 +8,12 @@ ______________________________________________________________________
 
 ## Feature Categories
 
+### [Event Processor](./event-processor.md)
+
+`MapEventHandler` splits one event into items and processes them concurrently with a per-item
+asynchronous DI scope. Choose from five callback families for response building, error mapping, and
+graceful stopping.
+
 ### [Envelope Pattern](./envelopes.md)
 
 The Envelope pattern provides type-safe wrappers for various AWS event sources like SQS, SNS, and API Gateway. Instead of manually parsing JSON, you can work with strongly-typed objects, improving code quality and developer productivity.

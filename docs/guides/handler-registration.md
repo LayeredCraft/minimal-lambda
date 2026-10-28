@@ -35,6 +35,7 @@ interface IGreetingService
 
 - While you can have multiple `MapHandler` calls in your code, only one can be registered at runtime (see [Multiple MapHandler Calls](#multiple-maphandler-calls) below).
 - The generated handler feeds into the normal invocation builder, so all middleware, features, and diagnostics apply equally to handlers created via `Handle` or `MapHandler`.
+- For batch events, [`MapEventHandler`](event-processor.md) consumes the same single handler slot and splits one event into concurrently processed items.
 
 ## Multiple MapHandler Calls
 
