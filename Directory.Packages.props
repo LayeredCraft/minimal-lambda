@@ -7,7 +7,7 @@
     <!-- Packages for all targets -->
     <PackageVersion Include="Amazon.Lambda.CloudWatchLogsEvents" Version="3.0.0" />
     <PackageVersion Include="Amazon.Lambda.Core" Version="3.4.0" />
-    <PackageVersion Include="Amazon.Lambda.DurableExecution" Version="1.0.0" />
+    <PackageVersion Include="Amazon.Lambda.DurableExecution" Version="2.2.0" />
     <PackageVersion Include="Amazon.Lambda.DurableExecution.Testing" Version="1.1.0" />
     <PackageVersion Include="Amazon.Lambda.KafkaEvents" Version="3.0.0" />
     <PackageVersion Include="Amazon.Lambda.KinesisEvents" Version="4.0.0" />
@@ -54,6 +54,7 @@
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0" />
     <PackageVersion Include="System.Formats.Asn1" Version="6.0.1" />
     <PackageVersion Include="System.Net.Http" Version="4.3.4" />
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
     <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
     <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
     <PackageVersion Include="Verify.SourceGenerators" Version="2.5.0" />
