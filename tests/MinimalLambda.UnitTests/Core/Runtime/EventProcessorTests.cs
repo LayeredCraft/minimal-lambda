@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace MinimalLambda.UnitTests.Core.Runtime;
@@ -1492,6 +1494,451 @@ public class EventProcessorTests
         captured!.Ids.Should().Equal(1, 2, 3);
     }
 
+    [Fact]
+    public async Task ThrowingProcessingTokenCallbackFromCancelProcessingIsFatalAndNotMapped()
+    {
+        // Arrange
+        var errorCalls = 0;
+        var responseCalls = 0;
+        var handlerCompleted =
+            new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var builder = LambdaApplication.CreateBuilder();
+        builder.Services.Configure<EventHandlerOptions>(options =>
+            options.MaxConcurrentExecutions = 1);
+        await using var app = builder.Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item _, IEventProcessingContext processing) =>
+            {
+                processing.CancellationToken.Register(() =>
+                    throw new InvalidOperationException("callback fault"));
+                processing.CancelProcessing();
+                handlerCompleted.TrySetResult();
+                return Task.CompletedTask;
+            },
+            onError: (Item item, Exception _, IEventProcessingContext _) =>
+            {
+                errorCalls++;
+                return item.Id;
+            },
+            createResponse: (results, _) =>
+            {
+                responseCalls++;
+                return new Response(results.ToList());
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(1), new Item(2)]));
+        var handler = app.Build();
+
+        // Act
+        var act = () => handler(harness.Context);
+
+        // Assert
+        // CancelAsync faults with the callback's AggregateException; the processor records it as
+        // the primary infrastructure failure instead of letting it escape the cancellation thread.
+        var thrown = await act.Should().ThrowAsync<Exception>();
+        Unwrap(thrown.Which)
+            .Should()
+            .BeOfType<InvalidOperationException>()
+            .Which
+            .Message
+            .Should()
+            .Be("callback fault");
+
+        // The cancelling handler must not observe the callback fault.
+        await handlerCompleted.Task.WaitAsync(
+            TimeSpan.FromSeconds(10),
+            TestContext.Current.CancellationToken);
+        errorCalls.Should().Be(0);
+        responseCalls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ThrowingProcessingTokenCallbackFromInvocationCancellationIsFatal()
+    {
+        // Arrange
+        var responseCalls = 0;
+        var callbackRan =
+            new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var registered =
+            new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: async (Item _, IEventProcessingContext processing) =>
+            {
+                processing.CancellationToken.Register(() =>
+                {
+                    callbackRan.TrySetResult();
+                    throw new InvalidOperationException("callback fault");
+                });
+                registered.TrySetResult();
+                await release.Task.ConfigureAwait(false);
+            },
+            createResponse: (items, _) =>
+            {
+                responseCalls++;
+                return new Response(items.Select(item => item.Id).ToList());
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(1)]));
+        var handler = app.Build();
+
+        // Act
+        var invocation = handler(harness.Context);
+        await registered.Task.WaitAsync(
+            TimeSpan.FromSeconds(10),
+            TestContext.Current.CancellationToken);
+        harness.InvocationCancellation.Cancel();
+        release.SetResult();
+        var act = () => invocation;
+
+        // Assert
+        // The callback fault is recorded as the primary fatal, but a latched invocation
+        // cancellation still wins at fan-in, so the cancellation result surfaces and the fault
+        // never escapes the cancellation thread.
+        await act.Should().ThrowAsync<OperationCanceledException>();
+        await callbackRan.Task.WaitAsync(
+            TimeSpan.FromSeconds(10),
+            TestContext.Current.CancellationToken);
+        responseCalls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task CancellationCallbacksAreAwaitedBeforeCompletion()
+    {
+        // Arrange
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var callbackEntered =
+            new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        Response? captured = null;
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item _, IEventProcessingContext processing) =>
+            {
+                processing.CancellationToken.Register(() =>
+                {
+                    callbackEntered.TrySetResult();
+                    gate.Task.GetAwaiter().GetResult();
+                });
+                processing.CancelProcessing();
+                return Task.CompletedTask;
+            },
+            createResponse: (items, _) =>
+            {
+                captured = new Response(items.Select(item => item.Id).ToList());
+                return captured;
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(1)]));
+        var handler = app.Build();
+
+        // Act
+        var invocation = handler(harness.Context);
+        await callbackEntered.Task.WaitAsync(
+            TimeSpan.FromSeconds(10),
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        // The callback is still parked, so cancellation dispatch has not joined and the
+        // invocation cannot have completed.
+        invocation.IsCompleted.Should().BeFalse();
+        gate.SetResult();
+        await invocation;
+        captured!.Ids.Should().Equal(1);
+    }
+
+    [Fact]
+    public async Task ReentrantControlCallsFromCancellationCallbacksDoNotDeadlock()
+    {
+        // Arrange
+        Response? captured = null;
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item _, IEventProcessingContext processing) =>
+            {
+                processing.CancellationToken.Register(() =>
+                {
+                    processing.CancelProcessing();
+                    processing.StopProcessing();
+                });
+                processing.CancellationToken.Register(() => processing.StopProcessing());
+                processing.CancelProcessing();
+                return Task.CompletedTask;
+            },
+            createResponse: (items, _) =>
+            {
+                captured = new Response(items.Select(item => item.Id).ToList());
+                return captured;
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(1)]));
+        var handler = app.Build();
+
+        // Act
+        await handler(harness.Context)
+            .WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+        // Assert
+        captured!.Ids.Should().Equal(1);
+        harness.InvocationCancellation.IsCancellationRequested.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task InvocationCancellationBeforeAdmissionThrowsAndSkipsSplitAndHandlers()
+    {
+        // Arrange
+        var splitCalls = 0;
+        var handleCalls = 0;
+        using var invocationCancellation = new CancellationTokenSource();
+        invocationCancellation.Cancel();
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) =>
+            {
+                splitCalls++;
+                return batch.Items;
+            },
+            handle: (Item _) =>
+            {
+                handleCalls++;
+                return Task.CompletedTask;
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(1)]), invocationCancellation);
+        var handler = app.Build();
+
+        // Act
+        var act = () => handler(harness.Context);
+
+        // Assert
+        await act.Should().ThrowAsync<OperationCanceledException>();
+        splitCalls.Should().Be(0);
+        handleCalls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ConcurrentControlRequestsFromManyHandlersDrainDeterministically()
+    {
+        // Arrange
+        ScopeProbe.Reset();
+        var allAdmitted =
+            new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var controlsApplied =
+            new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var entered = 0;
+        var applied = 0;
+        var handled = new ConcurrentBag<int>();
+        Response? captured = null;
+        var builder = LambdaApplication.CreateBuilder();
+        builder.Services.Configure<EventHandlerOptions>(options =>
+            options.MaxConcurrentExecutions = 3);
+        builder.Services.AddScoped<ScopeProbe>();
+        await using var app = builder.Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: async (Item item, IEventProcessingContext processing, ScopeProbe _) =>
+            {
+                if (Interlocked.Increment(ref entered) == 3)
+                    allAdmitted.TrySetResult();
+
+                await allAdmitted.Task.ConfigureAwait(false);
+
+                if (item.Id % 2 == 0)
+                    processing.CancelProcessing();
+                else
+                    processing.StopProcessing();
+
+                if (Interlocked.Increment(ref applied) == 3)
+                    controlsApplied.TrySetResult();
+
+                // Hold every admitted handler until all control requests are recorded, so no
+                // worker can race a claim for the next item while a peer is still outside the
+                // stop boundary.
+                await controlsApplied.Task.ConfigureAwait(false);
+                handled.Add(item.Id);
+            },
+            createResponse: (items, _) =>
+            {
+                captured = new Response(items.Select(item => item.Id).ToList());
+                return captured;
+            });
+
+        var harness = CreateHarness(
+            app,
+            new Batch(
+                [new Item(1), new Item(2), new Item(3), new Item(4), new Item(5), new Item(6),]));
+        var handler = app.Build();
+
+        // Act
+        await handler(harness.Context)
+            .WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+        // Assert
+        handled.Should().BeEquivalentTo(new[] { 1, 2, 3 });
+        captured!.Ids.Should().Equal(1, 2, 3);
+        ScopeProbe.Created.Should().Be(3);
+        ScopeProbe.Disposed.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task ExecutionErrorIsPrimaryWhenScopeDisposalAlsoFails()
+    {
+        // Arrange
+        var responseCalls = 0;
+        var builder = LambdaApplication.CreateBuilder();
+        builder.Services.AddScoped<FaultingDisposable>();
+        await using var app = builder.Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item _, FaultingDisposable _) =>
+                Task.FromException(new InvalidOperationException("handler failed")),
+            createResponse: (items, _) =>
+            {
+                responseCalls++;
+                return new Response(items.Select(item => item.Id).ToList());
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(1)]));
+        var handler = app.Build();
+
+        // Act
+        var act = () => handler(harness.Context);
+
+        // Assert
+        // The handler fault is recorded before the scope dispose fault, so it remains primary.
+        var thrown = await act.Should().ThrowAsync<Exception>();
+        Unwrap(thrown.Which)
+            .Should()
+            .BeOfType<InvalidOperationException>()
+            .Which
+            .Message
+            .Should()
+            .Be("handler failed");
+        responseCalls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task AdditionalFailuresAreLoggedWithoutReplacingThePrimary()
+    {
+        // Arrange
+        var logger = Substitute.For<ILogger>();
+        var loggerFactory = Substitute.For<ILoggerFactory>();
+        loggerFactory.CreateLogger("MinimalLambda.EventProcessor").Returns(logger);
+
+        var builder = LambdaApplication.CreateBuilder();
+        builder.Services.RemoveAll<ILoggerFactory>();
+        builder.Services.AddSingleton(loggerFactory);
+        builder.Services.AddScoped<FaultingDisposable>();
+        await using var app = builder.Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item _, FaultingDisposable _) =>
+                Task.FromException(new InvalidOperationException("handler failed")));
+
+        var harness = CreateHarness(app, new Batch([new Item(1)]));
+        var handler = app.Build();
+
+        // Act
+        var act = () => handler(harness.Context);
+
+        // Assert
+        var thrown = await act.Should().ThrowAsync<Exception>();
+        Unwrap(thrown.Which)
+            .Should()
+            .BeOfType<InvalidOperationException>()
+            .Which
+            .Message
+            .Should()
+            .Be("handler failed");
+
+        var calls = logger.ReceivedCalls().ToList();
+        calls.Should().ContainSingle();
+        calls[0].GetArguments()[3]
+            .Should()
+            .BeOfType<NotSupportedException>()
+            .Which
+            .Message
+            .Should()
+            .Be("scope disposal failed");
+    }
+
+    [Fact]
+    public async Task ThrowingLoggerDoesNotMaskThePrimaryFailure()
+    {
+        // Arrange
+        var loggerFactory = Substitute.For<ILoggerFactory>();
+        loggerFactory.CreateLogger("MinimalLambda.EventProcessor").Returns(new ThrowingLogger());
+
+        var builder = LambdaApplication.CreateBuilder();
+        builder.Services.RemoveAll<ILoggerFactory>();
+        builder.Services.AddSingleton(loggerFactory);
+        builder.Services.AddScoped<FaultingDisposable>();
+        await using var app = builder.Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item _, FaultingDisposable _) =>
+                Task.FromException(new InvalidOperationException("handler failed")));
+
+        var harness = CreateHarness(app, new Batch([new Item(1)]));
+        var handler = app.Build();
+
+        // Act
+        var act = () => handler(harness.Context);
+
+        // Assert
+        var thrown = await act.Should().ThrowAsync<Exception>();
+        Unwrap(thrown.Which)
+            .Should()
+            .BeOfType<InvalidOperationException>()
+            .Which
+            .Message
+            .Should()
+            .Be("handler failed");
+    }
+
+    [Fact]
+    public async Task MissingDependencyResolutionFailureIsNotMappedByErrorMapper()
+    {
+        // Arrange
+        var errorCalls = 0;
+        var responseCalls = 0;
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item item, UnregisteredValue _) => Task.FromResult(item.Id),
+            onError: (Item item, Exception _, IEventProcessingContext _) =>
+            {
+                errorCalls++;
+                return item.Id;
+            },
+            createResponse: (results, _) =>
+            {
+                responseCalls++;
+                return new Response(results.ToList());
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(1)]));
+        var handler = app.Build();
+
+        // Act
+        var act = () => handler(harness.Context);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        errorCalls.Should().Be(0);
+        responseCalls.Should().Be(0);
+    }
+
+    private static Exception Unwrap(Exception exception) =>
+        exception is AggregateException { InnerExceptions.Count: 1 } aggregate
+            ? aggregate.InnerExceptions[0]
+            : exception;
+
     private static async Task WaitForAsync(Func<bool> condition)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
@@ -1608,6 +2055,26 @@ public class EventProcessorTests
     internal sealed class ThrowingDisposable : IDisposable
     {
         public void Dispose() => throw new InvalidOperationException("scope disposal failed");
+    }
+
+    internal sealed class FaultingDisposable : IDisposable
+    {
+        public void Dispose() => throw new NotSupportedException("scope disposal failed");
+    }
+
+    internal sealed class ThrowingLogger : Microsoft.Extensions.Logging.ILogger
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            Microsoft.Extensions.Logging.LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter) =>
+            throw new InvalidOperationException("logger failed");
     }
 
     internal sealed class SlowDisposable(Task disposalGate) : IAsyncDisposable
