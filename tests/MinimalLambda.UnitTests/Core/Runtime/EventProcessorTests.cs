@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -955,6 +956,331 @@ public class EventProcessorTests
         await handler(CreateHarness(app, new Batch([new Item(1)])).Context);
     }
 
+    [Fact]
+    public async Task RetainsNullableItemsAndDoesNotFilterNulls()
+    {
+        // Arrange
+        IReadOnlyList<Item?>? contributions = null;
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item? _) => Task.CompletedTask,
+            createResponse: (items, _) =>
+            {
+                contributions = items.ToList();
+                return new Response([]);
+            });
+
+        var harness = CreateHarness(app, new Batch([null!, new Item(1)]));
+        var handler = app.Build();
+
+        // Act
+        await handler(harness.Context);
+
+        // Assert
+        contributions.Should().HaveCount(2);
+        contributions!.Count(item => item is null).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task EnumerationFailureFailsBeforeHandlingAndDisposesTheEnumerator()
+    {
+        // Arrange
+        var enumerable = new ThrowingEnumerable();
+        var handlerCalls = 0;
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch _, ILambdaInvocationContext _) => enumerable,
+            handle: (Item _) =>
+            {
+                handlerCalls++;
+                return Task.CompletedTask;
+            });
+
+        var harness = CreateHarness(app, new Batch([]));
+        var handler = app.Build();
+
+        // Act
+        var act = () => handler(harness.Context);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        handlerCalls.Should().Be(0);
+        enumerable.Disposed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task CollectsOnlyMappedFailuresForTheNoResultRecoveryFamily()
+    {
+        // Arrange
+        Response? captured = null;
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item item) =>
+                item.Id == 2
+                    ? Task.FromException(new InvalidOperationException("failed"))
+                    : Task.CompletedTask,
+            onError: (item, _, _) => item.Id,
+            createResponse: (failures, _) =>
+            {
+                captured = new Response(failures.ToList());
+                return captured;
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(1), new Item(2), new Item(3)]));
+        var handler = app.Build();
+
+        // Act
+        await handler(harness.Context);
+
+        // Assert
+        captured!.Ids.Should().Equal(2);
+    }
+
+    [Fact]
+    public async Task SynchronousHandlerThrowIsMappedOnce()
+    {
+        // Arrange
+        var mapperCalls = 0;
+        Response? captured = null;
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item item) => SyncThrow(item),
+            onError: (item, _, _) =>
+            {
+                mapperCalls++;
+                return item.Id;
+            },
+            createResponse: (results, _) =>
+            {
+                captured = new Response(results.ToList());
+                return captured;
+            });
+
+        static Task<int> SyncThrow(Item item) =>
+            throw new InvalidOperationException($"synchronous failure for {item.Id}");
+
+        var harness = CreateHarness(app, new Batch([new Item(4)]));
+        var handler = app.Build();
+
+        // Act
+        await handler(harness.Context);
+
+        // Assert
+        mapperCalls.Should().Be(1);
+        captured!.Ids.Should().Equal(4);
+    }
+
+    [Fact]
+    public async Task UnrelatedCancellationExceptionIsMappedNormally()
+    {
+        // Arrange
+        Response? captured = null;
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item _) => Task.FromException<int>(new OperationCanceledException()),
+            onError: (item, _, _) => item.Id,
+            createResponse: (results, _) =>
+            {
+                captured = new Response(results.ToList());
+                return captured;
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(8)]));
+        var handler = app.Build();
+
+        // Act
+        await handler(harness.Context);
+
+        // Assert
+        captured!.Ids.Should().Equal(8);
+    }
+
+    [Fact]
+    public async Task ResponseBuilderFailureFailsInvocation()
+    {
+        // Arrange
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        Func<IEnumerable<int>, ILambdaInvocationContext, Response> builder = (_, _) =>
+            throw new InvalidOperationException("builder failed");
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item item) => Task.FromResult(item.Id),
+            createResponse: builder);
+
+        var harness = CreateHarness(app, new Batch([new Item(1)]));
+        var handler = app.Build();
+
+        // Act
+        var act = () => handler(harness.Context);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        harness.ResponseFeature.DidNotReceiveWithAnyArgs().SetResponse(default(Response)!);
+    }
+
+    [Fact]
+    public async Task RegistersOnlyTheFeatureProvidersTheFamilyNeeds()
+    {
+        // Arrange
+        await using var noResult = LambdaApplication.CreateBuilder().Build();
+        noResult.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item _) => Task.CompletedTask);
+        var noResultProperties = noResult.Properties.Count;
+
+        await using var withResult = LambdaApplication.CreateBuilder().Build();
+        withResult.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item item) => Task.FromResult(item.Id),
+            createResponse: (results, _) => new Response(results.ToList()));
+        var withResultProperties = withResult.Properties.Count;
+
+        // Assert
+        noResultProperties.Should().Be(1);
+        withResultProperties.Should().Be(noResultProperties + 1);
+    }
+
+    [Fact]
+    public async Task SharesSingletonServicesAcrossItems()
+    {
+        // Arrange
+        var seen = new ConcurrentBag<SingletonProbe>();
+        var builder = LambdaApplication.CreateBuilder();
+        builder.Services.AddSingleton<SingletonProbe>();
+        await using var app = builder.Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item _, SingletonProbe probe) =>
+            {
+                seen.Add(probe);
+                return Task.CompletedTask;
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(1), new Item(2), new Item(3)]));
+        var handler = app.Build();
+
+        // Act
+        await handler(harness.Context);
+
+        // Assert
+        seen.Should().HaveCount(3);
+        seen.Distinct().Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task StopRequestedFromErrorMapperPreventsFurtherClaimsAndKeepsMappedValues()
+    {
+        // Arrange
+        var handled = new ConcurrentBag<int>();
+        Response? captured = null;
+        var builder = LambdaApplication.CreateBuilder();
+        builder.Services.Configure<EventHandlerOptions>(options =>
+            options.MaxConcurrentExecutions = 1);
+        await using var app = builder.Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item item) =>
+            {
+                handled.Add(item.Id);
+                return Task.FromException(new InvalidOperationException("failed"));
+            },
+            onError: (item, _, processing) =>
+            {
+                processing.StopProcessing();
+                return item.Id;
+            },
+            createResponse: (failures, _) =>
+            {
+                captured = new Response(failures.ToList());
+                return captured;
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(1), new Item(2), new Item(3)]));
+        var handler = app.Build();
+
+        // Act
+        await handler(harness.Context);
+
+        // Assert
+        handled.Should().BeEquivalentTo(new[] { 1 });
+        captured!.Ids.Should().Equal(1);
+    }
+
+    [Fact]
+    public async Task RepeatedAndEscalatedControlRequestsAreHarmless()
+    {
+        // Arrange
+        var tokenCancelled = false;
+        var tokenAfterCancellation = false;
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item _, IEventProcessingContext processing, CancellationToken token) =>
+            {
+                processing.StopProcessing();
+                processing.StopProcessing();
+                processing.CancelProcessing();
+                processing.CancelProcessing();
+                tokenCancelled = token.IsCancellationRequested;
+                processing.CancelProcessing();
+                tokenAfterCancellation = token.IsCancellationRequested;
+                return Task.CompletedTask;
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(1)]));
+        var handler = app.Build();
+
+        // Act
+        await handler(harness.Context);
+
+        // Assert
+        tokenCancelled.Should().BeTrue();
+        tokenAfterCancellation.Should().BeTrue();
+        harness.InvocationCancellation.IsCancellationRequested.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task EachInvocationStartsWithFreshProcessingState()
+    {
+        // Arrange
+        var handled = new ConcurrentBag<int>();
+        var tokensCancelledAtEntry = new ConcurrentBag<bool>();
+        var handledPerInvocation = new List<int>();
+        var builder = LambdaApplication.CreateBuilder();
+        builder.Services.Configure<EventHandlerOptions>(options =>
+            options.MaxConcurrentExecutions = 1);
+        await using var app = builder.Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item item, IEventProcessingContext processing, CancellationToken token) =>
+            {
+                handled.Add(item.Id);
+                tokensCancelledAtEntry.Add(token.IsCancellationRequested);
+
+                if (item.Id == 1)
+                    processing.StopProcessing();
+
+                return Task.CompletedTask;
+            });
+
+        var handler = app.Build();
+
+        // Act
+        await handler(CreateHarness(app, new Batch([new Item(1), new Item(2)])).Context);
+        handledPerInvocation.Add(handled.Count);
+
+        await handler(CreateHarness(app, new Batch([new Item(3), new Item(4)])).Context);
+        handledPerInvocation.Add(handled.Count);
+
+        // Assert
+        handledPerInvocation.Should().Equal(1, 3);
+        tokensCancelledAtEntry.Should().OnlyContain(cancelled => cancelled == false);
+    }
+
     private static async Task WaitForAsync(Func<bool> condition)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
@@ -1067,6 +1393,39 @@ public class EventProcessorTests
     internal sealed record ResultDto(int ItemId, int ScopeId);
 
     internal sealed class UnregisteredValue;
+
+    internal sealed class SingletonProbe;
+
+    private sealed class ThrowingEnumerable : IEnumerable<Item>
+    {
+        public bool Disposed { get; private set; }
+
+        public IEnumerator<Item> GetEnumerator() => new Enumerator(this);
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        private sealed class Enumerator(ThrowingEnumerable owner) : IEnumerator<Item>
+        {
+            private int index = -1;
+
+            public Item Current => new(1);
+
+            object IEnumerator.Current => Current;
+
+            public bool MoveNext()
+            {
+                index++;
+                if (index == 2)
+                    throw new InvalidOperationException("enumeration failed");
+
+                return index < 2;
+            }
+
+            public void Reset() => index = -1;
+
+            public void Dispose() => owner.Disposed = true;
+        }
+    }
 
     internal sealed class ScopedValue : IDisposable
     {

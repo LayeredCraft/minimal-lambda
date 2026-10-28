@@ -207,6 +207,33 @@ public class EventHandlerDiscoveryTests
     }
 
     [Fact]
+    public void RejectsAsyncVoidHandlerAtCompileTime()
+    {
+        var errors = CompileErrors(
+            """
+            using System.Threading.Tasks;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            var app = LambdaApplication.CreateBuilder().Build();
+            app.MapEventHandler(
+                split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+                handle: Handle);
+
+            static async void Handle(Item item) => await Task.CompletedTask;
+
+            internal sealed class Batch
+            {
+                public Item[] Items => [];
+            }
+
+            internal sealed class Item;
+            """);
+
+        errors.Should().NotBeEmpty();
+    }
+
+    [Fact]
     public void RecognizesPositionalAndReorderedArguments()
     {
         var result = RunGenerator(

@@ -109,6 +109,49 @@ public class EventHandlerEmitterTests
             """);
 
     [Fact]
+    public void CoexistsWithInvocationLifecycleAndMiddlewareGeneratedFiles()
+    {
+        const string source = """
+                              using System.Collections.Generic;
+                              using System.Threading.Tasks;
+                              using MinimalLambda;
+                              using MinimalLambda.Builder;
+
+                              var app = LambdaApplication.CreateBuilder().Build();
+                              app.OnInit(() => Task.CompletedTask);
+                              app.MapHandler(() => "hello");
+                              app.MapEventHandler(
+                                  split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+                                  handle: (Item item) => Task.CompletedTask,
+                                  createResponse: (IEnumerable<Item> items, ILambdaInvocationContext _) => new Response());
+
+                              internal sealed class Batch
+                              {
+                                  public Item[] Items => [];
+                              }
+
+                              internal sealed class Item;
+
+                              internal sealed class Response;
+                              """;
+
+        var (driver, _) = GeneratorTestHelpers.GenerateFromSource(source);
+        var result = driver.GetRunResult();
+
+        result.Diagnostics.Should().BeEmpty();
+        result
+            .GeneratedTrees
+            .Select(tree => tree.FilePath.Split('/').Last())
+            .Should()
+            .Contain(
+            [
+                "MinimalLambda.InvocationHandlers.g.cs",
+                "MinimalLambda.EventHandlers.g.cs",
+                "MinimalLambda.OnInitHandlers.g.cs",
+            ]);
+    }
+
+    [Fact]
     public void EmitsSingleDeterministicFileForMultipleSites()
     {
         const string source = """
