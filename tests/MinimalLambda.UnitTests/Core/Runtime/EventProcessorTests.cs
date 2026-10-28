@@ -1281,6 +1281,217 @@ public class EventProcessorTests
         tokensCancelledAtEntry.Should().OnlyContain(cancelled => cancelled == false);
     }
 
+    [Theory]
+    [InlineData(0, false)]
+    [InlineData(-1, false)]
+    [InlineData(0, true)]
+    [InlineData(-3, true)]
+    public void InvalidOptionsRejectNonPositiveLimitsInBothModes(int limit, bool concurrencyEnabled)
+    {
+        // Arrange
+        var builder = LambdaApplication.CreateBuilder();
+        builder.Services.Configure<EventHandlerOptions>(options =>
+        {
+            options.EnableConcurrency = concurrencyEnabled;
+            options.MaxConcurrentExecutions = limit;
+        });
+        using var app = builder.Build();
+
+        // Act
+        var act = () => app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item _) => Task.CompletedTask);
+
+        // Assert
+        act.Should().Throw<OptionsValidationException>();
+    }
+
+    [Fact]
+    public async Task MapperCancellationExceptionFailsInvocationWithoutResponse()
+    {
+        // Arrange
+        var responseCalls = 0;
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item _) => Task.FromException<int>(new InvalidOperationException("failed")),
+            onError: (_, _, _) => throw new OperationCanceledException(),
+            createResponse: (results, _) =>
+            {
+                responseCalls++;
+                return new Response(results.ToList());
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(1)]));
+        var handler = app.Build();
+
+        // Act
+        var act = () => handler(harness.Context);
+
+        // Assert
+        await act.Should().ThrowAsync<OperationCanceledException>();
+        responseCalls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ScopeDisposalFailureFailsInvocationAfterSuccessfulHandling()
+    {
+        // Arrange
+        var responseCalls = 0;
+        var builder = LambdaApplication.CreateBuilder();
+        builder.Services.AddScoped<ThrowingDisposable>();
+        await using var app = builder.Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item item, ThrowingDisposable _) => Task.FromResult(item.Id),
+            createResponse: (results, _) =>
+            {
+                responseCalls++;
+                return new Response(results.ToList());
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(1)]));
+        var handler = app.Build();
+
+        // Act
+        var act = () => handler(harness.Context);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        responseCalls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task BuildsEmptyResponseWhenLocalCancellationLeavesNoContributions()
+    {
+        // Arrange
+        Response? captured = null;
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: async (Item _, IEventProcessingContext processing, CancellationToken token) =>
+            {
+                processing.CancelProcessing();
+                await Task.Delay(Timeout.InfiniteTimeSpan, token).ConfigureAwait(false);
+            },
+            createResponse: (items, _) =>
+            {
+                captured = new Response(items.Select(item => item.Id).ToList());
+                return captured;
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(1)]));
+        var handler = app.Build();
+
+        // Act
+        await handler(harness.Context);
+
+        // Assert
+        captured!.Ids.Should().BeEmpty();
+        harness.ResponseFeature.Received(1).SetResponse(captured);
+    }
+
+    [Fact]
+    public async Task SlowAsyncDisposalCountsTowardTheConcurrencyCap()
+    {
+        // Arrange
+        var disposalGate =
+            new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var started = 0;
+        var handlersExited = 0;
+        var builder = LambdaApplication.CreateBuilder();
+        builder.Services.Configure<EventHandlerOptions>(options =>
+            options.MaxConcurrentExecutions = 2);
+        builder.Services.AddScoped(_ => new SlowDisposable(disposalGate.Task));
+        await using var app = builder.Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item _, SlowDisposable _) =>
+            {
+                Interlocked.Increment(ref started);
+                Interlocked.Increment(ref handlersExited);
+                return Task.CompletedTask;
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(1), new Item(2), new Item(3)]));
+        var handler = app.Build();
+
+        // Act
+        var invocation = handler(harness.Context);
+        await WaitForAsync(() => Volatile.Read(ref handlersExited) == 2);
+
+        // Both workers exited their handlers and are parked in scope disposal, so neither can claim
+        // the third item until disposal completes.
+        // Assert
+        Volatile.Read(ref started).Should().Be(2);
+        disposalGate.SetResult();
+        await invocation;
+        Volatile.Read(ref started).Should().Be(3);
+    }
+
+    [Fact]
+    public async Task StopWithPeersAdmittedKeepsCompletedValuesAndOmitsUnstarted()
+    {
+        // Arrange
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var allStarted =
+            new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var stopRequested =
+            new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var started = 0;
+        Response? captured = null;
+        var builder = LambdaApplication.CreateBuilder();
+        builder.Services.Configure<EventHandlerOptions>(options =>
+            options.MaxConcurrentExecutions = 3);
+        await using var app = builder.Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: async (Item item, IEventProcessingContext processing) =>
+            {
+                if (Interlocked.Increment(ref started) == 3)
+                    allStarted.TrySetResult();
+
+                if (item.Id == 2)
+                {
+                    await allStarted.Task.ConfigureAwait(false);
+                    processing.StopProcessing();
+                    stopRequested.TrySetResult();
+                    return item.Id;
+                }
+
+                await gate.Task.ConfigureAwait(false);
+                return item.Id;
+            },
+            createResponse: (results, _) =>
+            {
+                captured = new Response(results.ToList());
+                return captured;
+            });
+
+        var harness = CreateHarness(
+            app,
+            new Batch([new Item(1), new Item(2), new Item(3), new Item(4)]));
+        var handler = app.Build();
+
+        // Act
+        var invocation = handler(harness.Context);
+        await allStarted.Task.WaitAsync(
+            TimeSpan.FromSeconds(10),
+            TestContext.Current.CancellationToken);
+
+        // The stop is recorded before the admitted peers are released, so the pending fourth item
+        // can never be claimed.
+        await stopRequested.Task.WaitAsync(
+            TimeSpan.FromSeconds(10),
+            TestContext.Current.CancellationToken);
+        gate.SetResult();
+        await invocation;
+
+        // Assert
+        Volatile.Read(ref started).Should().Be(3);
+        captured!.Ids.Should().Equal(1, 2, 3);
+    }
+
     private static async Task WaitForAsync(Func<bool> condition)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
@@ -1393,6 +1604,16 @@ public class EventProcessorTests
     internal sealed record ResultDto(int ItemId, int ScopeId);
 
     internal sealed class UnregisteredValue;
+
+    internal sealed class ThrowingDisposable : IDisposable
+    {
+        public void Dispose() => throw new InvalidOperationException("scope disposal failed");
+    }
+
+    internal sealed class SlowDisposable(Task disposalGate) : IAsyncDisposable
+    {
+        public async ValueTask DisposeAsync() => await disposalGate.ConfigureAwait(false);
+    }
 
     internal sealed class SingletonProbe;
 
