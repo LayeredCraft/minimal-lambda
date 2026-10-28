@@ -682,6 +682,279 @@ public class EventProcessorTests
         secondPass.Should().Equal(3, 1, 2);
     }
 
+    [Fact]
+    public async Task CustomConcurrencyCapLimitsActiveOperations()
+    {
+        // Arrange
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var active = 0;
+        var maxActive = 0;
+        var started = 0;
+        var sync = new object();
+
+        var builder = LambdaApplication.CreateBuilder();
+        builder.Services.Configure<EventHandlerOptions>(options =>
+            options.MaxConcurrentExecutions = 2);
+        await using var app = builder.Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: async (Item _) =>
+            {
+                lock (sync)
+                {
+                    active++;
+                    started++;
+                    maxActive = Math.Max(maxActive, active);
+                }
+
+                await gate.Task.ConfigureAwait(false);
+
+                lock (sync)
+                    active--;
+            });
+
+        var harness = CreateHarness(
+            app,
+            new Batch([new Item(1), new Item(2), new Item(3), new Item(4)]));
+        var handler = app.Build();
+
+        // Act
+        var invocation = handler(harness.Context);
+        await WaitForAsync(() =>
+        {
+            lock (sync)
+                return started >= 2;
+        });
+        gate.SetResult();
+        await invocation;
+
+        // Assert
+        lock (sync)
+            maxActive.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task ConcurrencyLimitOfOneRunsSequentially()
+    {
+        // Arrange
+        var firstStarted =
+            new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var secondStarted =
+            new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseFirst =
+            new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var builder = LambdaApplication.CreateBuilder();
+        builder.Services.Configure<EventHandlerOptions>(options =>
+            options.MaxConcurrentExecutions = 1);
+        await using var app = builder.Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: async (Item item) =>
+            {
+                if (item.Id == 1)
+                {
+                    firstStarted.TrySetResult();
+                    await releaseFirst.Task.ConfigureAwait(false);
+                    return;
+                }
+
+                secondStarted.TrySetResult();
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(1), new Item(2)]));
+        var handler = app.Build();
+
+        // Act
+        var invocation = handler(harness.Context);
+        await firstStarted.Task.WaitAsync(
+            TimeSpan.FromSeconds(10),
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        secondStarted.Task.IsCompleted.Should().BeFalse();
+        releaseFirst.SetResult();
+        await invocation;
+        secondStarted.Task.IsCompleted.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SplitIsEnumeratedOnceAndFinishesBeforeHandlersStart()
+    {
+        // Arrange
+        var enumerationCount = 0;
+        var enumerationFinished = false;
+        var handlerRanBeforeEnumerationFinished = false;
+
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => Enumerate(),
+            handle: (Item _) =>
+            {
+                if (!enumerationFinished)
+                    handlerRanBeforeEnumerationFinished = true;
+
+                return Task.CompletedTask;
+            });
+
+        IEnumerable<Item> Enumerate()
+        {
+            enumerationCount++;
+            yield return new Item(1);
+            yield return new Item(2);
+            enumerationFinished = true;
+        }
+
+        var harness = CreateHarness(app, new Batch([]));
+        var handler = app.Build();
+
+        // Act
+        await handler(harness.Context);
+
+        // Assert
+        enumerationCount.Should().Be(1);
+        enumerationFinished.Should().BeTrue();
+        handlerRanBeforeEnumerationFinished.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task DuplicateItemsRemainSeparateOrderedContributions()
+    {
+        // Arrange
+        Response? captured = null;
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item item) => Task.FromResult(item.Id),
+            createResponse: (results, _) =>
+            {
+                captured = new Response(results.ToList());
+                return captured;
+            });
+
+        var harness = CreateHarness(
+            app,
+            new Batch([new Item(7), new Item(7), new Item(1), new Item(7)]));
+        var handler = app.Build();
+
+        // Act
+        await handler(harness.Context);
+
+        // Assert
+        captured!.Ids.Should().Equal(7, 7, 1, 7);
+    }
+
+    [Fact]
+    public async Task ResolvesKeyedServicesAndToleratesUnregisteredNullableServices()
+    {
+        // Arrange
+        KeyedValue? keyed = null;
+        OptionalValue? optional = null;
+        var builder = LambdaApplication.CreateBuilder();
+        builder.Services.AddKeyedScoped<KeyedValue>("primary", (_, _) => new KeyedValue(42));
+        await using var app = builder.Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (
+                Item _,
+                [FromKeyedServices("primary")] KeyedValue keyedValue,
+                OptionalValue? optionalValue) =>
+            {
+                keyed = keyedValue;
+                optional = optionalValue;
+                return Task.CompletedTask;
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(1)]));
+        var handler = app.Build();
+
+        // Act
+        await handler(harness.Context);
+
+        // Assert
+        keyed!.Value.Should().Be(42);
+        optional.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task KeepsScopedResultsValidAfterTheItemScopeIsDisposed()
+    {
+        // Arrange
+        Response? captured = null;
+        var builder = LambdaApplication.CreateBuilder();
+        builder.Services.AddScoped<ScopedValue>();
+        await using var app = builder.Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item item, ScopedValue value) =>
+                Task.FromResult(new ResultDto(item.Id, value.InstanceId)),
+            createResponse: (results, _) =>
+            {
+                captured = new Response(results.Select(result => result.ItemId).ToList());
+                return captured;
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(5)]));
+        var handler = app.Build();
+
+        // Act
+        await handler(harness.Context);
+
+        // Assert
+        captured!.Ids.Should().Equal(5);
+        ScopedValue.Disposed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task MissingDependencyFailsInvocationWithoutBuildingResponse()
+    {
+        // Arrange
+        var responseCalls = 0;
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item _, UnregisteredValue _) => Task.CompletedTask,
+            createResponse: (IEnumerable<Item> _, ILambdaInvocationContext _) =>
+            {
+                responseCalls++;
+                return new Response([]);
+            });
+
+        var harness = CreateHarness(app, new Batch([new Item(1)]));
+        var handler = app.Build();
+
+        // Act
+        var act = () => handler(harness.Context);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        responseCalls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task RejectedSecondMappingLeavesRegisteredProvidersInPlace()
+    {
+        // Arrange
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item _) => Task.CompletedTask,
+            createResponse: (IEnumerable<Item> _, ILambdaInvocationContext _) => new Response([]));
+        var propertiesAfterFirst = app.Properties.Count;
+
+        // Act
+        var act = () => app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item _) => Task.CompletedTask);
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>();
+        app.Properties.Count.Should().Be(propertiesAfterFirst);
+
+        var handler = app.Build();
+        await handler(CreateHarness(app, new Batch([new Item(1)])).Context);
+    }
+
     private static async Task WaitForAsync(Func<bool> condition)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
@@ -786,6 +1059,33 @@ public class EventProcessorTests
     internal sealed record Batch(IReadOnlyList<Item> Items);
 
     internal sealed record Item(int Id);
+
+    internal sealed record KeyedValue(int Value);
+
+    internal sealed record OptionalValue(int Value);
+
+    internal sealed record ResultDto(int ItemId, int ScopeId);
+
+    internal sealed class UnregisteredValue;
+
+    internal sealed class ScopedValue : IDisposable
+    {
+        private static readonly ConcurrentBag<int> Ids = [];
+        private static int _nextId;
+        private static int _disposed;
+
+        public ScopedValue()
+        {
+            InstanceId = Interlocked.Increment(ref _nextId);
+            Ids.Add(InstanceId);
+        }
+
+        public int InstanceId { get; }
+
+        public static bool Disposed => Volatile.Read(ref _disposed) > 0;
+
+        public void Dispose() => Interlocked.Increment(ref _disposed);
+    }
 
     public sealed record Response(IReadOnlyList<int> Ids);
 }

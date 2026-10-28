@@ -45,6 +45,43 @@ public class ServiceCollectionExtensionsTests
         act.Should().NotThrow();
     }
 
+    [Fact]
+    public void AddLambdaHostCoreServices_RegistersSingleEventHandlerOptionsValidator()
+    {
+        // Arrange
+        using var serviceProvider = new ServiceCollection()
+            .AddLambdaHostCoreServices()
+            .AddLambdaHostCoreServices()
+            .BuildServiceProvider();
+
+        // Act
+        var validators = serviceProvider.GetServices<IValidateOptions<EventHandlerOptions>>();
+
+        // Assert
+        validators.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void AddLambdaHostCoreServices_PreservesUserEventHandlerConfiguration()
+    {
+        // Arrange
+        using var serviceProvider = new ServiceCollection()
+            .AddLambdaHostCoreServices()
+            .Configure<EventHandlerOptions>(options =>
+            {
+                options.EnableConcurrency = false;
+                options.MaxConcurrentExecutions = 3;
+            })
+            .BuildServiceProvider();
+
+        // Act
+        var options = serviceProvider.GetRequiredService<IOptions<EventHandlerOptions>>().Value;
+
+        // Assert
+        options.EnableConcurrency.Should().BeFalse();
+        options.MaxConcurrentExecutions.Should().Be(3);
+    }
+
     [Theory]
 #if NET11_0_OR_GREATER
     [InlineData(24)]

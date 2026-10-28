@@ -207,6 +207,80 @@ public class EventHandlerDiscoveryTests
     }
 
     [Fact]
+    public void RecognizesPositionalAndReorderedArguments()
+    {
+        var result = RunGenerator(
+            """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            var app = LambdaApplication.CreateBuilder().Build();
+
+            app.MapEventHandler(
+                (Batch batch, ILambdaInvocationContext _) => batch.Items,
+                Handle,
+                (IEnumerable<Item> items, ILambdaInvocationContext _) => new Response());
+
+            app.MapEventHandler(
+                createResponse: (IEnumerable<Item> items, ILambdaInvocationContext _) => new Response(),
+                handle: Handle,
+                split: (Batch batch, ILambdaInvocationContext _) => batch.Items);
+
+            static Task Handle(Item item) => Task.CompletedTask;
+
+            internal sealed class Batch
+            {
+                public Item[] Items => [];
+            }
+
+            internal sealed class Item;
+
+            internal sealed class Response;
+            """);
+
+        result.Diagnostics.Should().BeEmpty();
+        var generated = result
+            .GeneratedTrees
+            .Should()
+            .ContainSingle(tree => tree.FilePath.EndsWith(
+                "MinimalLambda.EventHandlers.g.cs",
+                StringComparison.Ordinal))
+            .Subject
+            .ToString();
+        generated.Split("MapEventHandlerInterceptor").Length.Should().Be(3);
+    }
+
+    [Fact]
+    public void ReportsInvalidKeyedServiceKeyOnHandlerParameter()
+    {
+        var result = RunGenerator(
+            """
+            using System.Threading.Tasks;
+            using Microsoft.Extensions.DependencyInjection;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            var app = LambdaApplication.CreateBuilder().Build();
+            app.MapEventHandler(
+                split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+                handle: (Item _, [FromKeyedServices(new[] { "a", "b" })] Service _) => Task.CompletedTask);
+
+            internal sealed class Batch
+            {
+                public Item[] Items => [];
+            }
+
+            internal sealed class Item;
+
+            internal sealed class Service;
+            """);
+
+        result.Diagnostics.Should().ContainSingle().Which.Id.Should().Be("LH0003");
+    }
+
+    [Fact]
     public void IgnoresSameNamedMapEventHandlerFromConsumerAssembly()
     {
         var result = RunGenerator(
