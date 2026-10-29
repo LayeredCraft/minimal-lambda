@@ -58,18 +58,11 @@ internal sealed class EventProcessorRuntime
                 items.Add(enumerator.Current);
             }
 
-        var itemArray = items.ToArray();
         context.CancellationToken.ThrowIfCancellationRequested();
-        using var state = new EventProcessingState(context, _logger, itemArray.Length);
+        using var state = new EventProcessingState(context, _logger, items.Count);
         var outcomes =
             await EventProcessorWorkers
-                .RunAsync(
-                    itemArray,
-                    _concurrency,
-                    _scopeFactory,
-                    state,
-                    Adapt,
-                    complete is not null)
+                .RunAsync(items, _concurrency, _scopeFactory, state, Adapt, complete is not null)
                 .ConfigureAwait(false);
 
         if (complete is not null)

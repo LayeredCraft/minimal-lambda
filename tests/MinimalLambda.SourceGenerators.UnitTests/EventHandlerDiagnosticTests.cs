@@ -232,32 +232,40 @@ public class EventHandlerDiagnosticTests
         return Verifier.Verify(diagnostics).UseDirectory("Snapshots").DisableDiff();
     }
 
-    [Fact]
-    public void ReportsUnresolvedHandlerForReassignedDelegateLocal()
+    [Theory]
+    [InlineData("", "", "handle = Handle;")]
+    [InlineData("{", "}", "handle = Handle;")]
+    [InlineData("{", "}", "Action reassign = () => handle = Handle;")]
+    public void ReportsUnresolvedHandlerForReassignedDelegateLocal(
+        string scopeStart,
+        string scopeEnd,
+        string assignment)
     {
         var result = RunGenerator(
-            """
-            using System;
-            using System.Threading.Tasks;
-            using MinimalLambda;
-            using MinimalLambda.Builder;
+            $$"""
+              using System;
+              using System.Threading.Tasks;
+              using MinimalLambda;
+              using MinimalLambda.Builder;
 
-            var app = LambdaApplication.CreateBuilder().Build();
-            Func<Item, Task> handle = Handle;
-            handle = Handle;
-            app.MapEventHandler(
-                split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
-                handle: handle);
+              {{scopeStart}}
+              var app = LambdaApplication.CreateBuilder().Build();
+              Func<Item, Task> handle = Handle;
+              {{assignment}}
+              app.MapEventHandler(
+                  split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+                  handle: handle);
 
-            static Task Handle(Item item) => Task.CompletedTask;
+              static Task Handle(Item item) => Task.CompletedTask;
+              {{scopeEnd}}
 
-            internal sealed class Batch
-            {
-                public Item[] Items => [];
-            }
+              internal sealed class Batch
+              {
+                  public Item[] Items => [];
+              }
 
-            internal sealed class Item;
-            """);
+              internal sealed class Item;
+              """);
 
         var diagnostic = result.Diagnostics.Should().ContainSingle().Subject;
         diagnostic.Id.Should().Be("LH0010");
