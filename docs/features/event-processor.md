@@ -233,6 +233,10 @@ lambda.MapEventHandler(split, handle);
 lambda.MapEventHandler<ImportBatch, ImportDocument, DocumentImporter>(split, EventHandlers.HandleAsync);
 ```
 
+A typed delegate can refer to a method whose first parameter accepts a base class or interface of
+the item type. Keep delegate locals unchanged after initialization. Reassignment, including tuple
+deconstruction, reports `LH0010` because the generator needs one method's binding attributes.
+
 A result-returning handler bound to a no-result overload is a compile error (`LH0011`), not a silent
 discard.
 

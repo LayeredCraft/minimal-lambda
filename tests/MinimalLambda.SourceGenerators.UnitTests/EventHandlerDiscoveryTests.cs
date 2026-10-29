@@ -87,6 +87,53 @@ public class EventHandlerDiscoveryTests
         RunGenerator(source).Diagnostics.Should().BeEmpty();
     }
 
+    [Theory]
+    [InlineData("object")]
+    [InlineData("BaseItem")]
+    [InlineData("IItem")]
+    public void RecognizesTypedDelegateWhoseMethodAcceptsABaseItemType(string parameterType)
+    {
+        var (driver, compilation) = GeneratorTestHelpers.GenerateFromSource(
+            $$"""
+              using System;
+              using System.Threading.Tasks;
+              using MinimalLambda;
+              using MinimalLambda.Builder;
+
+              var app = LambdaApplication.CreateBuilder().Build();
+              Func<Item, Task> handle = Handle;
+              app.MapEventHandler<Batch, Item>(
+                  split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+                  handle: handle);
+
+              static Task Handle({{parameterType}} item) => Task.CompletedTask;
+
+              internal sealed class Batch
+              {
+                  public Item[] Items => [];
+              }
+
+              internal interface IItem;
+              internal class BaseItem;
+              internal sealed class Item : BaseItem, IItem;
+              """);
+
+        var result = driver.GetRunResult();
+        result.Diagnostics.Should().BeEmpty();
+        result
+            .GeneratedTrees
+            .Should()
+            .ContainSingle(tree =>
+                tree.FilePath.EndsWith(
+                    "MinimalLambda.EventHandlers.g.cs",
+                    StringComparison.Ordinal));
+        CompileWithGenerated(compilation, result)
+            .GetDiagnostics(TestContext.Current.CancellationToken)
+            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .Should()
+            .BeEmpty();
+    }
+
     [Fact]
     public void RecognizesTypedDelegateLocalAndExplicitGenericArguments()
     {

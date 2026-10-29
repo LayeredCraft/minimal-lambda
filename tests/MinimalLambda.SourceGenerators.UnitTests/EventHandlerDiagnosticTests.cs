@@ -186,6 +186,58 @@ public class EventHandlerDiagnosticTests
         diagnostic.Location.GetLineSpan().Path.Should().Be("InputFile.cs");
     }
 
+    [Theory]
+    [InlineData("(handle, replacement) = (replacement, handle);")]
+    [InlineData("(unused, (handle, replacement)) = (0, (replacement, handle));")]
+    public void ReportsUnresolvedHandlerForDeconstructionReassignment(string assignment)
+    {
+        var (driver, compilation) = GeneratorTestHelpers.GenerateFromSource(
+            $$"""
+              using System;
+              using System.Threading.Tasks;
+              using Microsoft.Extensions.DependencyInjection;
+              using MinimalLambda;
+              using MinimalLambda.Builder;
+
+              var app = LambdaApplication.CreateBuilder().Build();
+              Func<Item, Probe, Task> handle = First;
+              Func<Item, Probe, Task> replacement = Second;
+              int unused;
+              {{assignment}}
+              app.MapEventHandler<Batch, Item, Probe>(
+                  split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+                  handle: handle);
+
+              static Task First(Item item, [FromKeyedServices("blue")] Probe probe) => Task.CompletedTask;
+              static Task Second(Item item, Probe probe) => Task.CompletedTask;
+
+              internal sealed class Batch
+              {
+                  public Item[] Items => [];
+              }
+
+              internal sealed class Item;
+              internal sealed class Probe;
+              """);
+
+        compilation
+            .GetDiagnostics(TestContext.Current.CancellationToken)
+            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .Should()
+            .BeEmpty();
+        var result = driver.GetRunResult();
+        var diagnostic = result.Diagnostics.Should().ContainSingle().Subject;
+        diagnostic.Id.Should().Be("LH0010");
+        diagnostic.Location.GetLineSpan().Path.Should().Be("InputFile.cs");
+        result
+            .GeneratedTrees
+            .Should()
+            .NotContain(tree =>
+                tree.FilePath.EndsWith(
+                    "MinimalLambda.EventHandlers.g.cs",
+                    StringComparison.Ordinal));
+    }
+
     [Fact]
     public void ReportsDiscardedResultWhenMethodGroupReturnsTaskOfTForNoResultOverload()
     {

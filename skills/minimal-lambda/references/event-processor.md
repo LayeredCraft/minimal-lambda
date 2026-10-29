@@ -148,6 +148,10 @@ Requirements and limits:
 A method group alone cannot supply DI parameter types - it fails to compile (`CS1503` or `CS0411`).
 Do not add a `Delegate` catch-all.
 
+Typed delegates may refer to methods accepting a base item class or interface. Keep delegate locals
+unchanged after initialization. Reassignment, including tuple deconstruction, reports `LH0010` so
+the generator cannot apply stale service-binding attributes.
+
 ## Diagnostics
 
 | ID       | Meaning                                                                                                                                                |

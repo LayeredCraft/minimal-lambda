@@ -329,7 +329,9 @@ internal static class EventHandlerMethodInfoExtensions
                             location,
                             $"service attribute on item parameter '{parameter.Name}'"));
                 if (itemType is not null
-                    && !SymbolEqualityComparer.Default.Equals(itemType, parameter.Type))
+                    && !context.SemanticModel.Compilation
+                        .ClassifyCommonConversion(itemType, parameter.Type)
+                        .IsImplicit)
                     parameterDiagnostics.Add(
                         CreateDiagnostic(
                             Diagnostics.UnsupportedEventHandlerSignature,
@@ -657,10 +659,18 @@ internal static class EventHandlerMethodInfoExtensions
                     local))
                     continue;
 
-                var isWrite = identifier.Parent switch
+                SyntaxNode target = identifier;
+                while (true)
+                    if (target.Parent is ArgumentSyntax { Parent: TupleExpressionSyntax tuple })
+                        target = tuple;
+                    else if (target.Parent is ParenthesizedExpressionSyntax parenthesized)
+                        target = parenthesized;
+                    else
+                        break;
+
+                var isWrite = target.Parent switch
                 {
-                    AssignmentExpressionSyntax assignment when assignment.Left == identifier =>
-                        true,
+                    AssignmentExpressionSyntax assignment when assignment.Left == target => true,
                     PrefixUnaryExpressionSyntax prefix => prefix.IsKind(
                             SyntaxKind.PreIncrementExpression)
                         || prefix.IsKind(SyntaxKind.PreDecrementExpression),
