@@ -29,11 +29,11 @@ public class EventHandlerRegistrationTests
             calls.Add("after");
         });
 
-        var harness = CreateHarness<object>(app, new Batch([new Item(1)]));
+        var context = CreateContext(app, new Batch([new Item(1)]));
         var handler = app.Build();
 
         // Act
-        await handler(harness.Context);
+        await handler(context);
 
         // Assert
         calls.Should().Equal("before", "handle", "after");
@@ -54,17 +54,14 @@ public class EventHandlerRegistrationTests
             (items, _) => captured = new Response(items.Select(item => item.Id).ToArray()));
 
         var responseFeature = Substitute.For<IResponseFeature<Response>>();
-        var harness = CreateHarness<Response>(
-            app,
-            new Batch([new Item(1), new Item(2)]),
-            responseFeature);
+        var context = CreateContext(app, new Batch([new Item(1), new Item(2)]), responseFeature);
 
         // Act
-        await app.Build()(harness.Context);
+        await app.Build()(context);
 
         // Assert
         captured!.Ids.Should().Equal(1, 2);
-        harness.ResponseFeature.Received(1).SetResponse(captured);
+        responseFeature.Received(1).SetResponse(captured);
     }
 
     [Fact]
@@ -85,17 +82,14 @@ public class EventHandlerRegistrationTests
             (failures, _) => captured = new Response(failures.ToArray()));
 
         var responseFeature = Substitute.For<IResponseFeature<Response>>();
-        var harness = CreateHarness<Response>(
-            app,
-            new Batch([new Item(1), new Item(2)]),
-            responseFeature);
+        var context = CreateContext(app, new Batch([new Item(1), new Item(2)]), responseFeature);
 
         // Act
-        await app.Build()(harness.Context);
+        await app.Build()(context);
 
         // Assert
         captured!.Ids.Should().Equal(2 + "item failed".Length);
-        harness.ResponseFeature.Received(1).SetResponse(captured);
+        responseFeature.Received(1).SetResponse(captured);
     }
 
     [Fact]
@@ -113,17 +107,14 @@ public class EventHandlerRegistrationTests
             (results, _) => captured = new Response(results.ToArray()));
 
         var responseFeature = Substitute.For<IResponseFeature<Response>>();
-        var harness = CreateHarness<Response>(
-            app,
-            new Batch([new Item(3), new Item(4)]),
-            responseFeature);
+        var context = CreateContext(app, new Batch([new Item(3), new Item(4)]), responseFeature);
 
         // Act
-        await app.Build()(harness.Context);
+        await app.Build()(context);
 
         // Assert
         captured!.Ids.Should().Equal(6, 8);
-        harness.ResponseFeature.Received(1).SetResponse(captured);
+        responseFeature.Received(1).SetResponse(captured);
     }
 
     [Fact]
@@ -144,17 +135,17 @@ public class EventHandlerRegistrationTests
             (results, _) => captured = new Response(results.ToArray()));
 
         var responseFeature = Substitute.For<IResponseFeature<Response>>();
-        var harness = CreateHarness<Response>(
+        var context = CreateContext(
             app,
             new Batch([new Item(1), new Item(2), new Item(3)]),
             responseFeature);
 
         // Act
-        await app.Build()(harness.Context);
+        await app.Build()(context);
 
         // Assert
         captured!.Ids.Should().Equal(2, 2 + "item failed".Length, 6);
-        harness.ResponseFeature.Received(1).SetResponse(captured);
+        responseFeature.Received(1).SetResponse(captured);
     }
 
     [Fact]
@@ -263,12 +254,11 @@ public class EventHandlerRegistrationTests
             });
 
         var context = useWrongFeature
-            ? CreateHarness<OtherResponse>(
-                    app,
-                    new Batch([new Item(1)]),
-                    Substitute.For<IResponseFeature<OtherResponse>>())
-                .Context
-            : CreateHarness<Response>(app, new Batch([new Item(1)])).Context;
+            ? CreateContext(
+                app,
+                new Batch([new Item(1)]),
+                Substitute.For<IResponseFeature<OtherResponse>>())
+            : CreateContext(app, new Batch([new Item(1)]));
 
         // Act
         var act = () => app.Build()(context);
@@ -299,8 +289,8 @@ public class EventHandlerRegistrationTests
 
         // Act
         var handler = app.Build();
-        await handler(CreateHarness<object>(app, new Batch([new Item(1)])).Context);
-        await handler(CreateHarness<object>(app, new Batch([new Item(2)])).Context);
+        await handler(CreateContext(app, new Batch([new Item(1)])));
+        await handler(CreateContext(app, new Batch([new Item(2)])));
 
         // Assert
         options.Reads.Should().Be(1);
@@ -311,10 +301,10 @@ public class EventHandlerRegistrationTests
         string parameterName) =>
         action.Should().Throw<ArgumentNullException>().WithParameterName(parameterName);
 
-    private static Harness<TResponse> CreateHarness<TResponse>(
+    private static ILambdaInvocationContext CreateContext(
         LambdaApplication app,
         Batch batch,
-        IResponseFeature<TResponse>? responseFeature = null)
+        IResponseFeature? responseFeature = null)
     {
         var features = new DefaultFeatureCollection([]);
         features.Set<IEventFeature>(new TestEventFeature<Batch>(batch));
@@ -327,7 +317,7 @@ public class EventHandlerRegistrationTests
         context.CancellationToken.Returns(CancellationToken.None);
         context.Items.Returns(new Dictionary<object, object?>());
 
-        return new Harness<TResponse>(context, responseFeature!);
+        return context;
     }
 
     private sealed record Batch(Item[] Items);
@@ -337,10 +327,6 @@ public class EventHandlerRegistrationTests
     public sealed record Response(int[] Ids);
 
     public sealed record OtherResponse(string Value);
-
-    private sealed record Harness<TResponse>(
-        ILambdaInvocationContext Context,
-        IResponseFeature<TResponse> ResponseFeature);
 
     private sealed class TestEventFeature<T>(T value) : IEventFeature<T>
     {

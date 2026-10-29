@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MinimalLambda.UnitTests.Core.Runtime;
@@ -35,8 +34,11 @@ public sealed class EventProcessorRuntimeTests
         await run;
 
         // Assert
-        captured.Should().BeOfType<ReadOnlyCollection<int>>();
-        captured.Should().Equal(3, 1, 2);
+        var contributions = captured.Should().BeAssignableTo<ICollection<int>>().Subject;
+        contributions.IsReadOnly.Should().BeTrue();
+        var firstEnumeration = contributions.ToArray();
+        firstEnumeration.Should().Equal(3, 1, 2);
+        contributions.Should().Equal(firstEnumeration);
     }
 
     [Fact]

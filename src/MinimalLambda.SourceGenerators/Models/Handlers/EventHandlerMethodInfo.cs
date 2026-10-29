@@ -26,24 +26,17 @@ internal record EventHandlerCallbackInfo(string Name, string Type);
 internal record EventHandlerMethodInfo(
     string InterceptableLocationAttribute,
     EquatableArray<EventHandlerCallbackInfo> CallbackParameters,
-    EventHandlerFamily Family,
     bool HasResponse,
     bool HasOnError,
-    bool CollectsValues,
-    bool CollectsSourceItems,
-    bool CollectsMappedFailures,
     bool HandleReturnsResult,
     string EventType,
     string ItemType,
-    string CollectedType,
     string ValueType,
     string? ResponseType,
     EquatableArray<EventHandlerParameterInfo> HandlerParameters,
     string HandlerArguments,
     bool HasAnyFromKeyedServices,
     LocationInfo MapCallLocation,
-    LocationInfo HandlerArgumentLocation,
-    int TreeOrdinal,
     int SourceSpanStart,
     EquatableArray<DiagnosticInfo> DiagnosticInfos,
     MethodType MethodType = MethodType.MapEventHandler) : IMethodInfo;
@@ -61,7 +54,6 @@ internal static class EventHandlerMethodInfoExtensions
 
             var diagnostics = new List<DiagnosticInfo>();
             var method = invocation.TargetMethod;
-            var compilation = context.SemanticModel.Compilation;
             var invocationLocation =
                 LocationInfo.Create(context.Node)
                 ?? throw new InvalidOperationException("Event mapping has no source location");
@@ -110,9 +102,6 @@ internal static class EventHandlerMethodInfoExtensions
                 createResponseArgument is not null);
             var hasResponse = family is not EventHandlerFamily.N1;
             var hasOnError = family is EventHandlerFamily.N3 or EventHandlerFamily.R2;
-            var collectValues = family is not EventHandlerFamily.N1;
-            var collectsSourceItems = family is EventHandlerFamily.N2;
-            var collectsMappedFailures = family is EventHandlerFamily.N3;
 
             string? collectedType = null;
             switch (family)
@@ -203,15 +192,7 @@ internal static class EventHandlerMethodInfoExtensions
                 ? []
                 : CreateParameters(handlerMethod, itemType, context, diagnostics);
 
-            var valueType = family switch
-            {
-                EventHandlerFamily.N1 => "global::System.Object",
-                EventHandlerFamily.N2 => itemType?.QualifiedNullableName ?? "global::System.Object",
-                _ => collectedType ?? "global::System.Object",
-            };
-
-            var hasAnyKeyed = parameters.Any(parameter =>
-                parameter.Kind is EventHandlerParameterKind.KeyedService);
+            var hasAnyKeyed = parameters.Any(parameter => parameter.IsKeyedService);
 
             var callbackParameters = new List<EventHandlerCallbackInfo>(4);
             AddCallback(invocation, "split", callbackParameters);
@@ -224,17 +205,12 @@ internal static class EventHandlerMethodInfoExtensions
             return new EventHandlerMethodInfo(
                 InterceptableLocationAttribute: interceptableLocation.Attribute,
                 CallbackParameters: callbackParameters.ToEquatableArray(),
-                Family: family,
                 HasResponse: hasResponse,
                 HasOnError: hasOnError,
-                CollectsValues: collectValues,
-                CollectsSourceItems: collectsSourceItems,
-                CollectsMappedFailures: collectsMappedFailures,
                 HandleReturnsResult: handleReturnsResult,
                 EventType: eventType?.QualifiedNullableName ?? "global::System.Object",
                 ItemType: itemType?.QualifiedNullableName ?? "global::System.Object",
-                CollectedType: collectedType ?? "global::System.Object",
-                ValueType: valueType,
+                ValueType: collectedType ?? "global::System.Object",
                 ResponseType: responseType,
                 HandlerParameters: parameters.ToEquatableArray(),
                 HandlerArguments: string.Join(
@@ -242,10 +218,6 @@ internal static class EventHandlerMethodInfoExtensions
                     parameters.Select(parameter => $"arg{parameter.Ordinal}")),
                 HasAnyFromKeyedServices: hasAnyKeyed,
                 MapCallLocation: invocationLocation,
-                HandlerArgumentLocation: handlerArgumentLocation,
-                TreeOrdinal: DurableMethodInfoExtensions.GetTreeOrdinal(
-                    context.Node.SyntaxTree,
-                    compilation),
                 SourceSpanStart: context.Node.SpanStart,
                 DiagnosticInfos: diagnostics.ToEquatableArray());
         }
@@ -302,7 +274,7 @@ internal static class EventHandlerMethodInfoExtensions
 
             ValidateAccessibleType(parameter.Type, parameter.Name, location, parameterDiagnostics);
 
-            var isEventAttribute = IsEventAttribute(parameter, context);
+            var isEventAttribute = parameter.IsFromEvent(context);
             var isServiceAttribute = parameter.IsServiceBindingAttribute(context);
 
             if (isEventAttribute)
@@ -312,15 +284,11 @@ internal static class EventHandlerMethodInfoExtensions
                         location,
                         $"[FromEvent] {parameter.Name}"));
 
-            var kind = EventHandlerParameterKind.Service;
             var assignment = string.Empty;
-            var isOptional = parameter.IsOptional
-                || parameter.NullableAnnotation == NullableAnnotation.Annotated;
-            string? keyedKey = null;
+            var isKeyedService = false;
 
             if (index == 0)
             {
-                kind = EventHandlerParameterKind.Item;
                 assignment = "item";
                 if (isServiceAttribute)
                     parameterDiagnostics.Add(
@@ -343,7 +311,6 @@ internal static class EventHandlerMethodInfoExtensions
                 WellKnownType.Amazon_Lambda_Core_ILambdaContext,
                 WellKnownType.MinimalLambda_ILambdaInvocationContext))
             {
-                kind = EventHandlerParameterKind.Context;
                 assignment = "processingContext.Invocation";
                 contextCount++;
                 if (contextCount > 1)
@@ -363,7 +330,6 @@ internal static class EventHandlerMethodInfoExtensions
                 parameter.Type,
                 WellKnownType.MinimalLambda_IEventProcessingContext))
             {
-                kind = EventHandlerParameterKind.ProcessingContext;
                 assignment = "processingContext";
                 processingCount++;
                 if (processingCount > 1)
@@ -383,7 +349,6 @@ internal static class EventHandlerMethodInfoExtensions
                 parameter.Type,
                 WellKnownType.System_Threading_CancellationToken))
             {
-                kind = EventHandlerParameterKind.CancellationToken;
                 assignment = "processingContext.CancellationToken";
                 tokenCount++;
                 if (tokenCount > 1)
@@ -405,10 +370,7 @@ internal static class EventHandlerMethodInfoExtensions
                 if (diResult.IsSuccess)
                 {
                     if (diResult.Value!.Key is not null)
-                    {
-                        kind = EventHandlerParameterKind.KeyedService;
-                        keyedKey = diResult.Value.Key;
-                    }
+                        isKeyedService = true;
 
                     assignment = diResult.Value.Assignment;
                 }
@@ -417,16 +379,7 @@ internal static class EventHandlerMethodInfoExtensions
             }
 
             parameters.Add(
-                new EventHandlerParameterInfo(
-                    parameter.Ordinal,
-                    parameter.Name,
-                    parameter.Type.QualifiedNullableName,
-                    kind,
-                    assignment,
-                    isOptional,
-                    keyedKey,
-                    location,
-                    parameterDiagnostics.ToEquatableArray()));
+                new EventHandlerParameterInfo(parameter.Ordinal, assignment, isKeyedService));
 
             diagnostics.AddRange(parameterDiagnostics);
         }
@@ -501,15 +454,6 @@ internal static class EventHandlerMethodInfoExtensions
                 || named.TypeArguments.Any(ContainsTypeParameter),
             _ => false,
         };
-
-    private static bool IsEventAttribute(IParameterSymbol parameter, GeneratorContext context) =>
-        parameter
-            .GetAttributes()
-            .Any(attribute => attribute.AttributeClass is not null
-                && context.WellKnownTypes.IsType(
-                    attribute.AttributeClass,
-                    WellKnownType.MinimalLambda_Builder_EventAttribute,
-                    WellKnownType.MinimalLambda_Builder_FromEventAttribute));
 
     private static bool IsStream(ITypeSymbol type, GeneratorContext context) =>
         context.WellKnownTypes.IsType(type, WellKnownType.System_IO_Stream);
@@ -588,7 +532,7 @@ internal static class EventHandlerMethodInfoExtensions
                 case IDelegateCreationOperation delegateCreation:
                     return Resolve(delegateCreation.Target);
                 case IFieldReferenceOperation { Field.IsReadOnly: true } field
-                    when GetFieldInitializerOperation(
+                    when GetVariableInitializerOperation(
                         field.Field,
                         semanticModel.Compilation,
                         cancellationToken) is { } initializer:
@@ -603,7 +547,7 @@ internal static class EventHandlerMethodInfoExtensions
                         return null;
                     }
 
-                    return GetLocalInitializerOperation(
+                    return GetVariableInitializerOperation(
                         local.Local,
                         semanticModel.Compilation,
                         cancellationToken) is { } localInitializer
@@ -623,11 +567,11 @@ internal static class EventHandlerMethodInfoExtensions
         }
     }
 
-    private static IOperation? GetLocalInitializerOperation(
-        ILocalSymbol local,
+    private static IOperation? GetVariableInitializerOperation(
+        ISymbol variable,
         Compilation compilation,
         CancellationToken cancellationToken) =>
-        local
+        variable
             .DeclaringSyntaxReferences
             .Select(reference => reference.GetSyntax(cancellationToken))
             .OfType<VariableDeclaratorSyntax>()
@@ -689,21 +633,6 @@ internal static class EventHandlerMethodInfoExtensions
 
         return false;
     }
-
-    private static IOperation? GetFieldInitializerOperation(
-        IFieldSymbol field,
-        Compilation compilation,
-        CancellationToken cancellationToken) =>
-        field
-            .DeclaringSyntaxReferences
-            .Select(reference => reference.GetSyntax(cancellationToken))
-            .OfType<VariableDeclaratorSyntax>()
-            .Where(declarator => declarator.Initializer is not null)
-            .Select(declarator =>
-                compilation
-                    .GetSemanticModel(declarator.SyntaxTree)
-                    .GetOperation(declarator.Initializer!.Value, cancellationToken))
-            .FirstOrDefault(operation => operation is not null);
 
     private static LocationInfo GetParameterLocation(
         IParameterSymbol parameter,

@@ -91,7 +91,7 @@ internal sealed class EventProcessorRuntime
             var invocationToken = processing.Invocation.CancellationToken;
             invocationToken.ThrowIfCancellationRequested();
             if (processing.CancellationToken.IsCancellationRequested)
-                return ItemOutcome<TValue>.Cancelled;
+                return default;
 
             Task? handlerTask = null;
             Exception? synchronousFault = null;
@@ -123,7 +123,7 @@ internal sealed class EventProcessorRuntime
                         invocationToken);
                 if (ex is OperationCanceledException
                     && processing.CancellationToken.IsCancellationRequested)
-                    return ItemOutcome<TValue>.Cancelled;
+                    return default;
                 if (onError is null)
                     throw;
 
@@ -133,7 +133,7 @@ internal sealed class EventProcessorRuntime
                     throw new OperationCanceledException(
                         "The Lambda invocation was cancelled while mapping an item error.",
                         invocationToken);
-                return ItemOutcome<TValue>.FromMappedValue(mapped);
+                return ItemOutcome<TValue>.FromValue(mapped);
             }
 
             if (invocationToken.IsCancellationRequested)
@@ -141,7 +141,7 @@ internal sealed class EventProcessorRuntime
                     "The Lambda invocation was cancelled while processing an item.",
                     invocationToken);
             return selectSuccess is null
-                ? ItemOutcome<TValue>.NoValue
+                ? default
                 : ItemOutcome<TValue>.FromValue(selectSuccess(item, handlerTask!));
         }
     }

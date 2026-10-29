@@ -2,40 +2,19 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace MinimalLambda.Runtime;
 
-internal enum ItemExecutionState
-{
-    Unstarted,
-    Succeeded,
-    MappedError,
-    Cancelled,
-}
-
 internal readonly struct ItemOutcome<TValue>
 {
-    private ItemOutcome(ItemExecutionState state, bool hasValue, TValue? value)
+    private ItemOutcome(TValue? value)
     {
-        State = state;
-        HasValue = hasValue;
+        HasValue = true;
         Value = value;
     }
-
-    internal ItemExecutionState State { get; }
 
     internal bool HasValue { get; }
 
     internal TValue? Value { get; }
 
-    internal static ItemOutcome<TValue> FromValue(TValue? value) =>
-        new(ItemExecutionState.Succeeded, true, value);
-
-    internal static ItemOutcome<TValue> FromMappedValue(TValue? value) =>
-        new(ItemExecutionState.MappedError, true, value);
-
-    internal static ItemOutcome<TValue> NoValue =>
-        new(ItemExecutionState.Succeeded, false, default);
-
-    internal static ItemOutcome<TValue> Cancelled =>
-        new(ItemExecutionState.Cancelled, false, default);
+    internal static ItemOutcome<TValue> FromValue(TValue? value) => new(value);
 }
 
 internal static class EventProcessorWorkers
@@ -86,7 +65,6 @@ internal static class EventProcessorWorkers
                 }
 
                 ItemOutcome<TValue> outcome = default;
-                var hasOutcome = false;
 
                 try
                 {
@@ -94,7 +72,6 @@ internal static class EventProcessorWorkers
                     {
                         outcome = await adapter(items[index], scope.ServiceProvider, state)
                             .ConfigureAwait(false);
-                        hasOutcome = true;
                     }
                     catch (Exception ex)
                     {
@@ -116,7 +93,7 @@ internal static class EventProcessorWorkers
                     state.RecordFatal(ex);
                 }
 
-                if (collectValues && hasOutcome && outcome.HasValue)
+                if (collectValues && outcome.HasValue)
                     outcomes![index] = outcome;
             }
         }

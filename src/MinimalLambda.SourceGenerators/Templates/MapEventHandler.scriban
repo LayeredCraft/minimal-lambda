@@ -47,7 +47,7 @@ namespace MinimalLambda.Generated
                 onError{{ end }}{{ if call.has_response }},
                 createResponse{{ end }});
 
-            Func<{{ if call.handle_returns_result }}Task<{{ call.collected_type }}>{{ else }}Task{{ end }}> Bind(
+            Func<{{ if call.handle_returns_result }}Task<{{ call.value_type }}>{{ else }}Task{{ end }}> Bind(
                 {{ call.item_type }} item,
                 IServiceProvider serviceProvider,
                 IEventProcessingContext processingContext)
