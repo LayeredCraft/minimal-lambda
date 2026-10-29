@@ -137,7 +137,7 @@ public class EventHandlerDiscoveryTests
     [Fact]
     public void RecognizesTypedDelegateLocalAndExplicitGenericArguments()
     {
-        var result = RunGenerator(
+        var (driver, compilation) = GeneratorTestHelpers.GenerateFromSource(
             """
             using System;
             using System.Collections.Generic;
@@ -155,7 +155,8 @@ public class EventHandlerDiscoveryTests
 
             app.MapEventHandler<Batch, Item, int, Response, Probe>(
                 (Batch batch, ILambdaInvocationContext _) => batch.Items,
-                Handle);
+                Handle,
+                (IEnumerable<int> results, ILambdaInvocationContext _) => new Response());
 
             static Task<int> Handle(Item item, Probe probe) => Task.FromResult(probe.Value);
 
@@ -173,6 +174,7 @@ public class EventHandlerDiscoveryTests
 
             internal sealed class Response;
             """);
+        var result = driver.GetRunResult();
 
         result.Diagnostics.Should().BeEmpty();
         result
@@ -181,6 +183,12 @@ public class EventHandlerDiscoveryTests
             .ContainSingle(tree => tree.FilePath.EndsWith(
                 "MinimalLambda.EventHandlers.g.cs",
                 StringComparison.Ordinal));
+
+        CompileWithGenerated(compilation, result)
+            .GetDiagnostics(TestContext.Current.CancellationToken)
+            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .Should()
+            .BeEmpty();
     }
 
     [Fact]

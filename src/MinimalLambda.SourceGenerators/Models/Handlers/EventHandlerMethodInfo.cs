@@ -205,7 +205,7 @@ internal static class EventHandlerMethodInfoExtensions
 
             var valueType = family switch
             {
-                EventHandlerFamily.N1 => "MinimalLambda.Generated.NoData",
+                EventHandlerFamily.N1 => "global::System.Object",
                 EventHandlerFamily.N2 => itemType?.QualifiedNullableName ?? "global::System.Object",
                 _ => collectedType ?? "global::System.Object",
             };

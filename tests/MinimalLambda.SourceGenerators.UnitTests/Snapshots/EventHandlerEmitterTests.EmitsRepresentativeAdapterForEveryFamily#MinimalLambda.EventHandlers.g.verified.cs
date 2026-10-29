@@ -25,144 +25,34 @@ namespace System.Runtime.CompilerServices
 namespace MinimalLambda.Generated
 {
     using System;
-    using System.Collections.Generic;
-    using System.Collections.ObjectModel;
-    using System.Runtime.ExceptionServices;
     using System.Runtime.CompilerServices;
-    using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Extensions.DependencyInjection;
-    using Microsoft.Extensions.Logging;
-    using Microsoft.Extensions.Options;
     using MinimalLambda.Builder;
-    using MinimalLambda.Options;
+    using MinimalLambda.Runtime;
 
     [global::System.CodeDom.Compiler.GeneratedCode("MinimalLambda.SourceGenerators", "REPLACED")]
     file static class GeneratedEventProcessorExtensions
     {
-        private const string EventFeatureProviderKey = "__EventFeatureProvider";
-        private const string ResponseFeatureProviderKey = "__ResponseFeatureProvider";
-
         [InterceptsLocation(1, "REPLACED")]
         internal static ILambdaInvocationBuilder MapEventHandlerInterceptor0(
             this ILambdaInvocationBuilder application,
             global::System.Func<global::Batch, global::MinimalLambda.ILambdaInvocationContext, global::System.Collections.Generic.IEnumerable<global::Item>> split,
             global::System.Func<global::Item, global::System.Threading.Tasks.Task> handle)
         {
-            ArgumentNullException.ThrowIfNull(application);
-            ArgumentNullException.ThrowIfNull(split);
-            ArgumentNullException.ThrowIfNull(handle);
+            return EventHandlerRegistration.Register<global::Batch, global::Item>(
+                application,
+                split,
+                handle,
+                Bind);
 
-            var options = application.Services.GetRequiredService<IOptions<EventHandlerOptions>>().Value;
-            var effectiveConcurrency = options.EnableConcurrency
-                ? options.MaxConcurrentExecutions
-                : 1;
-            var scopeFactory = application.Services.GetRequiredService<IServiceScopeFactory>();
-            var logger = application
-                .Services.GetService<ILoggerFactory>()
-                ?.CreateLogger("MinimalLambda.EventProcessor");
-
-            application.Handle(InvocationDelegate);
-
-            if (!application.Properties.ContainsKey(EventFeatureProviderKey))
-                application.Properties[EventFeatureProviderKey] = application
-                    .Services.GetRequiredService<IEventFeatureProviderFactory>()
-                    .Create<global::Batch>();
-
-            return application;
-
-            async Task InvocationDelegate(ILambdaInvocationContext context)
-            {
-                if (context.CancellationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(context.CancellationToken);
-
-                _ = context.ServiceProvider;
-
-                var lambdaEvent = context.GetRequiredEvent<global::Batch>();
-                var splitItems = split(lambdaEvent, context);
-                if (splitItems is null)
-                    throw new InvalidOperationException("The event splitter 'split' returned null.");
-
-                var items = new List<global::Item>();
-                using (var enumerator = splitItems.GetEnumerator())
-                {
-                    while (enumerator.MoveNext())
-                    {
-                        context.CancellationToken.ThrowIfCancellationRequested();
-                        items.Add(enumerator.Current);
-                    }
-                }
-
-                var itemArray = items.ToArray();
-
-                if (context.CancellationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(context.CancellationToken);
-
-                using var state = new EventProcessingState(
-                    context,
-                    logger,
-                    itemArray.Length);
-                var outcomes = await EventProcessorRuntime
-                    .RunAsync(itemArray, effectiveConcurrency, scopeFactory, state, Adapt, false)
-                    .ConfigureAwait(false);
-            }
-
-            async Task<ItemOutcome<MinimalLambda.Generated.NoData>> Adapt(
+            Func<Task> Bind(
                 global::Item item,
                 IServiceProvider serviceProvider,
-                EventProcessingState processingContext)
+                IEventProcessingContext processingContext)
             {
                 var arg0 = item;
-
-                var invocationToken = processingContext.Invocation.CancellationToken;
-                if (invocationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(invocationToken);
-                if (processingContext.CancellationToken.IsCancellationRequested)
-                    return ItemOutcome<MinimalLambda.Generated.NoData>.Cancelled;
-
-                Task? handlerTask = null;
-                
-                Exception? synchronousFault = null;
-                try
-                {
-                    handlerTask = handle(arg0);
-                }
-                catch (Exception ex)
-                {
-                    synchronousFault = ex;
-                }
-
-                if (synchronousFault is null && handlerTask is null)
-                    throw new InvalidOperationException("The event handler 'handle' returned a null task.");
-
-                try
-                {
-                    if (synchronousFault is not null)
-                        ExceptionDispatchInfo.Capture(synchronousFault).Throw();
-
-                    await handlerTask!.ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    if (invocationToken.IsCancellationRequested)
-                        throw new OperationCanceledException(
-                            "The Lambda invocation was cancelled while processing an item.",
-                            ex,
-                            invocationToken);
-
-                    if (ex is OperationCanceledException
-                        && processingContext.CancellationToken.IsCancellationRequested)
-                        return ItemOutcome<MinimalLambda.Generated.NoData>.Cancelled;
-
-                    throw;
-                }
-
-                if (invocationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(
-                        "The Lambda invocation was cancelled while processing an item.",
-                        invocationToken);
-
-                return ItemOutcome<MinimalLambda.Generated.NoData>.NoValue;
+                return () => handle(arg0);
             }
         }
         [InterceptsLocation(1, "REPLACED")]
@@ -172,140 +62,20 @@ namespace MinimalLambda.Generated
             global::System.Func<global::Item, global::System.Threading.Tasks.Task> handle,
             global::System.Func<global::System.Collections.Generic.IEnumerable<global::Item>, global::MinimalLambda.ILambdaInvocationContext, global::Response> createResponse)
         {
-            ArgumentNullException.ThrowIfNull(application);
-            ArgumentNullException.ThrowIfNull(split);
-            ArgumentNullException.ThrowIfNull(handle);
-            ArgumentNullException.ThrowIfNull(createResponse);
+            return EventHandlerRegistration.Register<global::Batch, global::Item, global::Response>(
+                application,
+                split,
+                handle,
+                Bind,
+                createResponse);
 
-            var options = application.Services.GetRequiredService<IOptions<EventHandlerOptions>>().Value;
-            var effectiveConcurrency = options.EnableConcurrency
-                ? options.MaxConcurrentExecutions
-                : 1;
-            var scopeFactory = application.Services.GetRequiredService<IServiceScopeFactory>();
-            var logger = application
-                .Services.GetService<ILoggerFactory>()
-                ?.CreateLogger("MinimalLambda.EventProcessor");
-
-            application.Handle(InvocationDelegate);
-
-            if (!application.Properties.ContainsKey(EventFeatureProviderKey))
-                application.Properties[EventFeatureProviderKey] = application
-                    .Services.GetRequiredService<IEventFeatureProviderFactory>()
-                    .Create<global::Batch>();
-
-            if (!application.Properties.ContainsKey(ResponseFeatureProviderKey))
-                application.Properties[ResponseFeatureProviderKey] = application
-                    .Services.GetRequiredService<IResponseFeatureProviderFactory>()
-                    .Create<global::Response>();
-
-            return application;
-
-            async Task InvocationDelegate(ILambdaInvocationContext context)
-            {
-                if (context.CancellationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(context.CancellationToken);
-
-                _ = context.ServiceProvider;
-
-                var lambdaEvent = context.GetRequiredEvent<global::Batch>();
-                var splitItems = split(lambdaEvent, context);
-                if (splitItems is null)
-                    throw new InvalidOperationException("The event splitter 'split' returned null.");
-
-                var items = new List<global::Item>();
-                using (var enumerator = splitItems.GetEnumerator())
-                {
-                    while (enumerator.MoveNext())
-                    {
-                        context.CancellationToken.ThrowIfCancellationRequested();
-                        items.Add(enumerator.Current);
-                    }
-                }
-
-                var itemArray = items.ToArray();
-
-                if (context.CancellationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(context.CancellationToken);
-
-                using var state = new EventProcessingState(
-                    context,
-                    logger,
-                    itemArray.Length);
-                var outcomes = await EventProcessorRuntime
-                    .RunAsync(itemArray, effectiveConcurrency, scopeFactory, state, Adapt, true)
-                    .ConfigureAwait(false);
-
-                var contributions = new List<global::Item>(outcomes!.Length);
-                foreach (var outcome in outcomes)
-                    if (outcome.HasValue)
-                        contributions.Add(outcome.Value!);
-
-                var response = createResponse(
-                    new ReadOnlyCollection<global::Item>(contributions),
-                    context);
-
-                if (context.Features.Get<IResponseFeature>() is not IResponseFeature<global::Response> responseFeature)
-                    throw new InvalidOperationException(
-                        "Response feature for type 'global::Response' is not available in the collection.");
-                responseFeature.SetResponse(response);
-            }
-
-            async Task<ItemOutcome<global::Item>> Adapt(
+            Func<Task> Bind(
                 global::Item item,
                 IServiceProvider serviceProvider,
-                EventProcessingState processingContext)
+                IEventProcessingContext processingContext)
             {
                 var arg0 = item;
-
-                var invocationToken = processingContext.Invocation.CancellationToken;
-                if (invocationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(invocationToken);
-                if (processingContext.CancellationToken.IsCancellationRequested)
-                    return ItemOutcome<global::Item>.Cancelled;
-
-                Task? handlerTask = null;
-                
-                Exception? synchronousFault = null;
-                try
-                {
-                    handlerTask = handle(arg0);
-                }
-                catch (Exception ex)
-                {
-                    synchronousFault = ex;
-                }
-
-                if (synchronousFault is null && handlerTask is null)
-                    throw new InvalidOperationException("The event handler 'handle' returned a null task.");
-
-                try
-                {
-                    if (synchronousFault is not null)
-                        ExceptionDispatchInfo.Capture(synchronousFault).Throw();
-
-                    await handlerTask!.ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    if (invocationToken.IsCancellationRequested)
-                        throw new OperationCanceledException(
-                            "The Lambda invocation was cancelled while processing an item.",
-                            ex,
-                            invocationToken);
-
-                    if (ex is OperationCanceledException
-                        && processingContext.CancellationToken.IsCancellationRequested)
-                        return ItemOutcome<global::Item>.Cancelled;
-
-                    throw;
-                }
-
-                if (invocationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(
-                        "The Lambda invocation was cancelled while processing an item.",
-                        invocationToken);
-
-                return ItemOutcome<global::Item>.FromValue(item);
+                return () => handle(arg0);
             }
         }
         [InterceptsLocation(1, "REPLACED")]
@@ -316,151 +86,21 @@ namespace MinimalLambda.Generated
             global::System.Func<global::Item, global::System.Exception, global::MinimalLambda.IEventProcessingContext, int> onError,
             global::System.Func<global::System.Collections.Generic.IEnumerable<int>, global::MinimalLambda.ILambdaInvocationContext, global::Response> createResponse)
         {
-            ArgumentNullException.ThrowIfNull(application);
-            ArgumentNullException.ThrowIfNull(split);
-            ArgumentNullException.ThrowIfNull(handle);
-            ArgumentNullException.ThrowIfNull(onError);
-            ArgumentNullException.ThrowIfNull(createResponse);
+            return EventHandlerRegistration.Register<global::Batch, global::Item, int, global::Response>(
+                application,
+                split,
+                handle,
+                Bind,
+                onError,
+                createResponse);
 
-            var options = application.Services.GetRequiredService<IOptions<EventHandlerOptions>>().Value;
-            var effectiveConcurrency = options.EnableConcurrency
-                ? options.MaxConcurrentExecutions
-                : 1;
-            var scopeFactory = application.Services.GetRequiredService<IServiceScopeFactory>();
-            var logger = application
-                .Services.GetService<ILoggerFactory>()
-                ?.CreateLogger("MinimalLambda.EventProcessor");
-
-            application.Handle(InvocationDelegate);
-
-            if (!application.Properties.ContainsKey(EventFeatureProviderKey))
-                application.Properties[EventFeatureProviderKey] = application
-                    .Services.GetRequiredService<IEventFeatureProviderFactory>()
-                    .Create<global::Batch>();
-
-            if (!application.Properties.ContainsKey(ResponseFeatureProviderKey))
-                application.Properties[ResponseFeatureProviderKey] = application
-                    .Services.GetRequiredService<IResponseFeatureProviderFactory>()
-                    .Create<global::Response>();
-
-            return application;
-
-            async Task InvocationDelegate(ILambdaInvocationContext context)
-            {
-                if (context.CancellationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(context.CancellationToken);
-
-                _ = context.ServiceProvider;
-
-                var lambdaEvent = context.GetRequiredEvent<global::Batch>();
-                var splitItems = split(lambdaEvent, context);
-                if (splitItems is null)
-                    throw new InvalidOperationException("The event splitter 'split' returned null.");
-
-                var items = new List<global::Item>();
-                using (var enumerator = splitItems.GetEnumerator())
-                {
-                    while (enumerator.MoveNext())
-                    {
-                        context.CancellationToken.ThrowIfCancellationRequested();
-                        items.Add(enumerator.Current);
-                    }
-                }
-
-                var itemArray = items.ToArray();
-
-                if (context.CancellationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(context.CancellationToken);
-
-                using var state = new EventProcessingState(
-                    context,
-                    logger,
-                    itemArray.Length);
-                var outcomes = await EventProcessorRuntime
-                    .RunAsync(itemArray, effectiveConcurrency, scopeFactory, state, Adapt, true)
-                    .ConfigureAwait(false);
-
-                var contributions = new List<int>(outcomes!.Length);
-                foreach (var outcome in outcomes)
-                    if (outcome.HasValue)
-                        contributions.Add(outcome.Value!);
-
-                var response = createResponse(
-                    new ReadOnlyCollection<int>(contributions),
-                    context);
-
-                if (context.Features.Get<IResponseFeature>() is not IResponseFeature<global::Response> responseFeature)
-                    throw new InvalidOperationException(
-                        "Response feature for type 'global::Response' is not available in the collection.");
-                responseFeature.SetResponse(response);
-            }
-
-            async Task<ItemOutcome<int>> Adapt(
+            Func<Task> Bind(
                 global::Item item,
                 IServiceProvider serviceProvider,
-                EventProcessingState processingContext)
+                IEventProcessingContext processingContext)
             {
                 var arg0 = item;
-
-                var invocationToken = processingContext.Invocation.CancellationToken;
-                if (invocationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(invocationToken);
-                if (processingContext.CancellationToken.IsCancellationRequested)
-                    return ItemOutcome<int>.Cancelled;
-
-                Task? handlerTask = null;
-                
-                Exception? synchronousFault = null;
-                try
-                {
-                    handlerTask = handle(arg0);
-                }
-                catch (Exception ex)
-                {
-                    synchronousFault = ex;
-                }
-
-                if (synchronousFault is null && handlerTask is null)
-                    throw new InvalidOperationException("The event handler 'handle' returned a null task.");
-
-                try
-                {
-                    if (synchronousFault is not null)
-                        ExceptionDispatchInfo.Capture(synchronousFault).Throw();
-
-                    await handlerTask!.ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    if (invocationToken.IsCancellationRequested)
-                        throw new OperationCanceledException(
-                            "The Lambda invocation was cancelled while processing an item.",
-                            ex,
-                            invocationToken);
-
-                    if (ex is OperationCanceledException
-                        && processingContext.CancellationToken.IsCancellationRequested)
-                        return ItemOutcome<int>.Cancelled;
-
-                    if (invocationToken.IsCancellationRequested)
-                        throw new OperationCanceledException(invocationToken);
-
-                    var mapped = onError(item, ex, processingContext);
-
-                    if (invocationToken.IsCancellationRequested)
-                        throw new OperationCanceledException(
-                            "The Lambda invocation was cancelled while mapping an item error.",
-                            invocationToken);
-
-                    return ItemOutcome<int>.FromMappedValue(mapped);
-                }
-
-                if (invocationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(
-                        "The Lambda invocation was cancelled while processing an item.",
-                        invocationToken);
-
-                return ItemOutcome<int>.NoValue;
+                return () => handle(arg0);
             }
         }
         [InterceptsLocation(1, "REPLACED")]
@@ -470,140 +110,20 @@ namespace MinimalLambda.Generated
             global::System.Func<global::Item, global::System.Threading.Tasks.Task<int>> handle,
             global::System.Func<global::System.Collections.Generic.IEnumerable<int>, global::MinimalLambda.ILambdaInvocationContext, global::Response> createResponse)
         {
-            ArgumentNullException.ThrowIfNull(application);
-            ArgumentNullException.ThrowIfNull(split);
-            ArgumentNullException.ThrowIfNull(handle);
-            ArgumentNullException.ThrowIfNull(createResponse);
+            return EventHandlerRegistration.Register<global::Batch, global::Item, int, global::Response>(
+                application,
+                split,
+                handle,
+                Bind,
+                createResponse);
 
-            var options = application.Services.GetRequiredService<IOptions<EventHandlerOptions>>().Value;
-            var effectiveConcurrency = options.EnableConcurrency
-                ? options.MaxConcurrentExecutions
-                : 1;
-            var scopeFactory = application.Services.GetRequiredService<IServiceScopeFactory>();
-            var logger = application
-                .Services.GetService<ILoggerFactory>()
-                ?.CreateLogger("MinimalLambda.EventProcessor");
-
-            application.Handle(InvocationDelegate);
-
-            if (!application.Properties.ContainsKey(EventFeatureProviderKey))
-                application.Properties[EventFeatureProviderKey] = application
-                    .Services.GetRequiredService<IEventFeatureProviderFactory>()
-                    .Create<global::Batch>();
-
-            if (!application.Properties.ContainsKey(ResponseFeatureProviderKey))
-                application.Properties[ResponseFeatureProviderKey] = application
-                    .Services.GetRequiredService<IResponseFeatureProviderFactory>()
-                    .Create<global::Response>();
-
-            return application;
-
-            async Task InvocationDelegate(ILambdaInvocationContext context)
-            {
-                if (context.CancellationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(context.CancellationToken);
-
-                _ = context.ServiceProvider;
-
-                var lambdaEvent = context.GetRequiredEvent<global::Batch>();
-                var splitItems = split(lambdaEvent, context);
-                if (splitItems is null)
-                    throw new InvalidOperationException("The event splitter 'split' returned null.");
-
-                var items = new List<global::Item>();
-                using (var enumerator = splitItems.GetEnumerator())
-                {
-                    while (enumerator.MoveNext())
-                    {
-                        context.CancellationToken.ThrowIfCancellationRequested();
-                        items.Add(enumerator.Current);
-                    }
-                }
-
-                var itemArray = items.ToArray();
-
-                if (context.CancellationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(context.CancellationToken);
-
-                using var state = new EventProcessingState(
-                    context,
-                    logger,
-                    itemArray.Length);
-                var outcomes = await EventProcessorRuntime
-                    .RunAsync(itemArray, effectiveConcurrency, scopeFactory, state, Adapt, true)
-                    .ConfigureAwait(false);
-
-                var contributions = new List<int>(outcomes!.Length);
-                foreach (var outcome in outcomes)
-                    if (outcome.HasValue)
-                        contributions.Add(outcome.Value!);
-
-                var response = createResponse(
-                    new ReadOnlyCollection<int>(contributions),
-                    context);
-
-                if (context.Features.Get<IResponseFeature>() is not IResponseFeature<global::Response> responseFeature)
-                    throw new InvalidOperationException(
-                        "Response feature for type 'global::Response' is not available in the collection.");
-                responseFeature.SetResponse(response);
-            }
-
-            async Task<ItemOutcome<int>> Adapt(
+            Func<Task<int>> Bind(
                 global::Item item,
                 IServiceProvider serviceProvider,
-                EventProcessingState processingContext)
+                IEventProcessingContext processingContext)
             {
                 var arg0 = item;
-
-                var invocationToken = processingContext.Invocation.CancellationToken;
-                if (invocationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(invocationToken);
-                if (processingContext.CancellationToken.IsCancellationRequested)
-                    return ItemOutcome<int>.Cancelled;
-
-                Task<int>? handlerTask = null;
-                int handlerResult = default!;
-                Exception? synchronousFault = null;
-                try
-                {
-                    handlerTask = handle(arg0);
-                }
-                catch (Exception ex)
-                {
-                    synchronousFault = ex;
-                }
-
-                if (synchronousFault is null && handlerTask is null)
-                    throw new InvalidOperationException("The event handler 'handle' returned a null task.");
-
-                try
-                {
-                    if (synchronousFault is not null)
-                        ExceptionDispatchInfo.Capture(synchronousFault).Throw();
-
-                    handlerResult = await handlerTask!.ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    if (invocationToken.IsCancellationRequested)
-                        throw new OperationCanceledException(
-                            "The Lambda invocation was cancelled while processing an item.",
-                            ex,
-                            invocationToken);
-
-                    if (ex is OperationCanceledException
-                        && processingContext.CancellationToken.IsCancellationRequested)
-                        return ItemOutcome<int>.Cancelled;
-
-                    throw;
-                }
-
-                if (invocationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(
-                        "The Lambda invocation was cancelled while processing an item.",
-                        invocationToken);
-
-                return ItemOutcome<int>.FromValue(handlerResult);
+                return () => handle(arg0);
             }
         }
         [InterceptsLocation(1, "REPLACED")]
@@ -614,580 +134,21 @@ namespace MinimalLambda.Generated
             global::System.Func<global::Item, global::System.Exception, global::MinimalLambda.IEventProcessingContext, int> onError,
             global::System.Func<global::System.Collections.Generic.IEnumerable<int>, global::MinimalLambda.ILambdaInvocationContext, global::Response> createResponse)
         {
-            ArgumentNullException.ThrowIfNull(application);
-            ArgumentNullException.ThrowIfNull(split);
-            ArgumentNullException.ThrowIfNull(handle);
-            ArgumentNullException.ThrowIfNull(onError);
-            ArgumentNullException.ThrowIfNull(createResponse);
+            return EventHandlerRegistration.Register<global::Batch, global::Item, int, global::Response>(
+                application,
+                split,
+                handle,
+                Bind,
+                onError,
+                createResponse);
 
-            var options = application.Services.GetRequiredService<IOptions<EventHandlerOptions>>().Value;
-            var effectiveConcurrency = options.EnableConcurrency
-                ? options.MaxConcurrentExecutions
-                : 1;
-            var scopeFactory = application.Services.GetRequiredService<IServiceScopeFactory>();
-            var logger = application
-                .Services.GetService<ILoggerFactory>()
-                ?.CreateLogger("MinimalLambda.EventProcessor");
-
-            application.Handle(InvocationDelegate);
-
-            if (!application.Properties.ContainsKey(EventFeatureProviderKey))
-                application.Properties[EventFeatureProviderKey] = application
-                    .Services.GetRequiredService<IEventFeatureProviderFactory>()
-                    .Create<global::Batch>();
-
-            if (!application.Properties.ContainsKey(ResponseFeatureProviderKey))
-                application.Properties[ResponseFeatureProviderKey] = application
-                    .Services.GetRequiredService<IResponseFeatureProviderFactory>()
-                    .Create<global::Response>();
-
-            return application;
-
-            async Task InvocationDelegate(ILambdaInvocationContext context)
-            {
-                if (context.CancellationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(context.CancellationToken);
-
-                _ = context.ServiceProvider;
-
-                var lambdaEvent = context.GetRequiredEvent<global::Batch>();
-                var splitItems = split(lambdaEvent, context);
-                if (splitItems is null)
-                    throw new InvalidOperationException("The event splitter 'split' returned null.");
-
-                var items = new List<global::Item>();
-                using (var enumerator = splitItems.GetEnumerator())
-                {
-                    while (enumerator.MoveNext())
-                    {
-                        context.CancellationToken.ThrowIfCancellationRequested();
-                        items.Add(enumerator.Current);
-                    }
-                }
-
-                var itemArray = items.ToArray();
-
-                if (context.CancellationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(context.CancellationToken);
-
-                using var state = new EventProcessingState(
-                    context,
-                    logger,
-                    itemArray.Length);
-                var outcomes = await EventProcessorRuntime
-                    .RunAsync(itemArray, effectiveConcurrency, scopeFactory, state, Adapt, true)
-                    .ConfigureAwait(false);
-
-                var contributions = new List<int>(outcomes!.Length);
-                foreach (var outcome in outcomes)
-                    if (outcome.HasValue)
-                        contributions.Add(outcome.Value!);
-
-                var response = createResponse(
-                    new ReadOnlyCollection<int>(contributions),
-                    context);
-
-                if (context.Features.Get<IResponseFeature>() is not IResponseFeature<global::Response> responseFeature)
-                    throw new InvalidOperationException(
-                        "Response feature for type 'global::Response' is not available in the collection.");
-                responseFeature.SetResponse(response);
-            }
-
-            async Task<ItemOutcome<int>> Adapt(
+            Func<Task<int>> Bind(
                 global::Item item,
                 IServiceProvider serviceProvider,
-                EventProcessingState processingContext)
+                IEventProcessingContext processingContext)
             {
                 var arg0 = item;
-
-                var invocationToken = processingContext.Invocation.CancellationToken;
-                if (invocationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(invocationToken);
-                if (processingContext.CancellationToken.IsCancellationRequested)
-                    return ItemOutcome<int>.Cancelled;
-
-                Task<int>? handlerTask = null;
-                int handlerResult = default!;
-                Exception? synchronousFault = null;
-                try
-                {
-                    handlerTask = handle(arg0);
-                }
-                catch (Exception ex)
-                {
-                    synchronousFault = ex;
-                }
-
-                if (synchronousFault is null && handlerTask is null)
-                    throw new InvalidOperationException("The event handler 'handle' returned a null task.");
-
-                try
-                {
-                    if (synchronousFault is not null)
-                        ExceptionDispatchInfo.Capture(synchronousFault).Throw();
-
-                    handlerResult = await handlerTask!.ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    if (invocationToken.IsCancellationRequested)
-                        throw new OperationCanceledException(
-                            "The Lambda invocation was cancelled while processing an item.",
-                            ex,
-                            invocationToken);
-
-                    if (ex is OperationCanceledException
-                        && processingContext.CancellationToken.IsCancellationRequested)
-                        return ItemOutcome<int>.Cancelled;
-
-                    if (invocationToken.IsCancellationRequested)
-                        throw new OperationCanceledException(invocationToken);
-
-                    var mapped = onError(item, ex, processingContext);
-
-                    if (invocationToken.IsCancellationRequested)
-                        throw new OperationCanceledException(
-                            "The Lambda invocation was cancelled while mapping an item error.",
-                            invocationToken);
-
-                    return ItemOutcome<int>.FromMappedValue(mapped);
-                }
-
-                if (invocationToken.IsCancellationRequested)
-                    throw new OperationCanceledException(
-                        "The Lambda invocation was cancelled while processing an item.",
-                        invocationToken);
-
-                return ItemOutcome<int>.FromValue(handlerResult);
-            }
-        }
-    }
-
-    file readonly struct NoData;
-
-    file enum ItemExecutionState
-    {
-        Unstarted,
-        Succeeded,
-        MappedError,
-        Cancelled,
-    }
-
-    file readonly struct ItemOutcome<TValue>
-    {
-        private ItemOutcome(ItemExecutionState state, bool hasValue, TValue? value)
-        {
-            State = state;
-            HasValue = hasValue;
-            Value = value;
-        }
-
-        internal ItemExecutionState State { get; }
-
-        internal bool HasValue { get; }
-
-        internal TValue? Value { get; }
-
-        internal static ItemOutcome<TValue> FromValue(TValue? value) =>
-            new(ItemExecutionState.Succeeded, true, value);
-
-        internal static ItemOutcome<TValue> FromMappedValue(TValue? value) =>
-            new(ItemExecutionState.MappedError, true, value);
-
-        internal static ItemOutcome<TValue> NoValue =>
-            new(ItemExecutionState.Succeeded, false, default);
-
-        internal static ItemOutcome<TValue> Cancelled =>
-            new(ItemExecutionState.Cancelled, false, default);
-    }
-
-    file sealed class EventProcessingState : IEventProcessingContext, IDisposable
-    {
-        private readonly object _gate = new();
-        private readonly ILambdaInvocationContext _invocation;
-        private readonly ILogger? _logger;
-        private readonly int _itemCount;
-        private readonly CancellationTokenSource _processingSource = new();
-        private readonly CancellationTokenRegistration _invocationRegistration;
-
-        private int _nextIndex;
-        private int _admitted;
-        private bool _stopRequested;
-        private bool _cancelRequested;
-        private bool _handlingClosed;
-        private bool _completed;
-        private bool _invocationCancelled;
-        private bool _disposed;
-        private ExceptionDispatchInfo? _firstFatal;
-        private List<Exception>? _additionalFatal;
-        private TaskCompletionSource? _dispatchCompletion;
-
-        internal EventProcessingState(
-            ILambdaInvocationContext invocation,
-            ILogger? logger,
-            int itemCount)
-        {
-            _invocation = invocation;
-            _logger = logger;
-            _itemCount = itemCount;
-            _invocationRegistration = invocation.CancellationToken.Register(
-                static state => ((EventProcessingState)state!).OnInvocationTokenCancelled(),
-                this);
-        }
-
-        public ILambdaInvocationContext Invocation => _invocation;
-
-        public CancellationToken CancellationToken => _processingSource.Token;
-
-        public void StopProcessing()
-        {
-            lock (_gate)
-            {
-                if (_completed || _handlingClosed)
-                    return;
-
-                _stopRequested = true;
-                TryCloseHandlingCore();
-            }
-        }
-
-        public void CancelProcessing() => RequestProcessingCancellation(false);
-
-        internal bool TryClaim(out int index)
-        {
-            TaskCompletionSource? dispatch = null;
-            var claimed = false;
-            index = -1;
-
-            lock (_gate)
-            {
-                if (_completed)
-                    return false;
-
-                ObserveInvocationCancellationCore(ref dispatch);
-
-                if (_handlingClosed
-                    || _stopRequested
-                    || _firstFatal is not null
-                    || _nextIndex >= _itemCount)
-                {
-                    TryCloseHandlingCore();
-                }
-                else
-                {
-                    index = _nextIndex++;
-                    _admitted++;
-                    claimed = true;
-                }
-            }
-
-            if (dispatch is not null)
-                StartDispatch(dispatch);
-
-            return claimed;
-        }
-
-        internal bool IsInvocationCancellationLatched
-        {
-            get
-            {
-                lock (_gate)
-                    return _invocationCancelled;
-            }
-        }
-
-        internal void CompleteAdmission()
-        {
-            lock (_gate)
-            {
-                if (_admitted > 0)
-                    _admitted--;
-
-                TryCloseHandlingCore();
-            }
-        }
-
-        internal bool TryLatchInvocationCancellation()
-        {
-            if (!_invocation.CancellationToken.IsCancellationRequested)
-                return false;
-
-            RequestProcessingCancellation(true);
-
-            lock (_gate)
-                return _invocationCancelled;
-        }
-
-        internal void RecordFatal(Exception exception)
-        {
-            lock (_gate)
-            {
-                if (_completed)
-                    return;
-
-                _stopRequested = true;
-                var fatal = ExceptionDispatchInfo.Capture(exception);
-                if (_firstFatal is null)
-                    _firstFatal = fatal;
-                else
-                    (_additionalFatal ??= []).Add(exception);
-
-                TryCloseHandlingCore();
-            }
-        }
-
-        internal void TryCloseHandling()
-        {
-            lock (_gate)
-                TryCloseHandlingCore();
-        }
-
-        internal async Task JoinAsync()
-        {
-            Task? dispatch;
-            lock (_gate)
-            {
-                TryCloseHandlingCore();
-                dispatch = _dispatchCompletion?.Task;
-            }
-
-            if (dispatch is not null)
-                await dispatch.ConfigureAwait(false);
-
-            Completion completion;
-            lock (_gate)
-            {
-                TryCloseHandlingCore();
-                _completed = true;
-                completion = new Completion(
-                    _invocationCancelled,
-                    _firstFatal,
-                    _additionalFatal);
-            }
-
-            completion.LogAdditional(_logger);
-
-            if (completion.InvocationCancelled)
-                throw new OperationCanceledException(
-                    "The Lambda invocation was cancelled during item processing.",
-                    _invocation.CancellationToken);
-
-            if (completion.FirstFatal is not null)
-            {
-                completion.FirstFatal.Throw();
-                throw new InvalidOperationException("Unreachable");
-            }
-        }
-
-        public void Dispose()
-        {
-            if (_disposed)
-                return;
-
-            _disposed = true;
-            _invocationRegistration.Dispose();
-            _processingSource.Dispose();
-        }
-
-        private void OnInvocationTokenCancelled() => RequestProcessingCancellation(true);
-
-        private void RequestProcessingCancellation(bool invocationCancelled)
-        {
-            TaskCompletionSource? dispatch = null;
-            lock (_gate)
-            {
-                if (_completed || _handlingClosed)
-                    return;
-
-                if (invocationCancelled)
-                    _invocationCancelled = true;
-
-                _stopRequested = true;
-
-                if (!_cancelRequested)
-                {
-                    _cancelRequested = true;
-                    _dispatchCompletion = new TaskCompletionSource(
-                        TaskCreationOptions.RunContinuationsAsynchronously);
-                    dispatch = _dispatchCompletion;
-                }
-
-                TryCloseHandlingCore();
-            }
-
-            if (dispatch is not null)
-                StartDispatch(dispatch);
-        }
-
-        private void ObserveInvocationCancellationCore(ref TaskCompletionSource? dispatch)
-        {
-            if (_handlingClosed || !_invocation.CancellationToken.IsCancellationRequested)
-                return;
-
-            _invocationCancelled = true;
-            _stopRequested = true;
-
-            if (_cancelRequested)
-                return;
-
-            _cancelRequested = true;
-            _dispatchCompletion = new TaskCompletionSource(
-                TaskCreationOptions.RunContinuationsAsynchronously);
-            dispatch = _dispatchCompletion;
-        }
-
-        private void TryCloseHandlingCore()
-        {
-            if (_handlingClosed)
-                return;
-
-            if (_admitted > 0)
-                return;
-
-            if (_nextIndex < _itemCount
-                && !_stopRequested
-                && _firstFatal is null
-                && !_invocation.CancellationToken.IsCancellationRequested)
-                return;
-
-            if (_invocation.CancellationToken.IsCancellationRequested)
-            {
-                _invocationCancelled = true;
-                _stopRequested = true;
-            }
-
-            _handlingClosed = true;
-        }
-
-        private void StartDispatch(TaskCompletionSource completion) =>
-            _ = DispatchCancellationAsync(completion);
-
-        private async Task DispatchCancellationAsync(TaskCompletionSource completion)
-        {
-            try
-            {
-                await _processingSource.CancelAsync().ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                RecordFatal(ex);
-            }
-            finally
-            {
-                completion.TrySetResult();
-            }
-        }
-
-        private readonly struct Completion(
-            bool invocationCancelled,
-            ExceptionDispatchInfo? firstFatal,
-            List<Exception>? additionalFatal)
-        {
-            internal bool InvocationCancelled { get; } = invocationCancelled;
-
-            internal ExceptionDispatchInfo? FirstFatal { get; } = firstFatal;
-
-            internal void LogAdditional(ILogger? logger)
-            {
-                if (logger is null || additionalFatal is null)
-                    return;
-
-                foreach (var exception in additionalFatal)
-                    try
-                    {
-                        logger.LogError(
-                            exception,
-                            "Event processor observed an additional failure while draining item work.");
-                    }
-                    catch
-                    {
-                        // Logging must not replace the selected invocation error.
-                    }
-            }
-        }
-    }
-
-    file static class EventProcessorRuntime
-    {
-        internal static async Task<ItemOutcome<TValue>[]?> RunAsync<TItem, TValue>(
-            TItem[] items,
-            int effectiveConcurrency,
-            IServiceScopeFactory scopeFactory,
-            EventProcessingState state,
-            Func<TItem, IServiceProvider, EventProcessingState, Task<ItemOutcome<TValue>>> adapter,
-            bool collectValues)
-        {
-            if (items.Length == 0)
-                state.TryCloseHandling();
-
-            var outcomes = collectValues ? new ItemOutcome<TValue>[items.Length] : null;
-            var workerCount = Math.Min(items.Length, Math.Max(1, effectiveConcurrency));
-            var workers = new Task[workerCount];
-
-            for (var index = 0; index < workerCount; index++)
-                workers[index] = RunWorkerAsync();
-
-            await Task.WhenAll(workers).ConfigureAwait(false);
-            await state.JoinAsync().ConfigureAwait(false);
-
-            return outcomes;
-
-            async Task RunWorkerAsync()
-            {
-                while (state.TryClaim(out var index))
-                {
-                    if (state.IsInvocationCancellationLatched)
-                    {
-                        state.CompleteAdmission();
-                        continue;
-                    }
-
-                    AsyncServiceScope scope;
-                    try
-                    {
-                        scope = scopeFactory.CreateAsyncScope();
-                    }
-                    catch (Exception ex)
-                    {
-                        state.RecordFatal(ex);
-                        state.CompleteAdmission();
-                        continue;
-                    }
-
-                    ItemOutcome<TValue> outcome = default;
-                    var hasOutcome = false;
-
-                    try
-                    {
-                        try
-                        {
-                            outcome = await adapter(items[index], scope.ServiceProvider, state)
-                                .ConfigureAwait(false);
-                            hasOutcome = true;
-                        }
-                        catch (Exception ex)
-                        {
-                            if (!state.TryLatchInvocationCancellation())
-                                state.RecordFatal(ex);
-                        }
-                    }
-                    finally
-                    {
-                        state.CompleteAdmission();
-                    }
-
-                    try
-                    {
-                        await scope.DisposeAsync().ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        state.RecordFatal(ex);
-                    }
-
-                    if (collectValues && hasOutcome && outcome.HasValue)
-                        outcomes![index] = outcome;
-                }
+                return () => handle(arg0);
             }
         }
     }

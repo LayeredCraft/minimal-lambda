@@ -109,6 +109,74 @@ public class EventHandlerEmitterTests
             """);
 
     [Fact]
+    public Task EmitsTypedDelegateAndExplicitGenericMethodGroupBindings() =>
+        GeneratorTestHelpers.Verify(
+            """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            var app = LambdaApplication.CreateBuilder().Build();
+            Func<Item, Probe, Task<int>> handle = Handle;
+
+            app.MapEventHandler(
+                split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+                handle: handle,
+                createResponse: (IEnumerable<int> results, ILambdaInvocationContext _) => new Response());
+
+            app.MapEventHandler<Batch, Item, int, Response, Probe>(
+                (Batch batch, ILambdaInvocationContext _) => batch.Items,
+                Handle,
+                (IEnumerable<int> results, ILambdaInvocationContext _) => new Response());
+
+            static Task<int> Handle(Item item, Probe probe) => Task.FromResult(probe.Value);
+
+            internal sealed class Batch
+            {
+                public Item[] Items => [];
+            }
+
+            internal sealed class Item;
+
+            internal sealed class Probe
+            {
+                public int Value => 1;
+            }
+
+            internal sealed class Response;
+            """);
+
+    [Fact]
+    public Task EmitsNullableAndOptionalServiceResolution() =>
+        GeneratorTestHelpers.Verify(
+            """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using Microsoft.Extensions.DependencyInjection;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+
+            var app = LambdaApplication.CreateBuilder().Build();
+            app.MapEventHandler(
+                split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+                handle: (
+                    Item item,
+                    NullableService? nullableService,
+                    [FromServices] string? optionalService = null) => Task.CompletedTask);
+
+            internal sealed class Batch
+            {
+                public Item[] Items => [];
+            }
+
+            internal sealed class Item;
+
+            internal sealed class NullableService;
+            """);
+
+    [Fact]
     public void CoexistsWithInvocationLifecycleAndMiddlewareGeneratedFiles()
     {
         const string source = """

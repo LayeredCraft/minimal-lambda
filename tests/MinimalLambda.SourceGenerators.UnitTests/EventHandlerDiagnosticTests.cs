@@ -50,18 +50,18 @@ public class EventHandlerDiagnosticTests
     }
 
     [Fact]
-    public void ReportsUnsupportedSignatureForRefParameter()
+    public void ReportsCompilerErrorForRefLambdaParameter()
     {
-        var result = RunGenerator(
+        var (_, compilation) = GeneratorTestHelpers.GenerateFromSource(
             """
             using System.Threading.Tasks;
             using MinimalLambda;
             using MinimalLambda.Builder;
 
             var app = LambdaApplication.CreateBuilder().Build();
-            app.MapEventHandler(
+            app.MapEventHandler<Batch, Item, int>(
                 split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
-                handle: (Item item, ref int count) => count++;
+                handle: (Item item, ref int count) => Task.CompletedTask);
 
             internal sealed class Batch
             {
@@ -71,7 +71,11 @@ public class EventHandlerDiagnosticTests
             internal sealed class Item;
             """);
 
-        result.Diagnostics.Should().OnlyContain(diagnostic => diagnostic.Id == "LH0008");
+        compilation
+            .GetDiagnostics(TestContext.Current.CancellationToken)
+            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .Should()
+            .Contain(diagnostic => diagnostic.Id == "CS1677");
     }
 
     [Fact]
@@ -96,7 +100,12 @@ public class EventHandlerDiagnosticTests
             internal sealed class Response;
             """);
 
-        result.Diagnostics.Should().OnlyContain(diagnostic => diagnostic.Id == "LH0008");
+        result
+            .Diagnostics
+            .Should()
+            .NotBeEmpty()
+            .And
+            .OnlyContain(diagnostic => diagnostic.Id == "LH0008");
     }
 
     [Fact]
@@ -152,6 +161,75 @@ public class EventHandlerDiagnosticTests
         var diagnostic = result.Diagnostics.Should().ContainSingle().Subject;
         diagnostic.Id.Should().Be("LH0009");
         diagnostic.Location.GetLineSpan().Path.Should().Be("InputFile.cs");
+    }
+
+    [Fact]
+    public Task SnapshotsDuplicateCancellationTokensAndDiscardedTaskResult()
+    {
+        const string source = """
+                              using System.Threading;
+                              using System.Threading.Tasks;
+                              using MinimalLambda;
+                              using MinimalLambda.Builder;
+
+                              var app = LambdaApplication.CreateBuilder().Build();
+                              app.MapEventHandler<Batch, Item, CancellationToken, CancellationToken>(
+                                  split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+                                  handle: Handle);
+
+                              static Task<int> Handle(Item item, CancellationToken first, CancellationToken second) =>
+                                  Task.FromResult(item.Id);
+
+                              internal sealed class Batch
+                              {
+                                  public Item[] Items => [];
+                              }
+
+                              internal sealed class Item
+                              {
+                                  public int Id { get; set; }
+                              }
+                              """;
+        var (driver, compilation) = GeneratorTestHelpers.GenerateFromSource(source);
+
+        compilation
+            .GetDiagnostics(TestContext.Current.CancellationToken)
+            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .Should()
+            .BeEmpty("the diagnostic snapshot should use compiler-valid source");
+
+        var diagnostics = driver
+            .GetRunResult()
+            .Diagnostics
+            .Select(diagnostic =>
+            {
+                var span = diagnostic.Location.GetLineSpan();
+                return new
+                {
+                    diagnostic.Id,
+                    Severity = diagnostic.Severity.ToString(),
+                    Message = diagnostic.GetMessage(),
+                    FilePath = span.Path,
+                    StartLine = span.StartLinePosition.Line + 1,
+                    StartColumn = span.StartLinePosition.Character + 1,
+                    EndLine = span.EndLinePosition.Line + 1,
+                    EndColumn = span.EndLinePosition.Character + 1,
+                };
+            })
+            .OrderBy(diagnostic => diagnostic.Id, StringComparer.Ordinal)
+            .ToArray();
+
+        diagnostics.Select(diagnostic => diagnostic.Id).Should().Equal("LH0009", "LH0011");
+        diagnostics
+            .Select(diagnostic => diagnostic.Severity)
+            .Should()
+            .OnlyContain(severity => severity == DiagnosticSeverity.Error.ToString());
+        diagnostics
+            .Select(diagnostic => diagnostic.FilePath)
+            .Should()
+            .OnlyContain(path => path == "InputFile.cs");
+
+        return Verifier.Verify(diagnostics).UseDirectory("Snapshots").DisableDiff();
     }
 
     [Fact]

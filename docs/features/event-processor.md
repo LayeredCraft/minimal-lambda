@@ -12,8 +12,10 @@ lambda.MapEventHandler(
         importer.IndexAsync(item.S3.Object.Key, token));
 ```
 
-Registration is source-generated, like `MapHandler`. The generator emits the whole processor, so
-there is no runtime reflection and no public runtime bridge.
+Handler argument binding is source-generated, like `MapHandler`. The generated adapter forwards
+callbacks to library code, which registers a normal `LambdaInvocationDelegate` as the terminal
+handler in the middleware pipeline. The library owns feature setup, item scheduling, scopes,
+cancellation, error handling, and response construction, without runtime reflection.
 
 ## What it is not
 
@@ -258,7 +260,7 @@ registration still throws the existing `InvalidOperationException`.
 
 ## Native AOT
 
-The processor is generated into the consumer assembly with concrete closed signatures, so it is
+Generated wrappers call the library runtime with concrete closed generic types, so processing is
 trim- and AOT-safe. Add serializer metadata for the event, response, envelope payloads, and any
 result type you serialize yourself:
 

@@ -19,7 +19,10 @@ exist in the workspace. For repo contributions, read `repo-workflow.md` first.
 3. collects contributions in source order;
 4. builds one response through `createResponse`.
 
-It is source-generated. Never add a runtime helper or reflection fallback to replace it.
+Only typed handler bindings and forwarding adapters are source-generated. Library code registers
+the normal terminal `LambdaInvocationDelegate` and owns feature setup, item scheduling, scopes,
+cancellation, error handling, and response construction. Keep application code on `MapEventHandler`;
+do not call the generated-code registration helper directly or add reflection fallbacks.
 
 `MapEventHandler` consumes the same single invocation handler slot as `MapHandler`. Multiple mapping
 sites are fine and all compile; reaching a second mapping for one handler throws at runtime.
