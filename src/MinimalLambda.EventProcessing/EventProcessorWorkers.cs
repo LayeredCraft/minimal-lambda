@@ -30,14 +30,14 @@ internal readonly struct ItemOutcome<TValue>
 internal static class EventProcessorWorkers
 {
     internal static async Task<EventItemOutcome<TItem, TValue>[]?> RunAsync<TItem, TValue>(
-        TItem[] items,
+        List<TItem> items,
         int effectiveConcurrency,
         IServiceScopeFactory scopeFactory,
         EventProcessingState state,
         Func<TItem, IServiceProvider, EventProcessingState, Task<ItemOutcome<TValue>>> adapter,
         bool collectValues)
     {
-        if (items.Length == 0)
+        if (items.Count == 0)
             state.TryCloseHandling();
 
         var outcomes =
@@ -47,7 +47,7 @@ internal static class EventProcessorWorkers
                         new EventItemOutcome<TItem, TValue>(index, item, EventItemStatus.Skipped))
                     .ToArray()
                 : null;
-        var workerCount = Math.Min(items.Length, Math.Max(1, effectiveConcurrency));
+        var workerCount = Math.Min(items.Count, Math.Max(1, effectiveConcurrency));
         var workers = new Task[workerCount];
 
         for (var index = 0; index < workerCount; index++)

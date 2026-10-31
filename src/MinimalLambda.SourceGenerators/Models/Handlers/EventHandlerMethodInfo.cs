@@ -710,7 +710,9 @@ internal static class EventHandlerMethodInfoExtensions
             var declaration = reference.GetSyntax(cancellationToken);
             var tree = declaration.SyntaxTree;
             var model = compilation.GetSemanticModel(tree);
-            foreach (var node in tree.GetRoot(cancellationToken).DescendantNodes())
+            var scope = declaration.Ancestors().OfType<BlockSyntax>().FirstOrDefault()
+                ?? (SyntaxNode)tree.GetRoot(cancellationToken);
+            foreach (var node in scope.DescendantNodes())
             {
                 if (node is not IdentifierNameSyntax identifier
                     || identifier.Identifier.ValueText != local.Name)

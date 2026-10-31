@@ -2042,7 +2042,7 @@ public class EventProcessorTests
                 return captured;
             });
 
-        var harness = CreateStreamHarness<StreamResponse>(
+        var harness = CreateHarness<StreamResponse>(
             app,
             new Batch([new Item(1), new Item(2), new Item(3)]));
         var handler = app.Build();
@@ -2087,7 +2087,7 @@ public class EventProcessorTests
                 return captured;
             });
 
-        var harness = CreateStreamHarness<StreamResponse>(
+        var harness = CreateHarness<StreamResponse>(
             app,
             new Batch([new Item(1), new Item(2), new Item(3)]));
         var handler = app.Build();
@@ -2149,27 +2149,13 @@ public class EventProcessorTests
             await Task.Delay(10, timeout.Token);
     }
 
-    private static Harness CreateHarness(
+    private static Harness<Response> CreateHarness(
         LambdaApplication app,
         Batch batch,
-        CancellationTokenSource? invocationCancellation = null)
-    {
-        var features = new DefaultFeatureCollection([]);
-        features.Set<IEventFeature>(new TestEventFeature<Batch>(batch));
-        var responseFeature = Substitute.For<IResponseFeature<Response>>();
-        features.Set<IResponseFeature>(responseFeature);
-        invocationCancellation ??= new CancellationTokenSource();
+        CancellationTokenSource? invocationCancellation = null) =>
+        CreateHarness<Response>(app, batch, invocationCancellation);
 
-        var context = Substitute.For<ILambdaInvocationContext>();
-        context.Features.Returns(features);
-        context.ServiceProvider.Returns(app.Services);
-        context.CancellationToken.Returns(invocationCancellation.Token);
-        context.Items.Returns(new Dictionary<object, object?>());
-
-        return new Harness(context, responseFeature, invocationCancellation);
-    }
-
-    private static StreamHarness<TResponse> CreateStreamHarness<TResponse>(
+    private static Harness<TResponse> CreateHarness<TResponse>(
         LambdaApplication app,
         Batch batch,
         CancellationTokenSource? invocationCancellation = null)
@@ -2186,15 +2172,10 @@ public class EventProcessorTests
         context.CancellationToken.Returns(invocationCancellation.Token);
         context.Items.Returns(new Dictionary<object, object?>());
 
-        return new StreamHarness<TResponse>(context, responseFeature, invocationCancellation);
+        return new Harness<TResponse>(context, responseFeature, invocationCancellation);
     }
 
-    private sealed record Harness(
-        ILambdaInvocationContext Context,
-        IResponseFeature<Response> ResponseFeature,
-        CancellationTokenSource InvocationCancellation);
-
-    private sealed record StreamHarness<TResponse>(
+    private sealed record Harness<TResponse>(
         ILambdaInvocationContext Context,
         IResponseFeature<TResponse> ResponseFeature,
         CancellationTokenSource InvocationCancellation);
