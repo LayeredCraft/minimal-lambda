@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Amazon.Lambda.SQSEvents;
 using Microsoft.Extensions.DependencyInjection;
-using MinimalLambda.Options;
+using MinimalLambda.EventProcessing;
 
 namespace MinimalLambda.Testing.UnitTests;
 
@@ -139,8 +139,7 @@ public class EventProcessorLambdaTests
     }
 
     [Fact]
-    public async Task
-        EventProcessorLambda_SequentialStopAbandonsLaterRecordsAndKeepsEarlierIdentity()
+    public async Task EventProcessorLambda_SequentialStopReportsUnprocessedRecordsAsFailures()
     {
         // Arrange
         await using var factory = LambdaTestFactory
@@ -165,20 +164,77 @@ public class EventProcessorLambdaTests
         response.WasSuccess.Should().BeTrue();
         response.Response.Should().NotBeNull();
 
-        // The stop record succeeds and commits; records after it are abandoned, so the response
-        // only
-        // reports the failure that completed before the stop and never claims the omitted
-        // identities.
+        // The application retries every failed or unstarted source position.
         response
             .Response
             .BatchItemFailures
             .Select(failure => failure.ItemIdentifier)
             .Should()
-            .Equal("id-1");
+            .Equal("id-1", "id-3", "id-4");
         factory
             .Services
             .GetRequiredService<RecordProbe>()
             .MessageIds
+            .Should()
+            .Equal("id-1", "id-2");
+    }
+
+    [Fact]
+    public async Task EventProcessorLambda_SharesFullEventAndPacksResponseThroughMiddleware()
+    {
+        await using var factory =
+            LambdaTestFactory
+                .Create<EventProcessorLambda>()
+                .WithCancellationToken(TestContext.Current.CancellationToken);
+        factory.ServerOptions.FunctionTimeout = TestFunctionTimeout;
+        var response = await factory.TestServer.InvokeAsync<SQSEvent, SQSBatchResponse>(
+            CreateEvent(("id-1", "ok"), ("id-2", "ok")),
+            TestContext.Current.CancellationToken);
+        response.WasSuccess.Should().BeTrue();
+        var probe = factory.Services.GetRequiredService<RecordProbe>();
+        probe.MiddlewareEvent.Should().BeSameAs(probe.SplitEvent);
+        probe.SplitEvent!.Records.Select(item => item.BodyContent).Should().Equal("ok", "ok");
+        probe.ScopeIds.Should().OnlyHaveUniqueItems().And.HaveCount(2);
+        probe.Disposed.Should().Be(2);
+        probe.Packed.Should().BeTrue();
+        probe.Stages.Should().Equal("before", "split", "handle", "handle", "response", "after");
+    }
+
+    [Fact]
+    public async Task EventProcessorLambda_DisposalFailureSuppressesSerializedResponse()
+    {
+        await using var factory =
+            LambdaTestFactory
+                .Create<EventProcessorLambda>()
+                .WithCancellationToken(TestContext.Current.CancellationToken);
+        factory.ServerOptions.FunctionTimeout = TestFunctionTimeout;
+        factory.Services.GetRequiredService<RecordProbe>().ThrowOnDispose = true;
+        var response = await factory.TestServer.InvokeAsync<SQSEvent, SQSBatchResponse>(
+            CreateEvent(("id-1", "ok")),
+            TestContext.Current.CancellationToken);
+        response.WasSuccess.Should().BeFalse();
+        response.Error.Should().NotBeNull();
+        factory.Services.GetRequiredService<RecordProbe>().Stages.Should().NotContain("response");
+    }
+
+    [Fact]
+    public async Task EventProcessorLambda_MapsItemResolutionFailuresIntoSerializedResponse()
+    {
+        await using var factory =
+            LambdaTestFactory
+                .Create<EventProcessorLambda>()
+                .WithCancellationToken(TestContext.Current.CancellationToken)
+                .WithHostBuilder(builder => builder.ConfigureServices((_, services) =>
+                    services.AddScoped<ItemScopeProbe>(_ =>
+                        throw new InvalidOperationException("item resolution"))));
+        factory.ServerOptions.FunctionTimeout = TestFunctionTimeout;
+        var response = await factory.TestServer.InvokeAsync<SQSEvent, SQSBatchResponse>(
+            CreateEvent(("id-1", "ok"), ("id-2", "ok")),
+            TestContext.Current.CancellationToken);
+        response.WasSuccess.Should().BeTrue();
+        response.Response!
+            .BatchItemFailures
+            .Select(item => item.ItemIdentifier)
             .Should()
             .Equal("id-1", "id-2");
     }
@@ -192,7 +248,7 @@ public class EventProcessorLambdaTests
                 {
                     MessageId = record.MessageId,
                     ReceiptHandle = "receipt-" + record.MessageId,
-                    Body = record.Body,
+                    Body = JsonSerializer.Serialize(record.Body),
                 }),
             ],
         };

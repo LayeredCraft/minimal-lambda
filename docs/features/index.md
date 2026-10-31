@@ -10,7 +10,7 @@ ______________________________________________________________________
 
 ### [Event Processor](./event-processor.md)
 
-`MapEventHandler` splits one event into items and processes them concurrently with a per-item
+The optional `MinimalLambda.EventProcessing` package provides `MapEventHandler`, which splits one event into items and processes them concurrently with a per-item
 asynchronous DI scope. Choose from five callback families for response building, error mapping, and
 graceful stopping.
 

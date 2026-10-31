@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using MinimalLambda;
 using MinimalLambda.Builder;
 using MinimalLambda.Options;
+using MinimalLambda.EventProcessing;
 
 var builder = LambdaApplication.CreateBuilder();
 
@@ -22,16 +23,17 @@ await using var lambda = builder.Build();
 // One mapping site only: reaching a second mapping for the same invocation handler throws.
 lambda.MapEventHandler(
     split: (SQSEvent batch, ILambdaInvocationContext _) => batch.Records,
-    handle: async Task<ImportResult> (
-        SQSEvent.SQSMessage item,
-        RecordHandler handler,
-        CancellationToken token) => await handler.HandleAsync(item, token),
+    handle: async
+        Task<ImportResult> (
+            SQSEvent.SQSMessage item,
+            RecordHandler handler,
+            CancellationToken token) => await handler.HandleAsync(item, token),
     onError: (item, _, _) => new Retry(item.MessageId),
-    createResponse: (results, _) => new SQSBatchResponse(
-        results
-            .OfType<Retry>()
-            .Select(result =>
-                new SQSBatchResponse.BatchItemFailure { ItemIdentifier = result.MessageId, })
+    createResponse: (outcomes, _) => new SQSBatchResponse(
+        outcomes
+            .Where(outcome => outcome.Status != EventItemStatus.Succeeded || outcome.Value is Retry)
+            .Select(outcome =>
+                new SQSBatchResponse.BatchItemFailure { ItemIdentifier = outcome.Item.MessageId, })
             .ToList()));
 
 // Registration alone roots the generated processor. The runtime loop is intentionally not started

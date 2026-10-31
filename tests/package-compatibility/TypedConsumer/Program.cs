@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using MinimalLambda;
 using MinimalLambda.Builder;
 using MinimalLambda.DurableExecution;
+using MinimalLambda.EventProcessing;
 
 var builder = LambdaApplication.CreateBuilder();
 builder.Services.AddLambdaSerializerWithContext<TypedJsonContext>();
@@ -47,3 +48,10 @@ internal sealed class GreetingService : IGreetingService
 [JsonSerializable(typeof(WorkflowInput))]
 [JsonSerializable(typeof(WorkflowOutput))]
 internal partial class TypedJsonContext : JsonSerializerContext;
+
+internal static class EventCoexistence
+{
+    public static void Map(ILambdaInvocationBuilder app) => app.MapEventHandler(
+        split: (string[] batch, ILambdaInvocationContext _) => batch,
+        handle: (string _) => Task.CompletedTask);
+}

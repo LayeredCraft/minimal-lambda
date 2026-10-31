@@ -102,8 +102,42 @@ internal static class EventHandlerMethodInfoExtensions
                 context,
                 out var handleResultType);
 
+            if (handleResultType is not null && IsAwaitable(handleResultType))
+                diagnostics.Add(
+                    CreateDiagnostic(
+                        Diagnostics.UnsupportedEventHandlerSignature,
+                        handlerArgumentLocation,
+                        "nested awaitable handler result"));
+
             var onErrorArgument = GetArgument(invocation, "onError");
             var createResponseArgument = GetArgument(invocation, "createResponse");
+            var mapperMethod =
+                onErrorArgument is null
+                    ? null
+                    : ResolveHandlerMethod(
+                        onErrorArgument.Value,
+                        context.SemanticModel,
+                        context.CancellationToken,
+                        out _);
+            var mapperIsAwaitable =
+                mapperMethod is not null && IsAwaitable(mapperMethod.ReturnType);
+            if (mapperIsAwaitable)
+                diagnostics.Add(
+                    CreateDiagnostic(
+                        Diagnostics.UnsupportedEventHandlerSignature,
+                        handlerArgumentLocation,
+                        "awaitable onError contribution; use a synchronous mapper"));
+            var responseMethod =
+                createResponseArgument is null
+                    ? null
+                    : ResolveHandlerMethod(
+                        createResponseArgument.Value,
+                        context.SemanticModel,
+                        context.CancellationToken,
+                        out _);
+            var responseIsAwaitable =
+                responseMethod is not null && IsAwaitable(responseMethod.ReturnType);
+
             var family = DetermineFamily(
                 handleReturnsResult,
                 onErrorArgument is not null,
@@ -128,6 +162,12 @@ internal static class EventHandlerMethodInfoExtensions
                         "TFailure",
                         handlerArgumentLocation,
                         diagnostics);
+                    if (!mapperIsAwaitable && failureType is not null && IsAwaitable(failureType))
+                        diagnostics.Add(
+                            CreateDiagnostic(
+                                Diagnostics.UnsupportedEventHandlerSignature,
+                                handlerArgumentLocation,
+                                "awaitable onError contribution; use a synchronous mapper"));
                     collectedType = failureType?.QualifiedNullableName;
                     break;
                 }
@@ -154,7 +194,7 @@ internal static class EventHandlerMethodInfoExtensions
 
                 if (declaredResponseType is not null)
                 {
-                    if (IsAwaitable(declaredResponseType))
+                    if (responseIsAwaitable || IsAwaitable(declaredResponseType))
                         diagnostics.Add(
                             CreateDiagnostic(
                                 Diagnostics.UnsupportedEventHandlerSignature,
@@ -201,7 +241,12 @@ internal static class EventHandlerMethodInfoExtensions
 
             var parameters = handlerMethod is null
                 ? []
-                : CreateParameters(handlerMethod, itemType, context, diagnostics);
+                : CreateParameters(
+                    handlerMethod,
+                    handleDelegate!.DelegateInvokeMethod!,
+                    itemType,
+                    context,
+                    diagnostics);
 
             var valueType = family switch
             {
@@ -278,6 +323,7 @@ internal static class EventHandlerMethodInfoExtensions
 
     private static List<EventHandlerParameterInfo> CreateParameters(
         IMethodSymbol handlerMethod,
+        IMethodSymbol delegateInvokeMethod,
         ITypeSymbol? itemType,
         GeneratorContext context,
         List<DiagnosticInfo> diagnostics)
@@ -290,6 +336,7 @@ internal static class EventHandlerMethodInfoExtensions
         for (var index = 0; index < handlerMethod.Parameters.Length; index++)
         {
             var parameter = handlerMethod.Parameters[index];
+            var parameterType = delegateInvokeMethod.Parameters[index].Type;
             var location = GetParameterLocation(parameter, handlerMethod);
             var parameterDiagnostics = new List<DiagnosticInfo>();
 
@@ -300,7 +347,7 @@ internal static class EventHandlerMethodInfoExtensions
                         location,
                         $"{parameter.RefKind.ToString().ToLowerInvariant()} {parameter.Name}"));
 
-            ValidateAccessibleType(parameter.Type, parameter.Name, location, parameterDiagnostics);
+            ValidateAccessibleType(parameterType, parameter.Name, location, parameterDiagnostics);
 
             var isEventAttribute = IsEventAttribute(parameter, context);
             var isServiceAttribute = parameter.IsServiceBindingAttribute(context);
@@ -315,7 +362,7 @@ internal static class EventHandlerMethodInfoExtensions
             var kind = EventHandlerParameterKind.Service;
             var assignment = string.Empty;
             var isOptional = parameter.IsOptional
-                || parameter.NullableAnnotation == NullableAnnotation.Annotated;
+                || parameterType.NullableAnnotation == NullableAnnotation.Annotated;
             string? keyedKey = null;
 
             if (index == 0)
@@ -329,7 +376,7 @@ internal static class EventHandlerMethodInfoExtensions
                             location,
                             $"service attribute on item parameter '{parameter.Name}'"));
                 if (itemType is not null
-                    && !SymbolEqualityComparer.Default.Equals(itemType, parameter.Type))
+                    && !SymbolEqualityComparer.Default.Equals(itemType, parameterType))
                     parameterDiagnostics.Add(
                         CreateDiagnostic(
                             Diagnostics.UnsupportedEventHandlerSignature,
@@ -337,7 +384,7 @@ internal static class EventHandlerMethodInfoExtensions
                             $"item parameter '{parameter.Name}'"));
             }
             else if (context.WellKnownTypes.IsType(
-                parameter.Type,
+                parameterType,
                 WellKnownType.Amazon_Lambda_Core_ILambdaContext,
                 WellKnownType.MinimalLambda_ILambdaInvocationContext))
             {
@@ -358,8 +405,8 @@ internal static class EventHandlerMethodInfoExtensions
                             $"service attribute on context parameter '{parameter.Name}'"));
             }
             else if (context.WellKnownTypes.IsType(
-                parameter.Type,
-                WellKnownType.MinimalLambda_IEventProcessingContext))
+                parameterType,
+                WellKnownType.MinimalLambda_EventProcessing_IEventProcessingContext))
             {
                 kind = EventHandlerParameterKind.ProcessingContext;
                 assignment = "processingContext";
@@ -378,7 +425,7 @@ internal static class EventHandlerMethodInfoExtensions
                             $"service attribute on processing context parameter '{parameter.Name}'"));
             }
             else if (context.WellKnownTypes.IsType(
-                parameter.Type,
+                parameterType,
                 WellKnownType.System_Threading_CancellationToken))
             {
                 kind = EventHandlerParameterKind.CancellationToken;
@@ -399,7 +446,10 @@ internal static class EventHandlerMethodInfoExtensions
             }
             else
             {
-                var diResult = parameter.GetDiParameterAssignment(context, "serviceProvider");
+                var diResult = parameter.GetDiParameterAssignment(
+                    context,
+                    "serviceProvider",
+                    parameterType);
                 if (diResult.IsSuccess)
                 {
                     if (diResult.Value!.Key is not null)
@@ -409,6 +459,20 @@ internal static class EventHandlerMethodInfoExtensions
                     }
 
                     assignment = diResult.Value.Assignment;
+                    if (parameter.IsOptional)
+                    {
+                        var typeName = parameterType.QualifiedNullableName;
+                        var defaultValue =
+                            parameter.HasExplicitDefaultValue
+                            && parameter.ExplicitDefaultValue is not null
+                                ? $"({typeName}){SymbolDisplay.FormatPrimitive(parameter.ExplicitDefaultValue, true, false)}"
+                                : $"default({typeName})!";
+                        var lookup = diResult.Value.Key is { } key
+                            ? $"((IKeyedServiceProvider)serviceProvider).GetKeyedService(typeof({(parameterType.IsValueType ? typeName : typeName.TrimEnd('?'))}), {key})"
+                            : $"serviceProvider.GetService(typeof({(parameterType.IsValueType ? typeName : typeName.TrimEnd('?'))}))";
+                        assignment =
+                            $"{lookup} is {{ }} service{parameter.Ordinal} ? ({typeName})service{parameter.Ordinal} : {defaultValue}";
+                    }
                 }
                 else if (diResult.Error is { } error)
                     parameterDiagnostics.Add(error);
@@ -418,7 +482,7 @@ internal static class EventHandlerMethodInfoExtensions
                 new EventHandlerParameterInfo(
                     parameter.Ordinal,
                     parameter.Name,
-                    parameter.Type.QualifiedNullableName,
+                    parameterType.QualifiedNullableName,
                     kind,
                     assignment,
                     isOptional,
@@ -657,10 +721,18 @@ internal static class EventHandlerMethodInfoExtensions
                     local))
                     continue;
 
-                var isWrite = identifier.Parent switch
+                SyntaxNode target = identifier;
+                while (true)
+                    if (target.Parent is ArgumentSyntax { Parent: TupleExpressionSyntax tuple })
+                        target = tuple;
+                    else if (target.Parent is ParenthesizedExpressionSyntax parenthesized)
+                        target = parenthesized;
+                    else
+                        break;
+
+                var isWrite = target.Parent switch
                 {
-                    AssignmentExpressionSyntax assignment when assignment.Left == identifier =>
-                        true,
+                    AssignmentExpressionSyntax assignment when assignment.Left == target => true,
                     PrefixUnaryExpressionSyntax prefix => prefix.IsKind(
                             SyntaxKind.PreIncrementExpression)
                         || prefix.IsKind(SyntaxKind.PreDecrementExpression),

@@ -1,3 +1,4 @@
+using MinimalLambda.EventProcessing;
 using Amazon.Lambda.SQSEvents;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -55,27 +56,25 @@ static void RegisterNoResult(LambdaApplication lambda) =>
         handle: (
             SqsEnvelope<MyEvent>.SqsMessageEnvelope item,
             DocumentImporter importer,
-            IEventProcessingContext processing,
             CancellationToken token) =>
         {
             if (item.BodyContent is null)
                 return Task.CompletedTask;
 
-            if (item.BodyContent.StopProcessing)
-                processing.StopProcessing();
-
             return importer.ImportAsync(item.BodyContent, token);
         });
 
-// N2: createResponse receives only successfully handled source items, in source order.
+// N2: every source position has an outcome; count successful handling.
 static void RegisterNoResultWithResponse(LambdaApplication lambda) =>
     lambda.MapEventHandler(
         split: (ImportBatch batch, ILambdaInvocationContext _) => batch.Items,
         handle: (ImportDocument item, DocumentImporter importer, CancellationToken token) =>
             importer.ImportAsync(item.Event, token),
-        createResponse: (items, _) => new BatchSummary(items.Count()));
+        createResponse: (outcomes, _) =>
+            new BatchSummary(
+                outcomes.Count(outcome => outcome.Status == EventItemStatus.Succeeded)));
 
-// N3: successful items contribute nothing; only mapped failures reach createResponse.
+// N3: only mapped errors have values; every source position still has an outcome.
 static void RegisterNoResultWithFailures(LambdaApplication lambda) =>
     lambda.MapEventHandler(
         split: (SqsEnvelope<MyEvent> batch, ILambdaInvocationContext _) => batch.Records,
@@ -88,7 +87,15 @@ static void RegisterNoResultWithFailures(LambdaApplication lambda) =>
                 : importer.ImportAsync(item.BodyContent, token),
         onError: (item, _, _) =>
             new SQSBatchResponse.BatchItemFailure { ItemIdentifier = item.MessageId, },
-        createResponse: (failures, _) => new SQSBatchResponse(failures.ToList()));
+        createResponse: (outcomes, _) => new SQSBatchResponse(
+            outcomes
+                .Where(outcome => outcome.Status != EventItemStatus.Succeeded)
+                .Select(outcome =>
+                    new SQSBatchResponse.BatchItemFailure
+                    {
+                        ItemIdentifier = outcome.Item.MessageId
+                    })
+                .ToList()));
 
 // R1: every completed item contributes one TResult; any unhandled error prevents the response.
 // A typed delegate local supplies dependency types that a bare method group cannot infer.
@@ -100,12 +107,15 @@ static void RegisterResults(LambdaApplication lambda)
     lambda.MapEventHandler(
         split: (ImportBatch batch, ILambdaInvocationContext _) => batch.Items,
         handle: handle,
-        createResponse: (results, _) =>
-            new BatchSummary(results.Count(result => result is Success)));
+        createResponse: (outcomes, _) => new BatchSummary(
+            outcomes
+                .Where(outcome => outcome.HasValue)
+                .Select(outcome => outcome.Value!)
+                .Count(result => result is Success)));
 }
 
 // R2: SQS partial batch response. An async lambda block makes the result family unambiguous.
-// Stopping omits unstarted items from the response.
+// Include unstarted and cancelled items in the application retry response.
 static void RegisterResultsWithRecovery(LambdaApplication lambda) =>
     lambda.MapEventHandler(
         split: (SqsEnvelope<MyEvent> batch, ILambdaInvocationContext _) => batch.Records,
@@ -116,11 +126,15 @@ static void RegisterResultsWithRecovery(LambdaApplication lambda) =>
                 CancellationToken token) =>
             await EventHandlers.HandleSqsMessageAsync(item, importer, processing, token),
         onError: (item, _, _) => new Retry(item.MessageId),
-        createResponse: (results, _) => new SQSBatchResponse(
-            results
-                .OfType<Retry>()
-                .Select(result =>
-                    new SQSBatchResponse.BatchItemFailure { ItemIdentifier = result.MessageId, })
+        createResponse: (outcomes, _) => new SQSBatchResponse(
+            outcomes
+                .Where(outcome =>
+                    outcome.Status != EventItemStatus.Succeeded || outcome.Value is Retry)
+                .Select(outcome =>
+                    new SQSBatchResponse.BatchItemFailure
+                    {
+                        ItemIdentifier = outcome.Item.MessageId,
+                    })
                 .ToList()));
 
 public sealed record MyEvent(string Message, bool StopProcessing = false);

@@ -1,0 +1,22 @@
+﻿[
+  {
+    Id: LH0009,
+    Severity: Error,
+    Message: Event handler binding 'duplicate cancellation token parameter 'second'' is not supported; the first parameter is the source item, and framework context or cancellation-token parameters cannot use service or event attributes.,
+    FilePath: InputFile.cs,
+    StartLine: 12,
+    StartColumn: 61,
+    EndLine: 12,
+    EndColumn: 85
+  },
+  {
+    Id: LH0011,
+    Severity: Error,
+    Message: The event handler 'Handle' returns a result but is bound to a no-result overload; use a result overload with a response builder or wrap the handler so it intentionally returns Task.,
+    FilePath: InputFile.cs,
+    StartLine: 10,
+    StartColumn: 13,
+    EndLine: 10,
+    EndColumn: 19
+  }
+]

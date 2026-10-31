@@ -36,4 +36,5 @@
   <ItemGroup>
     <PackageReference Include="Amazon.Lambda.S3Events" />
   </ItemGroup>
+<ItemGroup><ProjectReference Include="../../src/MinimalLambda.EventProcessing/MinimalLambda.EventProcessing.csproj" /></ItemGroup>
 </Project>

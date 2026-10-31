@@ -48,7 +48,7 @@ Core pieces:
 
 - `LambdaApplication.CreateBuilder()` creates standard .NET host/config/DI defaults.
 - `MapHandler(...)` registers one ordinary Lambda handler. Source generator intercepts it at compile time.
-- `MapEventHandler(...)` registers one batch processor: split the event, run one scope per item
+- Optional `MinimalLambda.EventProcessing`: `MapEventHandler(...)` registers one batch processor: split the event, run one scope per item
   concurrently, then build one response. Read `references/event-processor.md`.
 - `MapDurableHandler(...)` registers one durable workflow with stricter signature, cancellation, replay, middleware, and serializer rules; read `references/durable-execution.md`.
 - `[FromEvent]` marks deserialized event payload. Ordinary handlers allow at most one; durable handlers allow zero or one. `IDurableContext` is optional for durable handlers.
@@ -91,7 +91,7 @@ Read `references/best-practices.md` before giving architectural advice.
 Before final answer or patch:
 
 - Does code compile with source generation? `MapHandler` has 0 or 1 `[FromEvent]`; `MapDurableHandler` has 0 or 1 `[FromEvent]`, 0 or 1 `IDurableContext`, and returns `Task`/`Task<T>`.
-- For batch handlers: `MapEventHandler` family matches the handler return type (no `Task<T>` on a no-result overload), arity is at most 10 after the item, concurrency mode suits the event source, and `createResponse` tolerates an empty collection.
+- For batch handlers: `MapEventHandler` family matches the handler return type (no `Task<T>` on a no-result overload), arity is at most 10 after the item, concurrency mode suits the event source, and `createResponse` handles complete ordered outcomes, including skipped/cancelled items and empty input.
 - Does durable code treat optional root `CancellationToken` as physical invocation cancellation, use SDK operation-callback tokens for durable steps, register explicit serializer roots, and obey replay-safe middleware rules?
 - Does runtime call only one handler mapping path?
 - Are packages matched (`MinimalLambda.Testing` same version as `MinimalLambda`)?

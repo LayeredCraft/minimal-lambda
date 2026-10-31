@@ -46,58 +46,19 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddLambdaHostCoreServices_RegistersSingleEventHandlerOptionsValidator()
+    public void AddLambdaHostCoreServices_RegistersExactlyNineteenCoreServices()
     {
-        // Arrange
-        using var serviceProvider = new ServiceCollection()
-            .AddLambdaHostCoreServices()
-            .AddLambdaHostCoreServices()
-            .BuildServiceProvider();
-
-        // Act
-        var validators = serviceProvider.GetServices<IValidateOptions<EventHandlerOptions>>();
-
-        // Assert
-        validators.Should().ContainSingle();
+        var serviceCollection = new ServiceCollection();
+        serviceCollection.AddLambdaHostCoreServices();
+        serviceCollection.Should().HaveCount(19);
     }
 
     [Fact]
-    public void AddLambdaHostCoreServices_PreservesUserEventHandlerConfiguration()
+    public void AddLambdaHostCoreServices_PreservesCoreOptionsWithoutEventProcessing()
     {
-        // Arrange
-        using var serviceProvider = new ServiceCollection()
-            .AddLambdaHostCoreServices()
-            .Configure<EventHandlerOptions>(options =>
-            {
-                options.EnableConcurrency = false;
-                options.MaxConcurrentExecutions = 3;
-            })
-            .BuildServiceProvider();
-
-        // Act
-        var options = serviceProvider.GetRequiredService<IOptions<EventHandlerOptions>>().Value;
-
-        // Assert
-        options.EnableConcurrency.Should().BeFalse();
-        options.MaxConcurrentExecutions.Should().Be(3);
-    }
-
-    [Theory]
-#if NET11_0_OR_GREATER
-    [InlineData(24)]
-#else
-    [InlineData(22)]
-#endif
-    public void AddLambdaHostCoreServices_RegistersExactlyNServices(int servicesCount)
-    {
-        // Arrange
-        var serviceCollection = new ServiceCollection();
-
-        // Act
-        serviceCollection.AddLambdaHostCoreServices();
-
-        // Assert
-        serviceCollection.Should().HaveCount(servicesCount);
+        using var services =
+            new ServiceCollection().AddLambdaHostCoreServices().BuildServiceProvider();
+        services.GetRequiredService<IOptions<EnvelopeOptions>>().Value.Should().NotBeNull();
     }
 
     [Fact]

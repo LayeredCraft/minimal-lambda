@@ -1,3 +1,4 @@
+using MinimalLambda.EventProcessing;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Amazon.Lambda.Core;
@@ -154,6 +155,7 @@ internal static class GeneratorTestHelpers
             .. Net80.References.All.ToList(),
 #endif
             MetadataReference.CreateFromFile(typeof(LambdaApplication).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(EventHandlerOptions).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(FromKeyedServicesAttribute).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(ILambdaContext).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(IHost).Assembly.Location),

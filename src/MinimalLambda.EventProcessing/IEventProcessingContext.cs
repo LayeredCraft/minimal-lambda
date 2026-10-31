@@ -1,4 +1,4 @@
-namespace MinimalLambda;
+namespace MinimalLambda.EventProcessing;
 
 /// <summary>
 ///     Provides processing controls and cancellation state for one event-processor invocation.

@@ -58,6 +58,7 @@ public class EventHandlerDiscoveryTests
                        using System;
                        using System.Threading.Tasks;
                        using MinimalLambda;
+                       using MinimalLambda.EventProcessing;
                        using MinimalLambda.Builder;
 
                        internal static class Program
@@ -87,6 +88,54 @@ public class EventHandlerDiscoveryTests
         RunGenerator(source).Diagnostics.Should().BeEmpty();
     }
 
+    [Theory]
+    [InlineData("object")]
+    [InlineData("BaseItem")]
+    [InlineData("IItem")]
+    public void RecognizesTypedDelegateWhoseMethodAcceptsABaseItemType(string parameterType)
+    {
+        var (driver, compilation) = GeneratorTestHelpers.GenerateFromSource(
+            $$"""
+              using System;
+              using System.Threading.Tasks;
+              using MinimalLambda;
+              using MinimalLambda.EventProcessing;
+              using MinimalLambda.Builder;
+
+              var app = LambdaApplication.CreateBuilder().Build();
+              Func<Item, Task> handle = Handle;
+              app.MapEventHandler<Batch, Item>(
+                  split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+                  handle: handle);
+
+              static Task Handle({{parameterType}} item) => Task.CompletedTask;
+
+              internal sealed class Batch
+              {
+                  public Item[] Items => [];
+              }
+
+              internal interface IItem;
+              internal class BaseItem;
+              internal sealed class Item : BaseItem, IItem;
+              """);
+
+        var result = driver.GetRunResult();
+        result.Diagnostics.Should().BeEmpty();
+        result
+            .GeneratedTrees
+            .Should()
+            .ContainSingle(tree =>
+                tree.FilePath.EndsWith(
+                    "MinimalLambda.EventHandlers.g.cs",
+                    StringComparison.Ordinal));
+        CompileWithGenerated(compilation, result)
+            .GetDiagnostics(TestContext.Current.CancellationToken)
+            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .Should()
+            .BeEmpty();
+    }
+
     [Fact]
     public void RecognizesTypedDelegateLocalAndExplicitGenericArguments()
     {
@@ -96,6 +145,7 @@ public class EventHandlerDiscoveryTests
             using System.Collections.Generic;
             using System.Threading.Tasks;
             using MinimalLambda;
+            using MinimalLambda.EventProcessing;
             using MinimalLambda.Builder;
 
             var app = LambdaApplication.CreateBuilder().Build();
@@ -104,11 +154,12 @@ public class EventHandlerDiscoveryTests
             app.MapEventHandler(
                 split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
                 handle: handle,
-                createResponse: (IEnumerable<int> results, ILambdaInvocationContext _) => new Response());
+                createResponse: (IReadOnlyList<EventItemOutcome<Item, int>> results, ILambdaInvocationContext _) => new Response());
 
             app.MapEventHandler<Batch, Item, int, Response, Probe>(
                 (Batch batch, ILambdaInvocationContext _) => batch.Items,
-                Handle);
+                Handle,
+                (IReadOnlyList<EventItemOutcome<Item, int>> results, ILambdaInvocationContext _) => new Response());
 
             static Task<int> Handle(Item item, Probe probe) => Task.FromResult(probe.Value);
 
@@ -136,6 +187,65 @@ public class EventHandlerDiscoveryTests
                 StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData(
+        "Service",
+        "[FromKeyedServices(\"probe\")]",
+        "GetRequiredKeyedService<global::Service>(\"probe\")")]
+    [InlineData("ILambdaInvocationContext", "", "processingContext.Invocation")]
+    [InlineData("IEventProcessingContext", "", "processingContext")]
+    public void BindsContravariantMethodUsingDelegateParameterTypes(
+        string dependencyType,
+        string attribute,
+        string expectedBinding)
+    {
+        // Arrange
+        var source = $$"""
+                       using System;
+                       using System.Threading.Tasks;
+                       using Microsoft.Extensions.DependencyInjection;
+                       using MinimalLambda;
+                       using MinimalLambda.EventProcessing;
+                       using MinimalLambda.Builder;
+
+                       var app = LambdaApplication.CreateBuilder().Build();
+                       Func<Item, {{dependencyType}}, Task> handle = Handle;
+                       app.MapEventHandler(
+                           split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+                           handle: handle);
+
+                       static Task Handle(object item, {{attribute}} object dependency) => Task.CompletedTask;
+
+                       internal sealed class Batch { public Item[] Items => []; }
+                       internal sealed class Item;
+                       internal sealed class Service;
+                       """;
+
+        // Act
+        var (driver, compilation) = GeneratorTestHelpers.GenerateFromSource(source);
+        var result = driver.GetRunResult();
+        var generated = CompileWithGenerated(compilation, result);
+
+        // Assert
+        compilation
+            .GetDiagnostics(TestContext.Current.CancellationToken)
+            .Should()
+            .NotContain(d => d.Severity == DiagnosticSeverity.Error);
+        result.Diagnostics.Should().BeEmpty();
+        generated
+            .GetDiagnostics(TestContext.Current.CancellationToken)
+            .Should()
+            .NotContain(d => d.Severity == DiagnosticSeverity.Error);
+        result
+            .GeneratedTrees
+            .Should()
+            .ContainSingle()
+            .Subject
+            .ToString()
+            .Should()
+            .Contain(expectedBinding);
+    }
+
     [Fact]
     public void ReportsCompileErrorForUntypedMethodGroupWithUnknownDependency()
     {
@@ -144,6 +254,7 @@ public class EventHandlerDiscoveryTests
             using System.Collections.Generic;
             using System.Threading.Tasks;
             using MinimalLambda;
+            using MinimalLambda.EventProcessing;
             using MinimalLambda.Builder;
 
             var app = LambdaApplication.CreateBuilder().Build();
@@ -177,13 +288,14 @@ public class EventHandlerDiscoveryTests
             using System.Collections.Generic;
             using System.Threading.Tasks;
             using MinimalLambda;
+            using MinimalLambda.EventProcessing;
             using MinimalLambda.Builder;
 
             var app = LambdaApplication.CreateBuilder().Build();
             app.MapEventHandler(
                 split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
                 handle: HandleSuccess,
-                createResponse: (IEnumerable<Outcome> results, ILambdaInvocationContext _) => new Response());
+                createResponse: (IReadOnlyList<EventItemOutcome<Outcome, Outcome>> results, ILambdaInvocationContext _) => new Response());
 
             static Task<Success> HandleSuccess(Item item) => Task.FromResult(new Success());
 
@@ -213,6 +325,7 @@ public class EventHandlerDiscoveryTests
             """
             using System.Threading.Tasks;
             using MinimalLambda;
+            using MinimalLambda.EventProcessing;
             using MinimalLambda.Builder;
 
             var app = LambdaApplication.CreateBuilder().Build();
@@ -241,6 +354,7 @@ public class EventHandlerDiscoveryTests
             using System.Collections.Generic;
             using System.Threading.Tasks;
             using MinimalLambda;
+            using MinimalLambda.EventProcessing;
             using MinimalLambda.Builder;
 
             var app = LambdaApplication.CreateBuilder().Build();
@@ -248,10 +362,10 @@ public class EventHandlerDiscoveryTests
             app.MapEventHandler(
                 (Batch batch, ILambdaInvocationContext _) => batch.Items,
                 Handle,
-                (IEnumerable<Item> items, ILambdaInvocationContext _) => new Response());
+                (IReadOnlyList<EventItemOutcome<Item, Item>> items, ILambdaInvocationContext _) => new Response());
 
             app.MapEventHandler(
-                createResponse: (IEnumerable<Item> items, ILambdaInvocationContext _) => new Response(),
+                createResponse: (IReadOnlyList<EventItemOutcome<Item, Item>> items, ILambdaInvocationContext _) => new Response(),
                 handle: Handle,
                 split: (Batch batch, ILambdaInvocationContext _) => batch.Items);
 
@@ -287,6 +401,7 @@ public class EventHandlerDiscoveryTests
             using System.Threading.Tasks;
             using Microsoft.Extensions.DependencyInjection;
             using MinimalLambda;
+            using MinimalLambda.EventProcessing;
             using MinimalLambda.Builder;
 
             var app = LambdaApplication.CreateBuilder().Build();
@@ -314,6 +429,7 @@ public class EventHandlerDiscoveryTests
             """
             using System.Threading.Tasks;
             using MinimalLambda;
+            using MinimalLambda.EventProcessing;
             using MinimalLambda.Builder;
 
             namespace MinimalLambda.Builder
@@ -406,6 +522,7 @@ public class EventHandlerDiscoveryTests
             using System.Collections.Generic;
             using System.Threading.Tasks;
             using MinimalLambda;
+            using MinimalLambda.EventProcessing;
             using MinimalLambda.Builder;
 
             internal sealed class Batch
@@ -444,7 +561,7 @@ public class EventHandlerDiscoveryTests
                           app.MapEventHandler(
                               split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
                               handle: (Item item{{parameters}}) => Task.CompletedTask,
-                              createResponse: (IEnumerable<Item> items, ILambdaInvocationContext _) => new Response());
+                              createResponse: (IReadOnlyList<EventItemOutcome<Item, Item>> items, ILambdaInvocationContext _) => new Response());
                   """);
             builder.AppendLine(
                 $$"""
@@ -452,14 +569,14 @@ public class EventHandlerDiscoveryTests
                               split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
                               handle: (Item item{{parameters}}) => Task.CompletedTask,
                               onError: (Item item, Exception exception, IEventProcessingContext processing) => item.Id,
-                              createResponse: (IEnumerable<int> failures, ILambdaInvocationContext _) => new Response());
+                              createResponse: (IReadOnlyList<EventItemOutcome<Item, int>> failures, ILambdaInvocationContext _) => new Response());
                   """);
             builder.AppendLine(
                 $$"""
                           app.MapEventHandler(
                               split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
                               handle: (Item item{{parameters}}) => Task.FromResult(item.Id),
-                              createResponse: (IEnumerable<int> results, ILambdaInvocationContext _) => new Response());
+                              createResponse: (IReadOnlyList<EventItemOutcome<Item, int>> results, ILambdaInvocationContext _) => new Response());
                   """);
             builder.AppendLine(
                 $$"""
@@ -467,7 +584,7 @@ public class EventHandlerDiscoveryTests
                               split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
                               handle: (Item item{{parameters}}) => Task.FromResult(item.Id),
                               onError: (Item item, Exception exception, IEventProcessingContext processing) => item.Id,
-                              createResponse: (IEnumerable<int> results, ILambdaInvocationContext _) => new Response());
+                              createResponse: (IReadOnlyList<EventItemOutcome<Item, int>> results, ILambdaInvocationContext _) => new Response());
                   """);
         }
 

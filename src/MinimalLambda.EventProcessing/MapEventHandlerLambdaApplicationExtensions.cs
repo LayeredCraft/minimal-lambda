@@ -24,8 +24,8 @@ namespace MinimalLambda.Builder;
 ///         the item, including framework context and cancellation-token parameters.
 ///     </para>
 ///     <para>
-///         The response builder receives only completed contributions in source order.
-///         Unstarted or locally cancelled items contribute nothing; the processor does not add
+///         The response builder receives outcomes for every source position in source order.
+///         Unstarted and locally cancelled items have explicit statuses; the processor does not add
 ///         placeholder results, validate response completeness, or retry items. These overloads
 ///         are mutually exclusive with each other and with <c>MapHandler</c> for the same
 ///         invocation handler at runtime.
@@ -304,14 +304,15 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder MapEventHandler<TEvent, TItem, TResponse>(
         this ILambdaInvocationBuilder application,
         Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
         Func<TItem, Task> handle,
-        Func<IEnumerable<TItem>, ILambdaInvocationContext, TResponse> createResponse)
+        Func<IReadOnlyList<EventItemOutcome<TItem, TItem>>, ILambdaInvocationContext, TResponse>
+            createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -326,14 +327,15 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder MapEventHandler<TEvent, TItem, TResponse, TD0>(
         this ILambdaInvocationBuilder application,
         Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
         Func<TItem, TD0, Task> handle,
-        Func<IEnumerable<TItem>, ILambdaInvocationContext, TResponse> createResponse)
+        Func<IReadOnlyList<EventItemOutcome<TItem, TItem>>, ILambdaInvocationContext, TResponse>
+            createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -349,14 +351,15 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder MapEventHandler<TEvent, TItem, TResponse, TD0, TD1>(
         this ILambdaInvocationBuilder application,
         Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
         Func<TItem, TD0, TD1, Task> handle,
-        Func<IEnumerable<TItem>, ILambdaInvocationContext, TResponse> createResponse)
+        Func<IReadOnlyList<EventItemOutcome<TItem, TItem>>, ILambdaInvocationContext, TResponse>
+            createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -373,14 +376,15 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder MapEventHandler<TEvent, TItem, TResponse, TD0, TD1, TD2>(
         this ILambdaInvocationBuilder application,
         Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
         Func<TItem, TD0, TD1, TD2, Task> handle,
-        Func<IEnumerable<TItem>, ILambdaInvocationContext, TResponse> createResponse)
+        Func<IReadOnlyList<EventItemOutcome<TItem, TItem>>, ILambdaInvocationContext, TResponse>
+            createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -398,7 +402,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -406,7 +410,8 @@ public static class MapEventHandlerLambdaApplicationExtensions
             this ILambdaInvocationBuilder application,
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, Task> handle,
-            Func<IEnumerable<TItem>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TItem>>, ILambdaInvocationContext, TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -425,7 +430,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -433,7 +438,8 @@ public static class MapEventHandlerLambdaApplicationExtensions
             this ILambdaInvocationBuilder application,
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, Task> handle,
-            Func<IEnumerable<TItem>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TItem>>, ILambdaInvocationContext, TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -453,7 +459,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -461,7 +467,8 @@ public static class MapEventHandlerLambdaApplicationExtensions
             this ILambdaInvocationBuilder application,
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, Task> handle,
-            Func<IEnumerable<TItem>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TItem>>, ILambdaInvocationContext, TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -482,7 +489,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -490,7 +497,8 @@ public static class MapEventHandlerLambdaApplicationExtensions
             this ILambdaInvocationBuilder application,
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, Task> handle,
-            Func<IEnumerable<TItem>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TItem>>, ILambdaInvocationContext, TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -512,7 +520,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -520,7 +528,8 @@ public static class MapEventHandlerLambdaApplicationExtensions
             this ILambdaInvocationBuilder application,
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, TD7, Task> handle,
-            Func<IEnumerable<TItem>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TItem>>, ILambdaInvocationContext, TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -543,7 +552,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -551,7 +560,8 @@ public static class MapEventHandlerLambdaApplicationExtensions
             this ILambdaInvocationBuilder application,
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, TD7, TD8, Task> handle,
-            Func<IEnumerable<TItem>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TItem>>, ILambdaInvocationContext, TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -575,7 +585,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -583,7 +593,8 @@ public static class MapEventHandlerLambdaApplicationExtensions
             this ILambdaInvocationBuilder application,
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, TD7, TD8, TD9, Task> handle,
-            Func<IEnumerable<TItem>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TItem>>, ILambdaInvocationContext, TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -599,7 +610,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder MapEventHandler<TEvent, TItem, TFailure, TResponse>(
@@ -607,7 +618,8 @@ public static class MapEventHandlerLambdaApplicationExtensions
         Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
         Func<TItem, Task> handle,
         Func<TItem, Exception, IEventProcessingContext, TFailure> onError,
-        Func<IEnumerable<TFailure>, ILambdaInvocationContext, TResponse> createResponse)
+        Func<IReadOnlyList<EventItemOutcome<TItem, TFailure>>, ILambdaInvocationContext, TResponse>
+            createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -624,7 +636,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder MapEventHandler<TEvent, TItem, TFailure, TResponse, TD0>(
@@ -632,7 +644,8 @@ public static class MapEventHandlerLambdaApplicationExtensions
         Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
         Func<TItem, TD0, Task> handle,
         Func<TItem, Exception, IEventProcessingContext, TFailure> onError,
-        Func<IEnumerable<TFailure>, ILambdaInvocationContext, TResponse> createResponse)
+        Func<IReadOnlyList<EventItemOutcome<TItem, TFailure>>, ILambdaInvocationContext, TResponse>
+            createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -650,7 +663,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -659,7 +672,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, Task> handle,
             Func<TItem, Exception, IEventProcessingContext, TFailure> onError,
-            Func<IEnumerable<TFailure>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TFailure>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -678,7 +693,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -687,7 +702,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, Task> handle,
             Func<TItem, Exception, IEventProcessingContext, TFailure> onError,
-            Func<IEnumerable<TFailure>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TFailure>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -707,7 +724,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -716,7 +733,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, Task> handle,
             Func<TItem, Exception, IEventProcessingContext, TFailure> onError,
-            Func<IEnumerable<TFailure>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TFailure>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -737,7 +756,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -746,7 +765,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, Task> handle,
             Func<TItem, Exception, IEventProcessingContext, TFailure> onError,
-            Func<IEnumerable<TFailure>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TFailure>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -768,7 +789,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -777,7 +798,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, Task> handle,
             Func<TItem, Exception, IEventProcessingContext, TFailure> onError,
-            Func<IEnumerable<TFailure>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TFailure>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -800,7 +823,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -809,7 +832,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, Task> handle,
             Func<TItem, Exception, IEventProcessingContext, TFailure> onError,
-            Func<IEnumerable<TFailure>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TFailure>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -833,7 +858,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -842,7 +867,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, TD7, Task> handle,
             Func<TItem, Exception, IEventProcessingContext, TFailure> onError,
-            Func<IEnumerable<TFailure>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TFailure>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -867,7 +894,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -877,7 +904,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, TD7, TD8, Task> handle,
             Func<TItem, Exception, IEventProcessingContext, TFailure> onError,
-            Func<IEnumerable<TFailure>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TFailure>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -903,7 +932,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -914,7 +943,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, TD7, TD8, TD9, Task> handle,
             Func<TItem, Exception, IEventProcessingContext, TFailure> onError,
-            Func<IEnumerable<TFailure>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TFailure>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -929,14 +960,15 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder MapEventHandler<TEvent, TItem, TResult, TResponse>(
         this ILambdaInvocationBuilder application,
         Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
         Func<TItem, Task<TResult>> handle,
-        Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+        Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext, TResponse>
+            createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -952,14 +984,15 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder MapEventHandler<TEvent, TItem, TResult, TResponse, TD0>(
         this ILambdaInvocationBuilder application,
         Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
         Func<TItem, TD0, Task<TResult>> handle,
-        Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+        Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext, TResponse>
+            createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -976,7 +1009,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -984,7 +1017,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             this ILambdaInvocationBuilder application,
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, Task<TResult>> handle,
-            Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -1002,7 +1037,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -1010,7 +1045,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             this ILambdaInvocationBuilder application,
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, Task<TResult>> handle,
-            Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -1029,7 +1066,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -1037,7 +1074,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             this ILambdaInvocationBuilder application,
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, Task<TResult>> handle,
-            Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -1057,7 +1096,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -1065,7 +1104,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             this ILambdaInvocationBuilder application,
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, Task<TResult>> handle,
-            Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -1086,7 +1127,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -1094,7 +1135,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             this ILambdaInvocationBuilder application,
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, Task<TResult>> handle,
-            Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -1116,7 +1159,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -1124,7 +1167,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             this ILambdaInvocationBuilder application,
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, Task<TResult>> handle,
-            Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -1147,7 +1192,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -1155,7 +1200,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             this ILambdaInvocationBuilder application,
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, TD7, Task<TResult>> handle,
-            Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -1179,7 +1226,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -1188,7 +1235,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             this ILambdaInvocationBuilder application,
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, TD7, TD8, Task<TResult>> handle,
-            Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -1213,7 +1262,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="application">The builder to register the handler with.</param>
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -1223,7 +1272,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             this ILambdaInvocationBuilder application,
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, TD7, TD8, TD9, Task<TResult>> handle,
-            Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -1239,7 +1290,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder MapEventHandler<TEvent, TItem, TResult, TResponse>(
@@ -1247,7 +1298,8 @@ public static class MapEventHandlerLambdaApplicationExtensions
         Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
         Func<TItem, Task<TResult>> handle,
         Func<TItem, Exception, IEventProcessingContext, TResult> onError,
-        Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+        Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext, TResponse>
+            createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -1264,7 +1316,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder MapEventHandler<TEvent, TItem, TResult, TResponse, TD0>(
@@ -1272,7 +1324,8 @@ public static class MapEventHandlerLambdaApplicationExtensions
         Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
         Func<TItem, TD0, Task<TResult>> handle,
         Func<TItem, Exception, IEventProcessingContext, TResult> onError,
-        Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+        Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext, TResponse>
+            createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -1290,7 +1343,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -1299,7 +1352,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, Task<TResult>> handle,
             Func<TItem, Exception, IEventProcessingContext, TResult> onError,
-            Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -1318,7 +1373,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -1327,7 +1382,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, Task<TResult>> handle,
             Func<TItem, Exception, IEventProcessingContext, TResult> onError,
-            Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -1347,7 +1404,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -1356,7 +1413,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, Task<TResult>> handle,
             Func<TItem, Exception, IEventProcessingContext, TResult> onError,
-            Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -1377,7 +1436,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -1386,7 +1445,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, Task<TResult>> handle,
             Func<TItem, Exception, IEventProcessingContext, TResult> onError,
-            Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -1408,7 +1469,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -1417,7 +1478,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, Task<TResult>> handle,
             Func<TItem, Exception, IEventProcessingContext, TResult> onError,
-            Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -1440,7 +1503,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -1449,7 +1512,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, Task<TResult>> handle,
             Func<TItem, Exception, IEventProcessingContext, TResult> onError,
-            Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -1473,7 +1538,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -1482,7 +1547,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, TD7, Task<TResult>> handle,
             Func<TItem, Exception, IEventProcessingContext, TResult> onError,
-            Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -1507,7 +1574,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -1517,7 +1584,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, TD7, TD8, Task<TResult>> handle,
             Func<TItem, Exception, IEventProcessingContext, TResult> onError,
-            Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");
@@ -1543,7 +1612,7 @@ public static class MapEventHandlerLambdaApplicationExtensions
     /// <param name="split">Splits the event into source items. Called once per invocation.</param>
     /// <param name="handle">Processes one source item; the item is the first parameter.</param>
     /// <param name="onError">Maps a handler exception for one item to a result value.</param>
-    /// <param name="createResponse">Builds the response from completed contributions in source order.</param>
+    /// <param name="createResponse">Builds the response from outcomes for every source position in source order.</param>
     /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
     public static ILambdaInvocationBuilder
@@ -1554,7 +1623,9 @@ public static class MapEventHandlerLambdaApplicationExtensions
             Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
             Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, TD7, TD8, TD9, Task<TResult>> handle,
             Func<TItem, Exception, IEventProcessingContext, TResult> onError,
-            Func<IEnumerable<TResult>, ILambdaInvocationContext, TResponse> createResponse)
+            Func<IReadOnlyList<EventItemOutcome<TItem, TResult>>, ILambdaInvocationContext,
+                    TResponse>
+                createResponse)
     {
         Debug.Fail("This method should have been intercepted at compile time!");
         throw new InvalidOperationException("This method is replaced at compile time.");

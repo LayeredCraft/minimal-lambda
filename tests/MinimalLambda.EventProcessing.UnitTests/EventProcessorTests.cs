@@ -19,8 +19,10 @@ public class EventProcessorTests
         app.MapEventHandler(
             split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
             handle: (Item _) => Task.CompletedTask,
-            createResponse: (items, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var items =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 responseCalls++;
                 var ids = items.Select(item => item.Id).ToList();
                 captured = new Response(ids);
@@ -72,7 +74,12 @@ public class EventProcessorTests
 
                 return item.Id;
             },
-            createResponse: (ids, _) => new Response(ids.ToList()));
+            createResponse: (outcomes, _) =>
+                new Response(
+                    outcomes
+                        .Where(outcome => outcome.HasValue)
+                        .Select(outcome => outcome.Value!)
+                        .ToList()));
 
         var harness = CreateHarness(app, new Batch([new Item(1), new Item(2), new Item(3)]));
         var handler = app.Build();
@@ -164,7 +171,12 @@ public class EventProcessorTests
                 exception.Message.Should().Be("item failed");
                 return -item.Id;
             },
-            createResponse: (results, _) => new Response(results.ToList()));
+            createResponse: (outcomes, _) =>
+                new Response(
+                    outcomes
+                        .Where(outcome => outcome.HasValue)
+                        .Select(outcome => outcome.Value!)
+                        .ToList()));
 
         var harness = CreateHarness(app, new Batch([new Item(1), new Item(2), new Item(3)]));
         var handler = app.Build();
@@ -191,8 +203,10 @@ public class EventProcessorTests
         app.MapEventHandler(
             split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
             handle: (Item item) => item.Id == 2 ? Task.FromException(expected) : Task.CompletedTask,
-            createResponse: (items, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var items =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 responseCalls++;
                 return new Response(items.Select(item => item.Id).ToList());
             });
@@ -209,7 +223,7 @@ public class EventProcessorTests
     }
 
     [Fact]
-    public async Task NullHandlerTaskFailsInvocationWithoutErrorMapping()
+    public async Task NullHandlerTaskIsMappedAsItemError()
     {
         // Arrange
         var errorCalls = 0;
@@ -222,7 +236,12 @@ public class EventProcessorTests
                 errorCalls++;
                 return item.Id;
             },
-            createResponse: (results, _) => new Response(results.ToList()));
+            createResponse: (outcomes, _) =>
+                new Response(
+                    outcomes
+                        .Where(outcome => outcome.HasValue)
+                        .Select(outcome => outcome.Value!)
+                        .ToList()));
 
         var harness = CreateHarness(app, new Batch([new Item(1)]));
         var handler = app.Build();
@@ -231,8 +250,8 @@ public class EventProcessorTests
         var act = () => handler(harness.Context);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*null task*");
-        errorCalls.Should().Be(0);
+        await act.Should().NotThrowAsync();
+        errorCalls.Should().Be(1);
     }
 
     [Fact]
@@ -278,8 +297,10 @@ public class EventProcessorTests
                 processing.StopProcessing();
                 return Task.CompletedTask;
             },
-            createResponse: (items, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var items =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 captured = new Response(items.Select(item => item.Id).ToList());
                 return captured;
             });
@@ -361,8 +382,10 @@ public class EventProcessorTests
                 errorCalls++;
                 return item.Id;
             },
-            createResponse: (results, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var results =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 captured = new Response(results.ToList());
                 return captured;
             });
@@ -393,8 +416,10 @@ public class EventProcessorTests
                 await Task.Delay(Timeout.InfiniteTimeSpan, token).ConfigureAwait(false);
                 return item.Id;
             },
-            createResponse: (results, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var results =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 responseCalls++;
                 return new Response(results.ToList());
             });
@@ -416,7 +441,7 @@ public class EventProcessorTests
     }
 
     [Fact]
-    public async Task LateInvocationCancellationDuringResponseDoesNotAddFailure()
+    public async Task InvocationCancellationDuringDisposalSuppressesResponse()
     {
         // Arrange
         Response? captured = null;
@@ -427,8 +452,11 @@ public class EventProcessorTests
         app.MapEventHandler(
             split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
             handle: (Item item, CancelOnDispose _) => Task.FromResult(item.Id),
-            createResponse: (ids, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var ids = outcomes
+                    .Where(outcome => outcome.HasValue)
+                    .Select(outcome => outcome.Value!);
                 captured = new Response(ids.ToList());
                 return captured;
             });
@@ -437,11 +465,13 @@ public class EventProcessorTests
         var handler = app.Build();
 
         // Act
-        await handler(harness.Context);
+        var run = () => handler(harness.Context);
+        await run.Should().ThrowAsync<OperationCanceledException>();
 
         // Assert
         invocationCancellation.IsCancellationRequested.Should().BeTrue();
-        harness.ResponseFeature.Received(1).SetResponse(captured!);
+        captured.Should().BeNull();
+        harness.ResponseFeature.DidNotReceive().SetResponse(Arg.Any<Response>());
     }
 
     [Fact]
@@ -592,7 +622,9 @@ public class EventProcessorTests
 
                 await blockedItems.Task.ConfigureAwait(false);
             },
-            createResponse: (IEnumerable<Item> _, ILambdaInvocationContext _) =>
+            createResponse: (
+                IReadOnlyList<EventItemOutcome<Item, Item>> _,
+                ILambdaInvocationContext _) =>
             {
                 responseCalls++;
                 return new Response([]);
@@ -667,8 +699,10 @@ public class EventProcessorTests
         app.MapEventHandler(
             split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
             handle: (Item item) => Task.FromResult(item.Id),
-            createResponse: (results, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var results =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 firstPass = results.ToList();
                 secondPass = results.ToList();
                 return new Response(firstPass);
@@ -829,8 +863,10 @@ public class EventProcessorTests
         app.MapEventHandler(
             split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
             handle: (Item item) => Task.FromResult(item.Id),
-            createResponse: (results, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var results =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 captured = new Response(results.ToList());
                 return captured;
             });
@@ -891,8 +927,10 @@ public class EventProcessorTests
             split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
             handle: (Item item, ScopedValue value) =>
                 Task.FromResult(new ResultDto(item.Id, value.InstanceId)),
-            createResponse: (results, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var results =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 captured = new Response(results.Select(result => result.ItemId).ToList());
                 return captured;
             });
@@ -917,7 +955,9 @@ public class EventProcessorTests
         app.MapEventHandler(
             split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
             handle: (Item _, UnregisteredValue _) => Task.CompletedTask,
-            createResponse: (IEnumerable<Item> _, ILambdaInvocationContext _) =>
+            createResponse: (
+                IReadOnlyList<EventItemOutcome<Item, Item>> _,
+                ILambdaInvocationContext _) =>
             {
                 responseCalls++;
                 return new Response([]);
@@ -942,7 +982,9 @@ public class EventProcessorTests
         app.MapEventHandler(
             split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
             handle: (Item _) => Task.CompletedTask,
-            createResponse: (IEnumerable<Item> _, ILambdaInvocationContext _) => new Response([]));
+            createResponse: (
+                IReadOnlyList<EventItemOutcome<Item, Item>> _,
+                ILambdaInvocationContext _) => new Response([]));
         var propertiesAfterFirst = app.Properties.Count;
 
         // Act
@@ -967,8 +1009,10 @@ public class EventProcessorTests
         app.MapEventHandler(
             split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
             handle: (Item? _) => Task.CompletedTask,
-            createResponse: (items, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var items =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 contributions = items.ToList();
                 return new Response([]);
             });
@@ -1024,8 +1068,10 @@ public class EventProcessorTests
                     ? Task.FromException(new InvalidOperationException("failed"))
                     : Task.CompletedTask,
             onError: (item, _, _) => item.Id,
-            createResponse: (failures, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var failures =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 captured = new Response(failures.ToList());
                 return captured;
             });
@@ -1055,8 +1101,10 @@ public class EventProcessorTests
                 mapperCalls++;
                 return item.Id;
             },
-            createResponse: (results, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var results =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 captured = new Response(results.ToList());
                 return captured;
             });
@@ -1085,8 +1133,10 @@ public class EventProcessorTests
             split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
             handle: (Item _) => Task.FromException<int>(new OperationCanceledException()),
             onError: (item, _, _) => item.Id,
-            createResponse: (results, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var results =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 captured = new Response(results.ToList());
                 return captured;
             });
@@ -1106,8 +1156,8 @@ public class EventProcessorTests
     {
         // Arrange
         await using var app = LambdaApplication.CreateBuilder().Build();
-        Func<IEnumerable<int>, ILambdaInvocationContext, Response> builder = (_, _) =>
-            throw new InvalidOperationException("builder failed");
+        Func<IReadOnlyList<EventItemOutcome<Item, int>>, ILambdaInvocationContext, Response>
+            builder = (_, _) => throw new InvalidOperationException("builder failed");
         app.MapEventHandler(
             split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
             handle: (Item item) => Task.FromResult(item.Id),
@@ -1138,7 +1188,12 @@ public class EventProcessorTests
         withResult.MapEventHandler(
             split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
             handle: (Item item) => Task.FromResult(item.Id),
-            createResponse: (results, _) => new Response(results.ToList()));
+            createResponse: (outcomes, _) =>
+                new Response(
+                    outcomes
+                        .Where(outcome => outcome.HasValue)
+                        .Select(outcome => outcome.Value!)
+                        .ToList()));
         var withResultProperties = withResult.Properties.Count;
 
         // Assert
@@ -1195,8 +1250,10 @@ public class EventProcessorTests
                 processing.StopProcessing();
                 return item.Id;
             },
-            createResponse: (failures, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var failures =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 captured = new Response(failures.ToList());
                 return captured;
             });
@@ -1318,8 +1375,10 @@ public class EventProcessorTests
             split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
             handle: (Item _) => Task.FromException<int>(new InvalidOperationException("failed")),
             onError: (_, _, _) => throw new OperationCanceledException(),
-            createResponse: (results, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var results =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 responseCalls++;
                 return new Response(results.ToList());
             });
@@ -1346,8 +1405,10 @@ public class EventProcessorTests
         app.MapEventHandler(
             split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
             handle: (Item item, ThrowingDisposable _) => Task.FromResult(item.Id),
-            createResponse: (results, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var results =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 responseCalls++;
                 return new Response(results.ToList());
             });
@@ -1376,8 +1437,10 @@ public class EventProcessorTests
                 processing.CancelProcessing();
                 await Task.Delay(Timeout.InfiniteTimeSpan, token).ConfigureAwait(false);
             },
-            createResponse: (items, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var items =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 captured = new Response(items.Select(item => item.Id).ToList());
                 return captured;
             });
@@ -1464,8 +1527,10 @@ public class EventProcessorTests
                 await gate.Task.ConfigureAwait(false);
                 return item.Id;
             },
-            createResponse: (results, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var results =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 captured = new Response(results.ToList());
                 return captured;
             });
@@ -1521,8 +1586,10 @@ public class EventProcessorTests
                 errorCalls++;
                 return item.Id;
             },
-            createResponse: (results, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var results =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 responseCalls++;
                 return new Response(results.ToList());
             });
@@ -1577,8 +1644,10 @@ public class EventProcessorTests
                 registered.TrySetResult();
                 await release.Task.ConfigureAwait(false);
             },
-            createResponse: (items, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var items =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 responseCalls++;
                 return new Response(items.Select(item => item.Id).ToList());
             });
@@ -1627,8 +1696,10 @@ public class EventProcessorTests
                 processing.CancelProcessing();
                 return Task.CompletedTask;
             },
-            createResponse: (items, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var items =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 captured = new Response(items.Select(item => item.Id).ToList());
                 return captured;
             });
@@ -1670,8 +1741,10 @@ public class EventProcessorTests
                 processing.CancelProcessing();
                 return Task.CompletedTask;
             },
-            createResponse: (items, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var items =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 captured = new Response(items.Select(item => item.Id).ToList());
                 return captured;
             });
@@ -1762,8 +1835,10 @@ public class EventProcessorTests
                 await controlsApplied.Task.ConfigureAwait(false);
                 handled.Add(item.Id);
             },
-            createResponse: (items, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var items =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 captured = new Response(items.Select(item => item.Id).ToList());
                 return captured;
             });
@@ -1797,8 +1872,10 @@ public class EventProcessorTests
             split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
             handle: (Item _, FaultingDisposable _) =>
                 Task.FromException(new InvalidOperationException("handler failed")),
-            createResponse: (items, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var items =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 responseCalls++;
                 return new Response(items.Select(item => item.Id).ToList());
             });
@@ -1828,7 +1905,7 @@ public class EventProcessorTests
         // Arrange
         var logger = Substitute.For<ILogger>();
         var loggerFactory = Substitute.For<ILoggerFactory>();
-        loggerFactory.CreateLogger("MinimalLambda.EventProcessor").Returns(logger);
+        loggerFactory.CreateLogger("MinimalLambda.EventProcessing").Returns(logger);
 
         var builder = LambdaApplication.CreateBuilder();
         builder.Services.RemoveAll<ILoggerFactory>();
@@ -1872,7 +1949,7 @@ public class EventProcessorTests
     {
         // Arrange
         var loggerFactory = Substitute.For<ILoggerFactory>();
-        loggerFactory.CreateLogger("MinimalLambda.EventProcessor").Returns(new ThrowingLogger());
+        loggerFactory.CreateLogger("MinimalLambda.EventProcessing").Returns(new ThrowingLogger());
 
         var builder = LambdaApplication.CreateBuilder();
         builder.Services.RemoveAll<ILoggerFactory>();
@@ -1902,7 +1979,7 @@ public class EventProcessorTests
     }
 
     [Fact]
-    public async Task MissingDependencyResolutionFailureIsNotMappedByErrorMapper()
+    public async Task MissingDependencyResolutionFailureIsMappedByErrorMapper()
     {
         // Arrange
         var errorCalls = 0;
@@ -1916,8 +1993,10 @@ public class EventProcessorTests
                 errorCalls++;
                 return item.Id;
             },
-            createResponse: (results, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var results =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 responseCalls++;
                 return new Response(results.ToList());
             });
@@ -1929,9 +2008,9 @@ public class EventProcessorTests
         var act = () => handler(harness.Context);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>();
-        errorCalls.Should().Be(0);
-        responseCalls.Should().Be(0);
+        await act.Should().NotThrowAsync();
+        errorCalls.Should().Be(1);
+        responseCalls.Should().Be(1);
     }
 
     [Fact]
@@ -1950,8 +2029,10 @@ public class EventProcessorTests
                         new InvalidOperationException("stream failed"))
                     : Task.FromResult(new StreamResult(record.SequenceNumber, Failed: false)),
             onError: (record, _, _) => new StreamResult(record.SequenceNumber, Failed: true),
-            createResponse: (results, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var results =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 contributed = results.Select(result => result.SequenceNumber).ToList();
                 captured = new StreamResponse(
                     results
@@ -1992,8 +2073,10 @@ public class EventProcessorTests
                         new InvalidOperationException("stream failed"))
                     : Task.FromResult(new StreamResult(record.SequenceNumber, Failed: false)),
             onError: (record, _, _) => new StreamResult(record.SequenceNumber, Failed: true),
-            createResponse: (results, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var results =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 captured = new StreamResponse(
                     results
                         .Where(result => result.Failed)
@@ -2020,7 +2103,7 @@ public class EventProcessorTests
     }
 
     [Fact]
-    public async Task InvocationCancellationDuringResponseConstructionStillDeliversResponseOnce()
+    public async Task InvocationCancellationDuringResponseConstructionSuppressesResponse()
     {
         // Arrange
         var responseCalls = 0;
@@ -2030,8 +2113,10 @@ public class EventProcessorTests
         app.MapEventHandler(
             split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
             handle: (Item item) => Task.FromResult(item.Id),
-            createResponse: (results, _) =>
+            createResponse: (outcomes, _) =>
             {
+                var results =
+                    outcomes.Where(outcome => outcome.HasValue).Select(outcome => outcome.Value!);
                 responseCalls++;
                 invocationCancellation.Cancel();
                 captured = new Response(results.ToList());
@@ -2042,16 +2127,14 @@ public class EventProcessorTests
         var handler = app.Build();
 
         // Act
-        await handler(harness.Context);
+        var run = () => handler(harness.Context);
+        await run.Should().ThrowAsync<OperationCanceledException>();
 
         // Assert
-        // Response construction sits past the handling boundary, so cancelling while the response
-        // is
-        // being built neither suppresses nor duplicates the delivered response and adds no failure.
         invocationCancellation.IsCancellationRequested.Should().BeTrue();
         responseCalls.Should().Be(1);
         captured!.Ids.Should().Equal(1);
-        harness.ResponseFeature.Received(1).SetResponse(captured);
+        harness.ResponseFeature.DidNotReceive().SetResponse(Arg.Any<Response>());
     }
 
     private static Exception Unwrap(Exception exception) =>

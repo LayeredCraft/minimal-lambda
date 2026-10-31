@@ -31,12 +31,14 @@ internal static class ParameterSymbolExtensions
 
         internal DiagnosticResult<(string Assignment, string? Key)> GetDiParameterAssignment(
             GeneratorContext context,
-            string serviceProviderExpression = "context.ServiceProvider")
+            string serviceProviderExpression = "context.ServiceProvider",
+            ITypeSymbol? serviceType = null)
         {
-            var paramType = parameterSymbol.Type.QualifiedNullableName;
+            var type = serviceType ?? parameterSymbol.Type;
+            var paramType = type.QualifiedNullableName;
 
             var isRequired = parameterSymbol.IsOptional
-                || parameterSymbol.NullableAnnotation == NullableAnnotation.Annotated;
+                || type.NullableAnnotation == NullableAnnotation.Annotated;
 
             return parameterSymbol
                 .IsFromKeyedService(context)

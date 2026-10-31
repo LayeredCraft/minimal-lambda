@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
 
-namespace MinimalLambda.Options;
+namespace MinimalLambda.EventProcessing;
 
 internal sealed class EventHandlerOptionsValidator : IValidateOptions<EventHandlerOptions>
 {

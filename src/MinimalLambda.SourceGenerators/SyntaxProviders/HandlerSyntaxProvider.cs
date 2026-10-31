@@ -185,7 +185,7 @@ internal static class HandlerSyntaxProvider
                     == "MapDurableHandlerLambdaApplicationExtensions"),
             "MapHandler" or "OnInit" or "OnShutdown" => method.ContainingAssembly.Name
                 == "MinimalLambda",
-            "MapEventHandler" => method.ContainingAssembly.Name == "MinimalLambda"
+            "MapEventHandler" => method.ContainingAssembly.Name == "MinimalLambda.EventProcessing"
                 && IsEventMapContainingType(method.ContainingType),
             _ => false,
         });

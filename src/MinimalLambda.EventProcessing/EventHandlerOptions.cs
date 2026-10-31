@@ -1,4 +1,4 @@
-namespace MinimalLambda.Options;
+namespace MinimalLambda.EventProcessing;
 
 /// <summary>Provides default event-processor behavior for the Lambda host.</summary>
 /// <remarks>

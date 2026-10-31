@@ -1,282 +1,155 @@
-# Event Processor
+# Event processing
 
-`MapEventHandler` splits one Lambda event into items and processes them concurrently. It replaces
-the loop-and-try/catch code most batch handlers write by hand.
+Install `MinimalLambda.EventProcessing` to process items from one Lambda event with separate DI
+scopes. Core-only applications do not expose these APIs or register processing services.
 
-```csharp
-builder.Services.AddScoped<DocumentImporter>();
-
-lambda.MapEventHandler(
-    split: (S3Event batch, ILambdaInvocationContext _) => batch.Records,
-    handle: (S3Event.S3EventNotificationRecord item, DocumentImporter importer, CancellationToken token) =>
-        importer.IndexAsync(item.S3.Object.Key, token));
+```bash
+dotnet add package MinimalLambda.EventProcessing
 ```
 
-Registration is source-generated, like `MapHandler`. The generator emits the whole processor, so
-there is no runtime reflection and no public runtime bridge.
+```csharp
+using MinimalLambda;
+using MinimalLambda.Builder;
+using MinimalLambda.EventProcessing;
 
-## What it is not
+builder.Services.AddScoped<DocumentImporter>();
+await using var lambda = builder.Build();
+lambda.MapEventHandler(
+    split: (ImportBatch batch, ILambdaInvocationContext _) => batch.Items,
+    handle: (ImportDocument item, DocumentImporter importer, CancellationToken token) =>
+        importer.ImportAsync(item.Event, token));
+```
 
-- It is not Lambda invocation concurrency. Item concurrency happens inside one invocation; the
-    runtime still runs one invocation per execution environment by default.
-- It is not a retry engine. Unstarted or cancelled items contribute nothing to the response, and the
-    processor never invents results for them.
-- It is not a task queue. The splitter output is materialized before any handler starts, bounded by
-    the event size.
+No `AddEventProcessing` call or processor registration is required. The package supports the same
+.NET target frameworks as core. Its matching core dependency supplies the source generator; the
+optional package does not ship another analyzer.
 
 ## Callback families
 
-`split` always runs first, once, and serial. It returns `IEnumerable<TItem>`.
+The splitter runs once and returns `IEnumerable<TItem>`. The processor materializes it before any
+handler starts. Null enumerable results and enumeration failures fail the invocation.
 
-| Family | Callbacks after `split`               | Response input                   | Error behavior                                |
-| ------ | ------------------------------------- | -------------------------------- | --------------------------------------------- |
-| N1     | `handle`                              | none                             | An unhandled item error fails the invocation. |
-| N2     | `handle`, `createResponse`            | successful source items          | Any item error prevents the response.         |
-| N3     | `handle`, `onError`, `createResponse` | values returned by `onError`     | Successful items contribute nothing.          |
-| R1     | `handle`, `createResponse`            | successful `TResult` values      | Any item error prevents the response.         |
-| R2     | `handle`, `onError`, `createResponse` | one `TResult` per completed item | Mapped errors contribute a result.            |
+| Handler | Error mapper | Successful contribution | Response |
+| --- | --- | --- | --- |
+| `Task` | absent | absent | absent |
+| `Task` | absent | source item | required |
+| `Task` | `TFailure` | absent | required |
+| `Task<TResult>` | absent | result | required |
+| `Task<TResult>` | `TResult` | result | required |
 
-`handle` returns `Task` for N1/N2/N3 and `Task<TResult>` for R1/R2. `onError` is a synchronous value
-mapper, not an observer. Log and rethrow inside `handle` when you only want observation.
+`onError` is synchronous `(item, exception, processing) => value`. It maps errors from service
+resolution and handler execution. A mapper that throws fails the invocation. Without a mapper,
+item errors fail the invocation. Nullable response types may return null for normal core serialization.
+A null returned handler task is an item error eligible for mapping.
+Async mappers, nested awaitable handler results, and awaitable responses receive a generator diagnostic.
+Put asynchronous recovery inside the item handler.
 
-Every family has arities 0 through 10 for parameters after the item, using `TD0` through `TD9`:
+## Complete outcomes
 
-```csharp
-lambda.MapEventHandler<TEvent, TItem, TD0, TD1>(...);   // two extra handler inputs
-```
+Every response callback receives `IReadOnlyList<EventItemOutcome<TItem, TValue>>` plus the invocation
+context. There is one immutable outcome per source position, in source order, regardless of completion
+order. Duplicate items remain separate. Empty input calls the builder once with an empty list.
 
-The count includes framework parameters. The item is always first.
+| Property | Meaning |
+| --- | --- |
+| `Index` | Zero-based source position |
+| `Item` | Original source item, including null where the source type allows it |
+| `Status` | `Succeeded`, `MappedError`, `Skipped`, or `Cancelled` |
+| `HasValue` | A contribution exists, even if its value is null |
+| `Value` | Handler, source-item, or mapped contribution |
+| `Exception` | Original error for `MappedError`, otherwise null |
 
-## Handler parameters
+A handler-returned domain failure still has `Succeeded` status. The framework does not interpret
+application result types. `Skipped` means the item never started; `Cancelled` means processing
+cancellation interrupted admitted work. A successfully completed handler retains its result.
 
-`handle` is resolved with a fresh asynchronous DI scope per item:
-
-- the source item, first;
-- `ILambdaInvocationContext` or `ILambdaContext`;
-- `IEventProcessingContext`;
-- `CancellationToken`, which is the *processing* token;
-- anything else from DI, including `[FromServices]` and `[FromKeyedServices]`.
-
-Each may appear at most once, and at most ten parameters follow the item. Framework parameters
-cannot carry service or event attributes. Scopes are disposed after each item exits, and results
-must remain valid after disposal.
+Applications own acknowledgement and retry. For example, this SQS response includes both mapped
+failures and items that never completed:
 
 ```csharp
 lambda.MapEventHandler(
     split: (SqsEnvelope<Order> batch, ILambdaInvocationContext _) => batch.Records,
-    handle: async Task<OrderResult> (
+    handle: async Task<ImportResult> (
         SqsEnvelope<Order>.SqsMessageEnvelope item,
-        OrderProcessor processor,
-        IEventProcessingContext processing,
-        CancellationToken token) =>
-    {
-        if (item.BodyContent is null)
-            return new Retry(item.MessageId);
-
-        return await processor.ProcessAsync(item.BodyContent, token);
-    },
-    onError: (item, _, _) => new Retry(item.MessageId),
-    createResponse: (results, _) => new SQSBatchResponse(/* ... */));
-```
-
-`split` and `createResponse` keep their explicit `ILambdaInvocationContext` parameter.
-
-## Ordering and contributions
-
-Handlers may finish in any order; contributions stay in source order. `createResponse` receives a
-materialized, repeatably enumerable, read-only collection. Duplicate items stay separate entries.
-An empty event still calls the response builder once, with an empty collection.
-
-Only completed contributions reach the builder:
-
-- N1 never builds a response;
-- N2 supplies items whose handlers succeeded;
-- N3 supplies only `onError` values;
-- R1 and R2 supply one `TResult` per completed item, mapped errors included.
-
-Nullable values are legitimate contributions. Null items are not filtered.
-
-## Concurrency options
-
-Concurrency is on by default with a cap of 10. It is captured when the handler is mapped.
-
-```csharp
-builder.Services.Configure<EventHandlerOptions>(options =>
-{
-    options.MaxConcurrentExecutions = 5;    // default 10
-    options.EnableConcurrency = false;      // force sequential
-});
-```
-
-`MaxConcurrentExecutions` must be positive in both modes. Invalid values fail before any callback
-runs, at application build time. `EnableConcurrency = false` forces sequential execution even when a
-larger cap is configured.
-
-Use sequential processing when order matters, such as FIFO queues or stream shards. For a FIFO
-queue, combine `EnableConcurrency = false` with `StopProcessing()` to keep ordered processing:
-records completed before the stop commit normally while later records are intentionally abandoned.
-
-## Stopping and cancelling
-
-`IEventProcessingContext` is one object per invocation, shared by item handlers and error mappers.
-
-| Call                                       | New work | Active work                                 | Response           |
-| ------------------------------------------ | -------- | ------------------------------------------- | ------------------ |
-| `StopProcessing()`                         | blocked  | finishes with the current token             | may still be built |
-| `CancelProcessing()`                       | blocked  | processing token is signalled, then drained | may still be built |
-| invocation token cancelled during handling | blocked  | processing token is signalled, then drained | suppressed         |
-
-Both calls are thread-safe and idempotent, and stop escalates to cancellation but never reverses.
-Calling either after handling completes does nothing.
-
-```csharp
-handle: async (Item item, IEventProcessingContext processing, CancellationToken token) =>
-{
-    if (item.IsPoisonPill)
-        processing.StopProcessing();
-
-    await handler.ProcessAsync(item, token);
-}
-```
-
-Handlers receive the *processing* token. Read
-`processingContext.Invocation.CancellationToken` when you need the original invocation token.
-Cancellation is cooperative: passing the token downstream is what makes work stop. Successful
-handlers that finish despite cancellation keep their results.
-
-Once handling closes, fan-in and response construction add no new framework cancellation checks.
-An invocation cancellation observed *during* handling still suppresses the response; one that
-arrives later does not invalidate completed work. Completion is not a completeness guarantee: an
-absent item is one the processor never produced a result for, not a claim that it was processed.
-Cancellation requested during response construction is observed past the handling boundary, so the
-completed response is still delivered.
-
-## Response input limitations
-
-The processor does not track which items are "missing". A response builder that needs to report
-unprocessed identities must do that work in application code, for example by recording identities
-inside `onError` or by comparing the response against the original event:
-
-```csharp
-createResponse: (results, context) =>
-    new SQSBatchResponse(
-        context.GetRequiredEvent<SQSEvent>().Records
-            .Select(record => record.MessageId)
-            .Except(results.OfType<Success>().Select(result => result.MessageId))
-            .Select(id => new SQSBatchResponse.BatchItemFailure { ItemIdentifier = id })
-            .ToList())
-```
-
-Treat omission as "no claim", not as "safe to retry". Applications own acknowledgement, idempotency,
-and rollback. Retried messages may already have partial side effects.
-
-## SQS partial batch responses
-
-Return `SQSBatchResponse` with `ReportBatchItemFailures` enabled on the event source mapping.
-Families R2 and N3 fit this shape best: successful messages contribute a success value, mapped
-failures contribute a retry value.
-
-```csharp
-lambda.MapEventHandler(
-    split: (SQSEvent batch, ILambdaInvocationContext _) => batch.Records,
-    handle: async Task<ImportItemResult> (
-        SQSEvent.SQSMessage item, DocumentImporter importer, CancellationToken token) =>
-    {
-        await importer.ImportAsync(item.Body, token);
-        return new Success(item.MessageId);
-    },
-    onError: (item, _, _) => new Retry(item.MessageId),
-    createResponse: (results, _) => new SQSBatchResponse(
-        results.OfType<Retry>()
-            .Select(result => new SQSBatchResponse.BatchItemFailure
+        OrderImporter importer,
+        CancellationToken token) => await importer.ImportAsync(item.BodyContent, token),
+    onError: (item, error, processing) => new Retry(item.MessageId),
+    createResponse: (outcomes, _) => new SQSBatchResponse(
+        outcomes
+            .Where(outcome => outcome.Status != EventItemStatus.Succeeded || outcome.Value is Retry)
+            .Select(outcome => new SQSBatchResponse.BatchItemFailure
             {
-                ItemIdentifier = result.MessageId,
+                ItemIdentifier = outcome.Item.MessageId,
             })
             .ToList()));
 ```
 
-The handler's declared `Task<ImportItemResult>` return type fixes the shared result type. A
-`Task<Success>` handler is not a `Task<ImportItemResult>` handler.
+Configure the SQS event source mapping to report partial batch failures. For FIFO ordering, use
+sequential processing and stop when the application decides later records must wait. Include the
+failed and unstarted records in the response. For stream sources, construct the source-specific
+checkpoint from the complete outcomes. The package never chooses acknowledgements or retries.
 
-## Stream checkpoints (Kinesis and DynamoDB)
+## Binding and scopes
 
-Stream sources report a checkpoint, not individual record identities. Each result carries the
-record's sequence number, and with `ReportBatchItemFailures` the checkpoint you return is the lowest
-failing sequence number. The source resumes from that checkpoint, so already-processed successes
-before it are re-delivered and the application must be idempotent. Kinesis and DynamoDB do not
-support per-record acknowledgement.
+The item is the handler's first argument. Up to ten further parameters bind as follows:
 
-## Choosing the overload
+- `ILambdaInvocationContext` or `ILambdaContext` receives the invocation context.
+- `IEventProcessingContext` receives shared per-invocation processing controls.
+- `CancellationToken` receives the processing token.
+- Other arguments resolve from a fresh asynchronous item scope, including required, nullable,
+  `[FromServices]`, and `[FromKeyedServices]` arguments.
 
-`Task<TResult>` derives from `Task`, so several families can bind the same lambda. Disambiguate
-explicitly:
+A declared optional default applies when the service is missing. A registered zero or empty string
+is retained. Each framework argument may appear once and cannot have service/event attributes.
+The full incoming event type comes from the splitter, not `[FromEvent]` on a handler argument.
 
-- declare the handler return type, `async Task<ImportItemResult> (...) => ...`;
-- pass a typed delegate local when using a method group;
-- pass `onError` only when you want recovery;
-- specify all generic arguments when nothing else works.
+The scope remains alive through argument resolution, execution, and error mapping. Scope creation
+or disposal failure fails the invocation. The processor stops admission and drains admitted handlers,
+cancellation callbacks, and scope cleanup before returning. Return DTOs that remain usable after
+scope disposal.
 
-A method group does not supply dependency parameter types for generic inference. This does not
-compile (the compiler reports a method-group conversion or type-inference failure, `CS1503` or
-`CS0411`):
+Typed delegates supply the parameter types used for binding. Attributes on the underlying handler
+method still apply when its parameters accept broader types.
 
-```csharp
-lambda.MapEventHandler(split, EventHandlers.HandleAsync);   // CS0411
-```
+Method groups cannot infer dependency types for these overloads. Use a typed lambda, a typed delegate
+local, or explicit generic arguments. A `Task<TResult>` handler cannot be passed to a no-result family.
 
-Use a typed lambda, a typed delegate local, or explicit generic arguments:
+## Options and cancellation
 
-```csharp
-Func<ImportDocument, DocumentImporter, Task> handle = EventHandlers.HandleAsync;
-lambda.MapEventHandler(split, handle);
-
-lambda.MapEventHandler<ImportBatch, ImportDocument, DocumentImporter>(split, EventHandlers.HandleAsync);
-```
-
-A result-returning handler bound to a no-result overload is a compile error (`LH0011`), not a silent
-discard.
-
-## One handler per run
-
-`MapEventHandler` consumes the single invocation handler slot, like `MapHandler`. Multiple mapping
-sites are allowed and all compile; the error only happens when execution reaches a second mapping.
-That keeps conditional registration and multi-mode samples working, while a genuinely duplicated
-registration still throws the existing `InvalidOperationException`.
-
-## Diagnostics
-
-| ID       | Meaning                                                                                                                                                |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `LH0008` | Unsupported signature: non-`Task` handler, wrong item type, inaccessible type, `ref`/`out`, stream or awaitable event/response, wrong parameter count. |
-| `LH0009` | Unsupported binding: event attribute on the item, duplicate context/token parameters, service attribute on a framework parameter.                      |
-| `LH0010` | Handler cannot be resolved to one analyzable method, typically a reassigned delegate local.                                                            |
-| `LH0011` | A `Task<T>` handler bound to a no-result overload would discard its result.                                                                            |
-
-## Native AOT
-
-The processor is generated into the consumer assembly with concrete closed signatures, so it is
-trim- and AOT-safe. Add serializer metadata for the event, response, envelope payloads, and any
-result type you serialize yourself:
+Defaults enable concurrency with at most ten active items per invocation. Scope disposal counts
+against that limit. This is item concurrency inside one invocation.
 
 ```csharp
-builder.Services.AddLambdaSerializerWithContext<SerializerContext>();
-builder.Services.ConfigureEnvelopeOptions(options =>
-    options.JsonOptions.TypeInfoResolver = SerializerContext.Default);
-
-[JsonSerializable(typeof(SQSEvent))]
-[JsonSerializable(typeof(SQSBatchResponse))]
-[JsonSerializable(typeof(Order))]
-internal partial class SerializerContext : JsonSerializerContext;
+builder.Services.Configure<EventHandlerOptions>(options =>
+{
+    options.EnableConcurrency = false;
+    options.MaxConcurrentExecutions = 1;
+});
 ```
 
-Intermediate union results only need metadata when they are serialized.
+Options are captured and validated when mapping, after `Build()`. The maximum must be positive even
+when concurrency is disabled. Configuration and options-validation exceptions propagate before any
+callback runs.
 
-## Limits
+`StopProcessing()` stops new admissions and lets admitted items finish. `CancelProcessing()` also
+cancels the processing token. Both allow a response built from complete outcomes. Repeated calls are
+safe. Pass the processing token into cancellable item work.
 
-- The event is materialized into memory; item count is bounded by event size, not by an unbounded
-    task queue.
-- Worker count is bounded by `min(itemCount, effectiveConcurrency)`.
-- Concurrency does not preserve order. Use `EnableConcurrency = false` for FIFO and ordered stream
-    processing.
-- Cancellation is cooperative and never undoes side effects. Poison pills that repeatedly fail will
-    repeatedly re-deliver unless the application records progress.
+Invocation cancellation is separate and fails the invocation. It remains effective through cleanup.
+The processor checks it immediately before response construction and before storing the response, so
+cancellation during a synchronous response builder also suppresses its response. Invocation cancellation
+takes precedence over concurrent item errors. Once the response is stored, core owns serialization.
+
+## Registration and middleware
+
+`MapEventHandler` consumes the same terminal-handler slot as `MapHandler`. A second mapping throws
+before replacing provider properties. Existing custom providers retain precedence.
+
+The generated interceptor creates one `HandleItem(item, itemServices, processing)` wrapper, calls
+`EventHandlerFactory.Create(application.Services, ...)`, registers its terminal through `Handle`,
+and emits normal event/final-response provider setup. Scheduling and error/cancellation state remain
+internal package code. Core middleware, envelope extraction/packing, deserialization, and serialization
+use their existing pipeline. Intermediate result types are not registered as response types.
+
+See the [example project](https://github.com/LayeredCraft/minimal-lambda/tree/main/examples/MinimalLambda.Example.EventProcessor)
+for all five families.

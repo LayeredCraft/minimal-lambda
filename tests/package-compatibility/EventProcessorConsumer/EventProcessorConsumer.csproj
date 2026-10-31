@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <EventPackageVersion Condition="'$(EventPackageVersion)' == ''">$(CorePackageVersion)</EventPackageVersion>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net8.0;net9.0;net10.0;net11.0</TargetFrameworks>
     <LangVersion>preview</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -11,9 +12,7 @@
   <ItemGroup>
     <PackageReference Include="MinimalLambda" Version="$(CorePackageVersion)"
                       Condition="'$(CorePackageVersion)' != ''" />
-    <PackageReference Include="MinimalLambda.DurableExecution" Version="$(DurablePackageVersion)"
-                      Condition="'$(DurablePackageVersion)' != ''" />
-    <PackageReference Include="Amazon.Lambda.DurableExecution" Version="1.0.0" />
+    <PackageReference Include="MinimalLambda.EventProcessing" Version="$(EventPackageVersion)" />
     <PackageReference Include="Amazon.Lambda.SQSEvents" Version="3.0.1" />
   </ItemGroup>
 </Project>

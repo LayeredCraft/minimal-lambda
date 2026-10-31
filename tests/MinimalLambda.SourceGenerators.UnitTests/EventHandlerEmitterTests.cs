@@ -13,6 +13,7 @@ public class EventHandlerEmitterTests
             using System.Collections.Generic;
             using System.Threading.Tasks;
             using MinimalLambda;
+            using MinimalLambda.EventProcessing;
             using MinimalLambda.Builder;
 
             var app = LambdaApplication.CreateBuilder().Build();
@@ -24,24 +25,24 @@ public class EventHandlerEmitterTests
             app.MapEventHandler(
                 split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
                 handle: (Item item) => Task.CompletedTask,
-                createResponse: (IEnumerable<Item> items, ILambdaInvocationContext _) => new Response());
+                createResponse: (IReadOnlyList<EventItemOutcome<Item, Item>> items, ILambdaInvocationContext _) => new Response());
 
             app.MapEventHandler(
                 split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
                 handle: (Item item) => Task.CompletedTask,
                 onError: (Item item, Exception exception, IEventProcessingContext _) => item.Id,
-                createResponse: (IEnumerable<int> failures, ILambdaInvocationContext _) => new Response());
+                createResponse: (IReadOnlyList<EventItemOutcome<Item, int>> failures, ILambdaInvocationContext _) => new Response());
 
             app.MapEventHandler(
                 split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
                 handle: (Item item) => Task.FromResult(item.Id),
-                createResponse: (IEnumerable<int> results, ILambdaInvocationContext _) => new Response());
+                createResponse: (IReadOnlyList<EventItemOutcome<Item, int>> results, ILambdaInvocationContext _) => new Response());
 
             app.MapEventHandler(
                 split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
                 handle: (Item item) => Task.FromResult(item.Id),
                 onError: (Item item, Exception exception, IEventProcessingContext _) => item.Id,
-                createResponse: (IEnumerable<int> results, ILambdaInvocationContext _) => new Response());
+                createResponse: (IReadOnlyList<EventItemOutcome<Item, int>> results, ILambdaInvocationContext _) => new Response());
 
             internal sealed class Batch
             {
@@ -67,6 +68,7 @@ public class EventHandlerEmitterTests
             using Amazon.Lambda.Core;
             using Microsoft.Extensions.DependencyInjection;
             using MinimalLambda;
+            using MinimalLambda.EventProcessing;
             using MinimalLambda.Builder;
 
             var app = LambdaApplication.CreateBuilder().Build();
@@ -88,7 +90,7 @@ public class EventHandlerEmitterTests
                     return item.Id + service.Value + keyed.Value;
                 },
                 onError: (item, _, _) => item.Id,
-                createResponse: (IEnumerable<int> results, ILambdaInvocationContext _) => new Response());
+                createResponse: (IReadOnlyList<EventItemOutcome<Item, int>> results, ILambdaInvocationContext _) => new Response());
 
             internal sealed class Batch
             {
@@ -109,12 +111,83 @@ public class EventHandlerEmitterTests
             """);
 
     [Fact]
+    public Task EmitsTypedDelegateAndExplicitGenericMethodGroupBindings() =>
+        GeneratorTestHelpers.Verify(
+            """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using MinimalLambda;
+            using MinimalLambda.EventProcessing;
+            using MinimalLambda.Builder;
+
+            var app = LambdaApplication.CreateBuilder().Build();
+            Func<Item, Probe, Task<int>> handle = Handle;
+
+            app.MapEventHandler(
+                split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+                handle: handle,
+                createResponse: (IReadOnlyList<EventItemOutcome<Item, int>> results, ILambdaInvocationContext _) => new Response());
+
+            app.MapEventHandler<Batch, Item, int, Response, Probe>(
+                (Batch batch, ILambdaInvocationContext _) => batch.Items,
+                Handle,
+                (IReadOnlyList<EventItemOutcome<Item, int>> results, ILambdaInvocationContext _) => new Response());
+
+            static Task<int> Handle(Item item, Probe probe) => Task.FromResult(probe.Value);
+
+            internal sealed class Batch
+            {
+                public Item[] Items => [];
+            }
+
+            internal sealed class Item;
+
+            internal sealed class Probe
+            {
+                public int Value => 1;
+            }
+
+            internal sealed class Response;
+            """);
+
+    [Fact]
+    public Task EmitsNullableAndOptionalServiceResolution() =>
+        GeneratorTestHelpers.Verify(
+            """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using Microsoft.Extensions.DependencyInjection;
+            using MinimalLambda;
+            using MinimalLambda.EventProcessing;
+            using MinimalLambda.Builder;
+
+            var app = LambdaApplication.CreateBuilder().Build();
+            app.MapEventHandler(
+                split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+                handle: (
+                    Item item,
+                    NullableService? nullableService,
+                    [FromServices] string? optionalService = null) => Task.CompletedTask);
+
+            internal sealed class Batch
+            {
+                public Item[] Items => [];
+            }
+
+            internal sealed class Item;
+
+            internal sealed class NullableService;
+            """);
+
+    [Fact]
     public void CoexistsWithInvocationLifecycleAndMiddlewareGeneratedFiles()
     {
         const string source = """
                               using System.Collections.Generic;
                               using System.Threading.Tasks;
                               using MinimalLambda;
+                              using MinimalLambda.EventProcessing;
                               using MinimalLambda.Builder;
 
                               var app = LambdaApplication.CreateBuilder().Build();
@@ -123,7 +196,7 @@ public class EventHandlerEmitterTests
                               app.MapEventHandler(
                                   split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
                                   handle: (Item item) => Task.CompletedTask,
-                                  createResponse: (IEnumerable<Item> items, ILambdaInvocationContext _) => new Response());
+                                  createResponse: (IReadOnlyList<EventItemOutcome<Item, Item>> items, ILambdaInvocationContext _) => new Response());
 
                               internal sealed class Batch
                               {
@@ -158,6 +231,7 @@ public class EventHandlerEmitterTests
                               using System.Collections.Generic;
                               using System.Threading.Tasks;
                               using MinimalLambda;
+                              using MinimalLambda.EventProcessing;
                               using MinimalLambda.Builder;
 
                               var app = LambdaApplication.CreateBuilder().Build();
@@ -167,7 +241,7 @@ public class EventHandlerEmitterTests
                               app.MapEventHandler(
                                   split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
                                   handle: (Item item) => Task.CompletedTask,
-                                  createResponse: (IEnumerable<Item> items, ILambdaInvocationContext _) => new Response());
+                                  createResponse: (IReadOnlyList<EventItemOutcome<Item, Item>> items, ILambdaInvocationContext _) => new Response());
 
                               internal sealed class Batch
                               {
