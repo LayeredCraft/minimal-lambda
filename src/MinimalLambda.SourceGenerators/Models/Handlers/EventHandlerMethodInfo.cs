@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using LayeredCraft.SourceGeneratorTools.Types;
@@ -462,11 +463,18 @@ internal static class EventHandlerMethodInfoExtensions
                     if (parameter.IsOptional)
                     {
                         var typeName = parameterType.QualifiedNullableName;
-                        var defaultValue =
-                            parameter.HasExplicitDefaultValue
-                            && parameter.ExplicitDefaultValue is not null
-                                ? $"({typeName}){SymbolDisplay.FormatPrimitive(parameter.ExplicitDefaultValue, true, false)}"
-                                : $"default({typeName})!";
+                        var defaultValue = (parameter.HasExplicitDefaultValue
+                                ? parameter.ExplicitDefaultValue
+                                : null) switch
+                            {
+                                decimal value =>
+                                    $"({typeName}){value.ToString(CultureInfo.InvariantCulture)}m",
+                                DateTime value =>
+                                    $"new global::System.DateTime({value.Ticks.ToString(CultureInfo.InvariantCulture)}L)",
+                                { } value =>
+                                    $"({typeName}){SymbolDisplay.FormatPrimitive(value, true, false)}",
+                                _ => $"default({typeName})!",
+                            };
                         var lookup = diResult.Value.Key is { } key
                             ? $"((IKeyedServiceProvider)serviceProvider).GetKeyedService(typeof({(parameterType.IsValueType ? typeName : typeName.TrimEnd('?'))}), {key})"
                             : $"serviceProvider.GetService(typeof({(parameterType.IsValueType ? typeName : typeName.TrimEnd('?'))}))";

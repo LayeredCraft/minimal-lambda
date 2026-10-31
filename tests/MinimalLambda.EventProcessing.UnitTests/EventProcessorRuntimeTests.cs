@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -293,6 +295,42 @@ public sealed class EventProcessorRuntimeTests
         await app.Build()(Context(app, new[] { "item" }));
         actualAmount.Should().Be(register ? 0 : 42);
         actualLabel.Should().Be(register ? "" : "fallback");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task DecimalAndDateTimeDefaultsPreserveExactValues(bool register)
+    {
+        var builder = LambdaApplication.CreateBuilder();
+        if (register)
+        {
+            builder.Services.AddSingleton(typeof(decimal), 0m);
+            builder.Services.AddKeyedSingleton(typeof(DateTime), "timestamp", default(DateTime));
+        }
+
+        await using var app = builder.Build();
+        decimal? actualAmount = null;
+        DateTime? actualTimestamp = null;
+
+        Task Handle(
+            string _,
+            [FromKeyedServices("timestamp"), Optional, DateTimeConstant(637000000000000000L)]
+            DateTime timestamp,
+            decimal amount = 1.2345678901234567890123456789m)
+        {
+            actualAmount = amount;
+            actualTimestamp = timestamp;
+            return Task.CompletedTask;
+        }
+
+        Func<string, DateTime, decimal, Task> handle = Handle;
+        app.MapEventHandler(
+            split: (string[] batch, ILambdaInvocationContext _) => batch,
+            handle: handle);
+        await app.Build()(Context(app, new[] { "item" }));
+        actualAmount.Should().Be(register ? 0m : 1.2345678901234567890123456789m);
+        actualTimestamp.Should().Be(register ? default : new DateTime(637000000000000000L));
     }
 
     private static ILambdaInvocationContext Context<T>(LambdaApplication app, T batch)
