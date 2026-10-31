@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="Autofac.Extensions.DependencyInjection" />
+    <PackageReference Include="Amazon.Lambda.SQSEvents" />
     <PackageReference Include="AutoFixture.Xunit3" />
     <PackageReference Include="JetBrains.Annotations" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
@@ -42,6 +43,8 @@
     <ProjectReference
       Include="..\..\Lambdas\MinimalLambda.Testing.UnitTests.DurableLambda\MinimalLambda.Testing.UnitTests.DurableLambda.csproj"
       Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp' And $([MSBuild]::VersionGreaterThanOrEquals('$(TargetFrameworkVersion)', 'v10.0'))" />
+    <ProjectReference
+      Include="..\..\Lambdas\MinimalLambda.Testing.UnitTests.EventProcessorLambda\MinimalLambda.Testing.UnitTests.EventProcessorLambda.csproj" />
     <ProjectReference
       Include="..\..\Lambdas\MinimalLambda.Testing.UnitTests.NoEventLambda\MinimalLambda.Testing.UnitTests.NoEventLambda.csproj" />
     <ProjectReference

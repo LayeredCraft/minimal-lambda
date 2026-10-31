@@ -57,4 +57,36 @@ internal static class Diagnostics
         UsageCategory,
         DiagnosticSeverity.Error,
         true);
+
+    internal static readonly DiagnosticDescriptor UnsupportedEventHandlerSignature = new(
+        "LH0008",
+        "Unsupported event handler signature",
+        "Event handler signature component '{0}' is not supported; use an item-first asynchronous handler returning Task or Task<TResult>, value parameters, and types accessible to generated adapter code.",
+        UsageCategory,
+        DiagnosticSeverity.Error,
+        true);
+
+    internal static readonly DiagnosticDescriptor UnsupportedEventHandlerBinding = new(
+        "LH0009",
+        "Unsupported event handler binding",
+        "Event handler binding '{0}' is not supported; the first parameter is the source item, and framework context or cancellation-token parameters cannot use service or event attributes.",
+        UsageCategory,
+        DiagnosticSeverity.Error,
+        true);
+
+    internal static readonly DiagnosticDescriptor UnresolvedEventHandler = new(
+        "LH0010",
+        "Unresolved event handler",
+        "The event handler '{0}' cannot be resolved to a single analyzable method; use an explicitly typed lambda, a typed delegate local with one initialization, or an explicit method group.",
+        UsageCategory,
+        DiagnosticSeverity.Error,
+        true);
+
+    internal static readonly DiagnosticDescriptor DiscardedEventHandlerResult = new(
+        "LH0011",
+        "Discarded event handler result",
+        "The event handler '{0}' returns a result but is bound to a no-result overload; use a result overload with a response builder or wrap the handler so it intentionally returns Task.",
+        UsageCategory,
+        DiagnosticSeverity.Error,
+        true);
 }

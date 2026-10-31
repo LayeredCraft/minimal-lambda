@@ -22,7 +22,7 @@ internal static class HandlerSyntaxProvider
 {
     private static readonly string[] TargetMethodNames =
     [
-        "MapHandler", "MapDurableHandler", "OnInit", "OnShutdown"
+        "MapHandler", "MapEventHandler", "MapDurableHandler", "OnInit", "OnShutdown"
     ];
 
     internal static bool Predicate(SyntaxNode node, CancellationToken _) =>
@@ -44,6 +44,9 @@ internal static class HandlerSyntaxProvider
 
         if (!TryGetInvocationOperation(context, out var targetOperation))
             return null;
+
+        if (targetOperation.TargetMethod.Name == "MapEventHandler")
+            return EventHandlerMethodInfo.Create(targetOperation, context);
 
         if (!targetOperation.TryGetHandlerMethod(
             context.SemanticModel,
@@ -72,10 +75,11 @@ internal static class HandlerSyntaxProvider
         if (operation is IInvocationOperation targetOperation
             && targetOperation.TargetMethod.GetDeclaredMethod() is { } declaredMethod
             && IsKnownTarget(declaredMethod)
-            && targetOperation.TryGetRouteHandlerArgument(
-                declaredMethod,
-                context.WellKnownTypes.Get(WellKnownType.System_Delegate),
-                out _))
+            && (declaredMethod.Name == "MapEventHandler"
+                || targetOperation.TryGetRouteHandlerArgument(
+                    declaredMethod,
+                    context.WellKnownTypes.Get(WellKnownType.System_Delegate),
+                    out _)))
         {
             invocationOperation = targetOperation;
             return true;
@@ -181,8 +185,14 @@ internal static class HandlerSyntaxProvider
                     == "MapDurableHandlerLambdaApplicationExtensions"),
             "MapHandler" or "OnInit" or "OnShutdown" => method.ContainingAssembly.Name
                 == "MinimalLambda",
+            "MapEventHandler" => method.ContainingAssembly.Name == "MinimalLambda.EventProcessing"
+                && IsEventMapContainingType(method.ContainingType),
             _ => false,
         });
+
+    private static bool IsEventMapContainingType(INamedTypeSymbol type) =>
+        type.Name == "MapEventHandlerLambdaApplicationExtensions"
+        || type.ContainingType?.Name == "MapEventHandlerLambdaApplicationExtensions";
 
     private static IOperation? ResolveDeclarationOperation(
         ISymbol symbol,

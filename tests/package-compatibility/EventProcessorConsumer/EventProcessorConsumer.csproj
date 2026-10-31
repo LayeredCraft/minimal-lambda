@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <EventPackageVersion Condition="'$(EventPackageVersion)' == ''">$(CorePackageVersion)</EventPackageVersion>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net8.0;net9.0;net10.0;net11.0</TargetFrameworks>
+    <LangVersion>preview</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MinimalLambda" Version="$(CorePackageVersion)"
+                      Condition="'$(CorePackageVersion)' != ''" />
+    <PackageReference Include="MinimalLambda.EventProcessing" Version="$(EventPackageVersion)" />
+    <PackageReference Include="Amazon.Lambda.SQSEvents" Version="3.0.1" />
+  </ItemGroup>
+</Project>
