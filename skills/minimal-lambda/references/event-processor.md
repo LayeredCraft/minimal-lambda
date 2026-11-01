@@ -53,6 +53,9 @@ Scope creation/disposal failures fail invocation. Drain admitted work and cleanu
 Return DTOs that survive scope disposal. First fatal error wins; additional failures are logged.
 Invocation cancellation takes precedence.
 
+Item scopes are separate from the invocation scope. Scoped services resolved by middleware are
+not shared with item handlers. Use injected handler services for per-item state.
+
 Options default to concurrency enabled, maximum 10. Optional Configure<EventHandlerOptions> before
 Build changes them. Mapping after Build captures and validates effective options, including defaults;
 positive maximum required even in sequential mode. Never hide configuration exceptions.
@@ -71,6 +74,14 @@ normal conditional event/final-response provider setup. Duplicate mappings prese
 Keep scheduling, batching, state and response construction in package code. No new core feature APIs,
 processing feature, Bind/Invoke stages, BoundArguments, runtime reflection, or generated algorithms.
 
-Validate real serialization/envelopes/middleware, keyed/optional/framework bindings, ordered outcomes,
-DI mapping, fatal cleanup, cancellation races, packed consumers and Native AOT. See
-`docs/features/event-processor.md` and `designs/event-processing-contracts.md` for full contracts.
+## Serialization
+
+For Native AOT, register a source-generated JSON context for the full event and final response with
+AddLambdaSerializerWithContext. Envelope body types also need metadata and ConfigureEnvelopeOptions
+with the context's resolver. Intermediate item results need metadata only if the final response
+contains them. See `patterns/aot-and-envelopes.md` for setup.
+
+For repo validation, cover serialization/envelopes/middleware, keyed/optional/framework bindings,
+ordered outcomes, DI mapping, fatal cleanup, cancellation races, packed consumers and Native AOT.
+The [event-processing guide](https://layeredcraft.github.io/minimal-lambda/features/event-processor/)
+contains usage examples. Read `repo-workflow.md` for repository commands and source locations.

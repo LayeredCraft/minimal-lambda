@@ -8,17 +8,25 @@ dotnet add package MinimalLambda.EventProcessing
 ```
 
 ```csharp
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using MinimalLambda;
 using MinimalLambda.Builder;
 using MinimalLambda.EventProcessing;
 
+var builder = LambdaApplication.CreateBuilder();
 builder.Services.AddScoped<DocumentImporter>();
 await using var lambda = builder.Build();
 lambda.MapEventHandler(
     split: (ImportBatch batch, ILambdaInvocationContext _) => batch.Items,
     handle: (ImportDocument item, DocumentImporter importer, CancellationToken token) =>
         importer.ImportAsync(item.Event, token));
+
+await lambda.RunAsync();
 ```
+
+This registration uses `ImportBatch`, `ImportDocument`, and `DocumentImporter` from the
+[example project](https://github.com/LayeredCraft/minimal-lambda/tree/main/examples/MinimalLambda.Example.EventProcessor).
 
 No `AddEventProcessing` call or processor registration is required. The package supports the same
 .NET target frameworks as core. Its matching core dependency supplies the source generator; the
@@ -82,15 +90,21 @@ application result types. `Skipped` means the item never started; `Cancelled` me
 cancellation interrupted admitted work. A successfully completed handler retains its result.
 
 Applications own acknowledgement and retry. For example, this SQS response includes both mapped
-failures and items that never completed:
+failures and items that never completed. Add `MinimalLambda.Envelopes.Sqs` and use the example
+project's `MyEvent`, `ImportItemResult`, `Retry`, and `DocumentImporter` types:
 
 ```csharp
+using Amazon.Lambda.SQSEvents;
+using MinimalLambda.Envelopes.Sqs;
+
 lambda.MapEventHandler(
-    split: (SqsEnvelope<Order> batch, ILambdaInvocationContext _) => batch.Records,
-    handle: async Task<ImportResult> (
-        SqsEnvelope<Order>.SqsMessageEnvelope item,
-        OrderImporter importer,
-        CancellationToken token) => await importer.ImportAsync(item.BodyContent, token),
+    split: (SqsEnvelope<MyEvent> batch, ILambdaInvocationContext _) => batch.Records,
+    handle: async Task<ImportItemResult> (
+        SqsEnvelope<MyEvent>.SqsMessageEnvelope item,
+        DocumentImporter importer,
+        CancellationToken token) => item.BodyContent is null
+            ? new Retry(item.MessageId)
+            : await importer.ImportResultAsync(item.BodyContent, token),
     onError: (item, error, processing) => new Retry(item.MessageId),
     createResponse: (outcomes, _) => new SQSBatchResponse(
         outcomes
@@ -125,6 +139,9 @@ The scope remains alive through argument resolution, execution, and error mappin
 or disposal failure fails the invocation. The processor stops admission and drains admitted handlers,
 cancellation callbacks, and scope cleanup before returning. Return DTOs that remain usable after
 scope disposal.
+
+Item scopes are separate from the invocation scope. A scoped service resolved by middleware is
+not the same instance injected into an item handler.
 
 Typed delegates supply the parameter types used for binding. Attributes on the underlying handler
 method still apply when its parameters accept broader types.
@@ -168,6 +185,30 @@ The generated interceptor creates one `HandleItem(item, itemServices, processing
 and emits normal event/final-response provider setup. Scheduling and error/cancellation state remain
 internal package code. Core middleware, envelope extraction/packing, deserialization, and serialization
 use their existing pipeline. Intermediate result types are not registered as response types.
+
+## Serialization and Native AOT
+
+For Native AOT, register a source-generated JSON serializer for the full event and final response.
+With `SqsEnvelope<MyEvent>`, include `SqsEnvelope<MyEvent>`, `MyEvent`, and `SQSBatchResponse` in
+the JSON context, and set `ConfigureEnvelopeOptions` to use that context's resolver for message bodies.
+Item results such as `ImportItemResult` need no serializer metadata unless the final response contains them.
+Register the serializer and envelope resolver before `Build()`:
+
+```csharp
+builder.Services.AddLambdaSerializerWithContext<EventProcessorJsonContext>();
+builder.Services.ConfigureEnvelopeOptions(options =>
+    options.JsonOptions.TypeInfoResolver = EventProcessorJsonContext.Default);
+```
+
+Declare the context after the top-level statements:
+
+```csharp
+[System.Text.Json.Serialization.JsonSerializable(typeof(SqsEnvelope<MyEvent>))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(MyEvent))]
+[System.Text.Json.Serialization.JsonSerializable(typeof(SQSBatchResponse))]
+internal partial class EventProcessorJsonContext
+    : System.Text.Json.Serialization.JsonSerializerContext;
+```
 
 See the [example project](https://github.com/LayeredCraft/minimal-lambda/tree/main/examples/MinimalLambda.Example.EventProcessor)
 for response and no-response examples.

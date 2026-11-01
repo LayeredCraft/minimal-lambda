@@ -3,13 +3,16 @@
 Sample registrations for the optional `MinimalLambda.EventProcessing` package. `MapEventHandler` consumes the single invocation handler slot,
 so this project registers exactly one family per run and selects it with `EVENT_PROCESSOR_SAMPLE`.
 
-| Value          | Family | Shows                                                                 |
-| -------------- | ------ | --------------------------------------------------------------------- |
-| `n1`           | N1     | per-item DI scope and processing token               |
-| `n2`           | N2     | complete source-item outcomes and success counts               |
+| Value          | Family | Shows                                                              |
+| -------------- | ------ | ------------------------------------------------------------------ |
+| `n1`           | N1     | per-item DI scope and processing token                              |
+| `n2`           | N2     | complete source-item outcomes and success counts                    |
 | `n3`           | N3     | `onError` mapping failures and building an SQS partial batch response |
-| `r1`           | R1     | per-item `TResult` contributions through a typed delegate local       |
-| `r2` (default) | R2     | complete outcomes and retries for skipped/cancelled items    |
+| `r1`           | R1     | per-item `TResult` contributions through a typed delegate local      |
+| `r2` (default) | R2     | complete outcomes and retries for skipped/cancelled items            |
+
+The no-response family with a synchronous `onError` action is documented in the
+[event-processing guide](../../docs/features/event-processor.md#callback-families).
 
 ## Program.cs
 
@@ -22,7 +25,7 @@ so this project registers exactly one family per run and selects it with `EVENT_
 
 ## Prerequisites
 
-- .NET SDK 8.0 or later.
+- The .NET SDK selected by the repository's `global.json`, plus the .NET 8 runtime for local execution.
 - AWS credentials configured locally if you plan to deploy.
 - Amazon.Lambda.Tools for command-line deployment.
 
@@ -33,14 +36,23 @@ dotnet restore
 dotnet build
 ```
 
-## Run a sample locally
+## Validate registration locally
+
+Run these commands from this example's directory. The smoke mode validates registration and options,
+then exits without processing an event:
 
 ```bash
-EVENT_PROCESSOR_SAMPLE=r2 dotnet run
+EVENT_PROCESSOR_SMOKE=1 EVENT_PROCESSOR_SAMPLE=r2 dotnet run
 ```
 
+To process events, omit `EVENT_PROCESSOR_SMOKE` and run under AWS Lambda or a local Lambda runtime
+emulator that supplies `AWS_LAMBDA_RUNTIME_API`. A plain `dotnet run` requires that runtime endpoint.
+Use `n2` and `r1` for `ImportBatch` events; the other samples expect SQS events. The sample's JSON
+context includes SQS contracts. Before invoking `n2` or `r1`, add `ImportBatch` and `BatchSummary`
+to `EventProcessorJsonContext`.
+
 Deploying an R2/N3 SQS sample requires `ReportBatchItemFailures` on the event source mapping, and
-the FIFO/SQS limits described in `docs/features/event-processor.md`.
+the [FIFO/SQS guidance](../../docs/features/event-processor.md#complete-outcomes).
 
 Response builders receive `IReadOnlyList<EventItemOutcome<TItem, TValue>>`. Check status and
 HasValue before using contributions. The SQS examples explicitly retry unstarted/cancelled records.

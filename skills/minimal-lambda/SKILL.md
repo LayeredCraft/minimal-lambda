@@ -1,6 +1,6 @@
 ---
 name: minimal-lambda
-description: Work effectively with MinimalLambda, the Lambda-first .NET hosting framework in this repo and in client projects. Use this skill whenever the user asks to build, debug, migrate, test, document, scaffold, template, package, or review code using MinimalLambda APIs, `dotnet new mlambda` templates, envelopes, middleware, lifecycle hooks, source-generated handlers, AOT/trimming, OpenTelemetry, or MinimalLambda.Testing. Trigger even when the user only mentions AWS Lambda with Minimal API-style .NET patterns, MapHandler, FromEvent, LambdaApplication, MinimalLambda package names, MinimalLambda.Templates, Durable Execution, MapDurableHandler, IDurableContext, or adding a Lambda to an existing solution.
+description: Work effectively with MinimalLambda, the Lambda-first .NET hosting framework in this repo and in client projects. Use this skill whenever the user asks to build, debug, migrate, test, document, scaffold, template, package, or review code using MinimalLambda APIs, `dotnet new mlambda` templates, envelopes, middleware, lifecycle hooks, source-generated handlers, AOT/trimming, OpenTelemetry, or MinimalLambda.Testing. Trigger even when the user only mentions AWS Lambda with Minimal API-style .NET patterns, MapHandler, MapEventHandler, FromEvent, LambdaApplication, MinimalLambda package names, MinimalLambda.Templates, Durable Execution, MapDurableHandler, IDurableContext, or adding a Lambda to an existing solution.
 ---
 
 # MinimalLambda skill
@@ -49,7 +49,7 @@ Core pieces:
 - `LambdaApplication.CreateBuilder()` creates standard .NET host/config/DI defaults.
 - `MapHandler(...)` registers one ordinary Lambda handler. Source generator intercepts it at compile time.
 - Optional `MinimalLambda.EventProcessing`: `MapEventHandler(...)` registers one batch processor: split the event, run one scope per item
-  concurrently, then build one response. Read `references/event-processor.md`.
+  concurrently, with an optional final response. Read `references/event-processor.md`.
 - `MapDurableHandler(...)` registers one durable workflow with stricter signature, cancellation, replay, middleware, and serializer rules; read `references/durable-execution.md`.
 - `[FromEvent]` marks deserialized event payload. Ordinary handlers allow at most one; durable handlers allow zero or one. `IDurableContext` is optional for durable handlers.
 - Other handler parameters resolve from DI/context/keyed services/cancellation token.

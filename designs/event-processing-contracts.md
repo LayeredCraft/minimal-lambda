@@ -67,7 +67,7 @@ Each item gets an asynchronous scope, alive through argument resolution, executi
 Scope creation is an invocation failure because no item provider exists. DI resolution, synchronous
 handler throws, asynchronous faults, and null handler tasks reach onError with the original exception.
 Absent or throwing mappers fail the invocation; mapper failures are never recursively mapped.
-Scope disposal always fails the invocation. Drain admitted work and cleanup before propagating errors;
+Scope disposal failures always fail the invocation. Drain admitted work and cleanup before propagating errors;
 preserve the first fatal exception and log additional failures. Invocation cancellation takes precedence.
 Optional nullable services retain null fallback. Declared optional defaults are honored, including keyed
 and value-type defaults; generated resolution distinguishes missing services from default-valued services.
