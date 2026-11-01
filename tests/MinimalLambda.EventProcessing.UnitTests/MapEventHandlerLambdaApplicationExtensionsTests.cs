@@ -20,7 +20,8 @@ public class MapEventHandlerLambdaApplicationExtensionsTests
             .Single(method =>
                 method.Name == "MapEventHandler"
                 && method.IsGenericMethodDefinition
-                && method.GetGenericArguments().Length == 2);
+                && method.GetGenericArguments().Length == 2
+                && method.GetParameters().Length == 3);
         var closed = stub.MakeGenericMethod(typeof(StubBatch), typeof(StubItem));
 
         // Act

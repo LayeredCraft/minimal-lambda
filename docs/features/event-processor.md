@@ -32,13 +32,31 @@ handler starts. Null enumerable results and enumeration failures fail the invoca
 | Handler | Error mapper | Successful contribution | Response |
 | --- | --- | --- | --- |
 | `Task` | absent | absent | absent |
+| `Task` | synchronous action | absent | absent |
 | `Task` | absent | source item | required |
 | `Task` | `TFailure` | absent | required |
 | `Task<TResult>` | absent | result | required |
 | `Task<TResult>` | `TResult` | result | required |
 
-`onError` is synchronous `(item, exception, processing) => value`. It maps errors from service
-resolution and handler execution. A mapper that throws fails the invocation. Without a mapper,
+For handlers without a response, `onError` can be a synchronous action:
+
+```csharp
+lambda.MapEventHandler(
+    split: (ImportBatch batch, ILambdaInvocationContext _) => batch.Items,
+    handle: (ImportDocument item, DocumentImporter importer, CancellationToken token) =>
+        importer.ImportAsync(item.Event, token),
+    onError: (item, exception, processing) =>
+    {
+        // Log or recover. Return normally to handle the error, or throw to fail the invocation.
+    });
+```
+
+The action handles dependency-resolution and handler errors while the item scope remains alive.
+It may call `StopProcessing()` or `CancelProcessing()`. It produces no value or response.
+Async actions, including `async void`, are unsupported; put asynchronous recovery in the handler.
+
+For handlers with a response, `onError` is synchronous `(item, exception, processing) => value`.
+It maps errors from service resolution and handler execution. A mapper that throws fails the invocation. Without a mapper,
 item errors fail the invocation. Nullable response types may return null for normal core serialization.
 A null returned handler task is an item error eligible for mapping.
 Async mappers, nested awaitable handler results, and awaitable responses receive a generator diagnostic.
@@ -152,4 +170,4 @@ internal package code. Core middleware, envelope extraction/packing, deserializa
 use their existing pipeline. Intermediate result types are not registered as response types.
 
 See the [example project](https://github.com/LayeredCraft/minimal-lambda/tree/main/examples/MinimalLambda.Example.EventProcessor)
-for all five families.
+for response and no-response examples.

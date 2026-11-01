@@ -6,6 +6,24 @@ namespace MinimalLambda.SourceGenerators.UnitTests;
 public class EventHandlerEmitterTests
 {
     [Fact]
+    public Task EmitsErrorCallbackWithoutResponse() =>
+        GeneratorTestHelpers.Verify(
+            """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+            using MinimalLambda.EventProcessing;
+
+            var app = LambdaApplication.CreateBuilder().Build();
+            app.MapEventHandler(
+                split: (string[] batch, ILambdaInvocationContext _) => batch,
+                handle: (string item, IEventProcessingContext processing, CancellationToken token) => Task.CompletedTask,
+                onError: (item, error, processing) => { processing.StopProcessing(); });
+            """);
+
+    [Fact]
     public Task EmitsRepresentativeAdapterForEveryFamily() =>
         GeneratorTestHelpers.Verify(
             """

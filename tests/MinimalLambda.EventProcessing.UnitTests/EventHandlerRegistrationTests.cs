@@ -6,6 +6,18 @@ namespace MinimalLambda.EventProcessing.UnitTests;
 public sealed class EventHandlerFactoryTests
 {
     [Fact]
+    public void RejectsNullNoResponseErrorCallback()
+    {
+        using var services = new ServiceCollection().BuildServiceProvider();
+        var create = () => EventHandlerFactory.Create<int[], int>(
+            services,
+            (batch, _) => batch,
+            (_, _, _) => Task.CompletedTask,
+            null!);
+        create.Should().Throw<ArgumentNullException>().WithParameterName("onError");
+    }
+
+    [Fact]
     public async Task DefaultsNeedNoRegistrationAndCallbacksAreLazy()
     {
         await using var app = LambdaApplication.CreateBuilder().Build();

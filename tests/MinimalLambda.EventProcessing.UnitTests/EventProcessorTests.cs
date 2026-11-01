@@ -9,6 +9,165 @@ namespace MinimalLambda.UnitTests.Core.Runtime;
 
 public class EventProcessorTests
 {
+    [Theory]
+    [InlineData("sync")]
+    [InlineData("async")]
+    [InlineData("null-task")]
+    [InlineData("resolution")]
+    public async Task HandlesItemErrorsWithoutResponseAndDisposesScopes(string failure)
+    {
+        // Arrange
+        ScopeProbe.Reset();
+        var builder = LambdaApplication.CreateBuilder();
+        builder.Services.Configure<EventHandlerOptions>(options =>
+            options.EnableConcurrency = false);
+        builder.Services.AddScoped<ScopeProbe>();
+        builder.Services.AddScoped<string>(_ => failure == "resolution"
+            ? throw new InvalidOperationException("resolution failed")
+            : "dependency");
+        await using var app = builder.Build();
+        var handled = new List<int>();
+        var errors = new List<Exception>();
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item item, ScopeProbe probe, string dependency) =>
+            {
+                handled.Add(item.Id);
+                if (item.Id == 2)
+                    return Task.CompletedTask;
+                return failure switch
+                {
+                    "sync" => throw new InvalidOperationException("handler failed"),
+                    "async" => Task.FromException(new InvalidOperationException("handler failed")),
+                    _ => null!,
+                };
+            },
+            onError: (item, error, processing) =>
+            {
+                errors.Add(error);
+                // The current item's scope remains alive during error handling.
+                ScopeProbe.Disposed.Should().Be(item.Id - 1);
+                processing.Invocation.Should().NotBeNull();
+            });
+        var harness = CreateHarness(app, new Batch([new Item(1), new Item(2)]));
+
+        // Act
+        await app.Build()(harness.Context);
+
+        // Assert
+        errors.Should().HaveCount(failure == "resolution" ? 2 : 1);
+        if (failure == "resolution")
+            handled.Should().BeEmpty();
+        else
+            handled.Should().Equal(1, 2);
+        ScopeProbe.Created.Should().Be(2);
+        ScopeProbe.Disposed.Should().Be(2);
+        harness.ResponseFeature.DidNotReceive().SetResponse(Arg.Any<Response>());
+        ((ILambdaInvocationBuilder)app)
+            .Properties
+            .Should()
+            .NotContainKey("__ResponseFeatureProvider");
+    }
+
+    [Fact]
+    public async Task ThrowingNoResponseErrorCallbackFailsInvocationAndDisposesScope()
+    {
+        // Arrange
+        ScopeProbe.Reset();
+        var builder = LambdaApplication.CreateBuilder();
+        builder.Services.AddScoped<ScopeProbe>();
+        await using var app = builder.Build();
+        var original = new InvalidOperationException("recovery failed");
+        var errorCalls = 0;
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item item, ScopeProbe probe) =>
+                Task.FromException(new Exception("item failed")),
+            onError: (item, error, processing) =>
+            {
+                errorCalls++;
+                throw original;
+            });
+        var harness = CreateHarness(app, new Batch([new Item(1)]));
+
+        // Act
+        var act = () => app.Build()(harness.Context);
+
+        // Assert
+        (await act.Should().ThrowAsync<InvalidOperationException>())
+            .Which
+            .Should()
+            .BeSameAs(original);
+        errorCalls.Should().Be(1);
+        ScopeProbe.Disposed.Should().Be(1);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NoResponseErrorCallbackCanStopOrCancelProcessing(bool cancel)
+    {
+        // Arrange
+        var builder = LambdaApplication.CreateBuilder();
+        builder.Services.Configure<EventHandlerOptions>(options =>
+            options.EnableConcurrency = false);
+        await using var app = builder.Build();
+        var started = new List<int>();
+        IEventProcessingContext? captured = null;
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item item) =>
+            {
+                started.Add(item.Id);
+                return Task.FromException(new Exception("item failed"));
+            },
+            onError: (item, error, processing) =>
+            {
+                captured = processing;
+                if (cancel)
+                    processing.CancelProcessing();
+                else
+                    processing.StopProcessing();
+            });
+        var harness = CreateHarness(app, new Batch([new Item(1), new Item(2)]));
+
+        // Act
+        await app.Build()(harness.Context);
+
+        // Assert
+        started.Should().Equal(1);
+        captured.Should().NotBeNull();
+        harness.ResponseFeature.DidNotReceive().SetResponse(Arg.Any<Response>());
+    }
+
+    [Fact]
+    public async Task InvocationCancellationCannotBeSwallowedByNoResponseErrorCallback()
+    {
+        // Arrange
+        using var cancellation = new CancellationTokenSource();
+        await using var app = LambdaApplication.CreateBuilder().Build();
+        var errorCalls = 0;
+        app.MapEventHandler(
+            split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+            handle: (Item item) =>
+            {
+                cancellation.Cancel();
+                return Task.FromException(new Exception("item failed"));
+            },
+            onError: (item, error, processing) =>
+            {
+                errorCalls++;
+            });
+        var harness = CreateHarness(app, new Batch([new Item(1)]), cancellation);
+
+        // Act
+        var act = () => app.Build()(harness.Context);
+
+        // Assert
+        await act.Should().ThrowAsync<OperationCanceledException>();
+        errorCalls.Should().Be(0);
+    }
+
     [Fact]
     public async Task ProcessesEmptyInputAndBuildsResponseOnce()
     {

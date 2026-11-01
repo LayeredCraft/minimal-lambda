@@ -31,11 +31,12 @@ even if cancellation was requested concurrently. Application code owns acknowled
 
 Each mapping takes `Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split` and an
 item-first handler returning `Task` or `Task<TResult>`. Up to ten additional parameters bind
-services or framework values. The five compiler-selected families are:
+services or framework values. The six compiler-selected families are:
 
 | Family | Handler | Mapper | Outcome value |
 | --- | --- | --- | --- |
 | No response | Task | absent | no response callback |
+| No response with errors | Task | synchronous action | no response callback |
 | Source item | Task | absent | source item on success |
 | Failures only | Task | TFailure | value only on mapped errors |
 | Results | Task<TResult> | absent | handler result |
@@ -43,7 +44,9 @@ services or framework values. The five compiler-selected families are:
 
 Response callbacks are synchronous `Func<IReadOnlyList<EventItemOutcome<TItem, TValue>>,
 ILambdaInvocationContext, TResponse>`. Error callbacks are synchronous
-`Func<TItem, Exception, IEventProcessingContext, TValue>`. Awaitable mapper contributions,
+`Func<TItem, Exception, IEventProcessingContext, TValue>` or, without a response,
+`Action<TItem, Exception, IEventProcessingContext>`. The action handles an error by returning normally;
+throwing fails the invocation. Async actions, including async void, are rejected. Awaitable mapper contributions,
 nested handler task results, and awaitable responses are rejected with an actionable generator
 diagnostic. Async error mappers are deliberately unsupported; put async recovery in the handler.
 Required callbacks cannot be null. A null task from a handler is an item error eligible for mapping.
@@ -55,7 +58,7 @@ Example response policies:
 createResponse: (outcomes, _) => outcomes.Where(x => x.Status != EventItemStatus.Succeeded)
     .Select(x => x.Item.Id).ToArray()
 // Failures-only and result families can inspect HasValue before reading Value.
-// The no-response family omits both response and error callbacks.
+// No-response handlers may omit onError or supply a synchronous action.
 ```
 
 ## Binding, errors, and lifetime
@@ -77,7 +80,7 @@ cancellation during construction suppresses storing its response. Once stored, c
 ## Factory and generated output
 
 `EventHandlerFactory.Create` accepts the built `IServiceProvider`, split, the typed wrapper,
-optional mapper, and optional response callback. Its five overloads mirror the families above.
+optional mapper, and optional response callback. Its six overloads mirror the families above.
 Wrappers are `Func<TItem, IServiceProvider, IEventProcessingContext, Task>` or the corresponding
 `Task<TResult>` shape. The factory validates callbacks and effective options at mapping time,
 resolves scope/logging dependencies, and constructs an internal processor once. No required

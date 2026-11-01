@@ -34,6 +34,38 @@ public static class EventHandlerFactory
             null);
     }
 
+    /// <summary>Creates an event terminal with synchronous error handling and no response.</summary>
+    /// <typeparam name="TEvent">The event type.</typeparam>
+    /// <typeparam name="TItem">The item type.</typeparam>
+    /// <param name="services">The mapping services.</param>
+    /// <param name="split">Splits the event into source items.</param>
+    /// <param name="handle">Resolves arguments and processes an item.</param>
+    /// <param name="onError">Handles an item error; throwing fails the invocation.</param>
+    /// <returns>A terminal invocation delegate.</returns>
+    public static LambdaInvocationDelegate Create<TEvent, TItem>(
+        IServiceProvider services,
+        Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
+        Func<TItem, IServiceProvider, IEventProcessingContext, Task> handle,
+        Action<TItem, Exception, IEventProcessingContext> onError)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(split);
+        ArgumentNullException.ThrowIfNull(handle);
+        ArgumentNullException.ThrowIfNull(onError);
+        var runtime = CreateRuntime(services);
+        return context => runtime.RunAsync<TEvent, TItem, object?>(
+            context,
+            split,
+            (item, provider, processing) => handle(item, provider, processing),
+            null,
+            (item, exception, processing) =>
+            {
+                onError(item, exception, processing);
+                return null;
+            },
+            null);
+    }
+
     /// <summary>Creates an event terminal and validates its callbacks and effective options.</summary>
     /// <typeparam name="TEvent">The Event type.</typeparam>
     /// <typeparam name="TItem">The Item type.</typeparam>

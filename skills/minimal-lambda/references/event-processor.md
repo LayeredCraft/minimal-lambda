@@ -18,10 +18,14 @@ processing CancellationToken. Other arguments resolve from the item scope, inclu
 services. Declared optional defaults apply only when a service is missing. Do not use FromEvent to
 select the incoming batch. Use a typed lambda/delegate or explicit generics for method groups.
 
-Five families: no response; Task plus source-item response; Task plus mapped-failure response;
-Task<TResult> plus response; Task<TResult> plus synchronous error mapper and response.
-The error mapper is `(item, exception, processing) => TValue`. Async mapper contributions, nested
-awaitable handler results, and awaitable responses are diagnostic errors.
+Six families: no response; Task plus synchronous error action without a response; Task plus source-item
+response; Task plus mapped-failure response; Task<TResult> plus response; Task<TResult> plus synchronous
+error mapper and response.
+The error mapper is `(item, exception, processing) => TValue`.
+Without a response, use `Action<TItem, Exception, IEventProcessingContext>` instead. Returning normally
+handles the error; throwing fails the invocation. The action can stop or cancel processing and covers
+DI resolution and handler failures within the item scope. Async actions, including async void, are rejected.
+Async mapper contributions, nested awaitable handler results, and awaitable responses are diagnostic errors.
 
 Typed delegates supply binding types. Attributes on the underlying handler method still apply
 when its parameters accept broader types.

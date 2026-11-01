@@ -18,6 +18,7 @@ internal enum EventHandlerFamily
     N1,
     N2,
     N3,
+    N4,
     R1,
     R2,
 }
@@ -121,7 +122,8 @@ internal static class EventHandlerMethodInfoExtensions
                         context.CancellationToken,
                         out _);
             var mapperIsAwaitable =
-                mapperMethod is not null && IsAwaitable(mapperMethod.ReturnType);
+                mapperMethod is not null
+                && (mapperMethod.IsAsync || IsAwaitable(mapperMethod.ReturnType));
             if (mapperIsAwaitable)
                 diagnostics.Add(
                     CreateDiagnostic(
@@ -143,9 +145,10 @@ internal static class EventHandlerMethodInfoExtensions
                 handleReturnsResult,
                 onErrorArgument is not null,
                 createResponseArgument is not null);
-            var hasResponse = family is not EventHandlerFamily.N1;
-            var hasOnError = family is EventHandlerFamily.N3 or EventHandlerFamily.R2;
-            var collectValues = family is not EventHandlerFamily.N1;
+            var hasResponse = family is not (EventHandlerFamily.N1 or EventHandlerFamily.N4);
+            var hasOnError =
+                family is EventHandlerFamily.N3 or EventHandlerFamily.N4 or EventHandlerFamily.R2;
+            var collectValues = family is not (EventHandlerFamily.N1 or EventHandlerFamily.N4);
             var collectsSourceItems = family is EventHandlerFamily.N2;
             var collectsMappedFailures = family is EventHandlerFamily.N3;
 
@@ -233,6 +236,7 @@ internal static class EventHandlerMethodInfoExtensions
             else if (family is EventHandlerFamily.N1
                     or EventHandlerFamily.N2
                     or EventHandlerFamily.N3
+                    or EventHandlerFamily.N4
                 && TryUnwrapTask(handlerMethod.ReturnType, context, out _))
                 diagnostics.Add(
                     CreateDiagnostic(
@@ -251,7 +255,7 @@ internal static class EventHandlerMethodInfoExtensions
 
             var valueType = family switch
             {
-                EventHandlerFamily.N1 => "MinimalLambda.Generated.NoData",
+                EventHandlerFamily.N1 or EventHandlerFamily.N4 => "MinimalLambda.Generated.NoData",
                 EventHandlerFamily.N2 => itemType?.QualifiedNullableName ?? "global::System.Object",
                 _ => collectedType ?? "global::System.Object",
             };
@@ -317,7 +321,7 @@ internal static class EventHandlerMethodInfoExtensions
             return hasOnError ? EventHandlerFamily.R2 : EventHandlerFamily.R1;
 
         if (!hasCreateResponse)
-            return EventHandlerFamily.N1;
+            return hasOnError ? EventHandlerFamily.N4 : EventHandlerFamily.N1;
 
         return hasOnError ? EventHandlerFamily.N3 : EventHandlerFamily.N2;
     }

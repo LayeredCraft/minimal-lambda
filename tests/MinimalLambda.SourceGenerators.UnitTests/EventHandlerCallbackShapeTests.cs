@@ -5,6 +5,52 @@ namespace MinimalLambda.SourceGenerators.UnitTests;
 public sealed class EventHandlerCallbackShapeTests
 {
     [Theory]
+    [InlineData("async (item, error, processing) => { await Task.Yield(); }")]
+    [InlineData("AsyncError")]
+    [InlineData("callback")]
+    public void RejectsAsyncVoidErrorCallbacks(string callback)
+    {
+        var (driver, _) = GeneratorTestHelpers.GenerateFromSource(
+            $$"""
+              using System;
+              using System.Threading.Tasks;
+              using MinimalLambda;
+              using MinimalLambda.Builder;
+              using MinimalLambda.EventProcessing;
+              var app = LambdaApplication.CreateBuilder().Build();
+              Action<string, Exception, IEventProcessingContext> callback = AsyncError;
+              app.MapEventHandler(split: (string[] batch, ILambdaInvocationContext _) => batch,
+                  handle: (string item) => Task.CompletedTask, onError: {{callback}});
+              static async void AsyncError(string item, Exception error, IEventProcessingContext processing)
+              {
+                  await Task.Yield();
+              }
+              """);
+        driver
+            .GetRunResult()
+            .Diagnostics
+            .Should()
+            .Contain(d => d.Id == "LH0008" && d.GetMessage().Contains("synchronous"));
+    }
+
+    [Fact]
+    public void RejectsDiscardedHandlerResultsWithNoResponseErrorCallback()
+    {
+        var (driver, _) = GeneratorTestHelpers.GenerateFromSource(
+            """
+            using System.Threading.Tasks;
+            using MinimalLambda;
+            using MinimalLambda.Builder;
+            using MinimalLambda.EventProcessing;
+            var app = LambdaApplication.CreateBuilder().Build();
+            app.MapEventHandler(split: (string[] batch, ILambdaInvocationContext _) => batch,
+                handle: Handle, onError: (item, error, processing) => { });
+            static Task<int> Handle(string item) => Task.FromResult(1);
+            """);
+        driver.GetRunResult().Diagnostics.Should().Contain(d => d.Id == "LH0011");
+    }
+
+    [Theory]
     [InlineData(
         "(string item) => Task.CompletedTask",
         "async (item, error, processing) => { await Task.Yield(); return 1; }")]

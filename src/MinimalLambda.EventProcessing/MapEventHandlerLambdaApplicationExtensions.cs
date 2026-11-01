@@ -296,6 +296,286 @@ public static class MapEventHandlerLambdaApplicationExtensions
         throw new InvalidOperationException("This method is replaced at compile time.");
     }
 
+    /// <summary>Registers an event-processor handler (N4, 0 additional parameters).</summary>
+    /// <remarks>No response. The synchronous error callback handles item errors; throwing fails the invocation.</remarks>
+    /// <typeparam name="TEvent">The deserialized Lambda event type.</typeparam>
+    /// <typeparam name="TItem">The source item type returned by <paramref name="split" />.</typeparam>
+    /// <param name="application">The builder to register the handler with.</param>
+    /// <param name="split">Splits the event into source items. Called once per invocation.</param>
+    /// <param name="handle">Processes one source item; the item is the first parameter.</param>
+    /// <param name="onError">Handles an item error without producing a value.</param>
+    /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
+    public static ILambdaInvocationBuilder MapEventHandler<TEvent, TItem>(
+        this ILambdaInvocationBuilder application,
+        Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
+        Func<TItem, Task> handle,
+        Action<TItem, Exception, IEventProcessingContext> onError)
+    {
+        Debug.Fail("This method should have been intercepted at compile time!");
+        throw new InvalidOperationException("This method is replaced at compile time.");
+    }
+
+    /// <summary>Registers an event-processor handler (N4, 1 additional parameter).</summary>
+    /// <remarks>No response. The synchronous error callback handles item errors; throwing fails the invocation.</remarks>
+    /// <typeparam name="TEvent">The deserialized Lambda event type.</typeparam>
+    /// <typeparam name="TItem">The source item type returned by <paramref name="split" />.</typeparam>
+    /// <typeparam name="TD0">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <param name="application">The builder to register the handler with.</param>
+    /// <param name="split">Splits the event into source items. Called once per invocation.</param>
+    /// <param name="handle">Processes one source item; the item is the first parameter.</param>
+    /// <param name="onError">Handles an item error without producing a value.</param>
+    /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
+    public static ILambdaInvocationBuilder MapEventHandler<TEvent, TItem, TD0>(
+        this ILambdaInvocationBuilder application,
+        Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
+        Func<TItem, TD0, Task> handle,
+        Action<TItem, Exception, IEventProcessingContext> onError)
+    {
+        Debug.Fail("This method should have been intercepted at compile time!");
+        throw new InvalidOperationException("This method is replaced at compile time.");
+    }
+
+    /// <summary>Registers an event-processor handler (N4, 2 additional parameters).</summary>
+    /// <remarks>No response. The synchronous error callback handles item errors; throwing fails the invocation.</remarks>
+    /// <typeparam name="TEvent">The deserialized Lambda event type.</typeparam>
+    /// <typeparam name="TItem">The source item type returned by <paramref name="split" />.</typeparam>
+    /// <typeparam name="TD0">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD1">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <param name="application">The builder to register the handler with.</param>
+    /// <param name="split">Splits the event into source items. Called once per invocation.</param>
+    /// <param name="handle">Processes one source item; the item is the first parameter.</param>
+    /// <param name="onError">Handles an item error without producing a value.</param>
+    /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
+    public static ILambdaInvocationBuilder MapEventHandler<TEvent, TItem, TD0, TD1>(
+        this ILambdaInvocationBuilder application,
+        Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
+        Func<TItem, TD0, TD1, Task> handle,
+        Action<TItem, Exception, IEventProcessingContext> onError)
+    {
+        Debug.Fail("This method should have been intercepted at compile time!");
+        throw new InvalidOperationException("This method is replaced at compile time.");
+    }
+
+    /// <summary>Registers an event-processor handler (N4, 3 additional parameters).</summary>
+    /// <remarks>No response. The synchronous error callback handles item errors; throwing fails the invocation.</remarks>
+    /// <typeparam name="TEvent">The deserialized Lambda event type.</typeparam>
+    /// <typeparam name="TItem">The source item type returned by <paramref name="split" />.</typeparam>
+    /// <typeparam name="TD0">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD1">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD2">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <param name="application">The builder to register the handler with.</param>
+    /// <param name="split">Splits the event into source items. Called once per invocation.</param>
+    /// <param name="handle">Processes one source item; the item is the first parameter.</param>
+    /// <param name="onError">Handles an item error without producing a value.</param>
+    /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
+    public static ILambdaInvocationBuilder MapEventHandler<TEvent, TItem, TD0, TD1, TD2>(
+        this ILambdaInvocationBuilder application,
+        Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
+        Func<TItem, TD0, TD1, TD2, Task> handle,
+        Action<TItem, Exception, IEventProcessingContext> onError)
+    {
+        Debug.Fail("This method should have been intercepted at compile time!");
+        throw new InvalidOperationException("This method is replaced at compile time.");
+    }
+
+    /// <summary>Registers an event-processor handler (N4, 4 additional parameters).</summary>
+    /// <remarks>No response. The synchronous error callback handles item errors; throwing fails the invocation.</remarks>
+    /// <typeparam name="TEvent">The deserialized Lambda event type.</typeparam>
+    /// <typeparam name="TItem">The source item type returned by <paramref name="split" />.</typeparam>
+    /// <typeparam name="TD0">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD1">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD2">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD3">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <param name="application">The builder to register the handler with.</param>
+    /// <param name="split">Splits the event into source items. Called once per invocation.</param>
+    /// <param name="handle">Processes one source item; the item is the first parameter.</param>
+    /// <param name="onError">Handles an item error without producing a value.</param>
+    /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
+    public static ILambdaInvocationBuilder MapEventHandler<TEvent, TItem, TD0, TD1, TD2, TD3>(
+        this ILambdaInvocationBuilder application,
+        Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
+        Func<TItem, TD0, TD1, TD2, TD3, Task> handle,
+        Action<TItem, Exception, IEventProcessingContext> onError)
+    {
+        Debug.Fail("This method should have been intercepted at compile time!");
+        throw new InvalidOperationException("This method is replaced at compile time.");
+    }
+
+    /// <summary>Registers an event-processor handler (N4, 5 additional parameters).</summary>
+    /// <remarks>No response. The synchronous error callback handles item errors; throwing fails the invocation.</remarks>
+    /// <typeparam name="TEvent">The deserialized Lambda event type.</typeparam>
+    /// <typeparam name="TItem">The source item type returned by <paramref name="split" />.</typeparam>
+    /// <typeparam name="TD0">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD1">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD2">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD3">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD4">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <param name="application">The builder to register the handler with.</param>
+    /// <param name="split">Splits the event into source items. Called once per invocation.</param>
+    /// <param name="handle">Processes one source item; the item is the first parameter.</param>
+    /// <param name="onError">Handles an item error without producing a value.</param>
+    /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
+    public static ILambdaInvocationBuilder MapEventHandler<TEvent, TItem, TD0, TD1, TD2, TD3, TD4>(
+        this ILambdaInvocationBuilder application,
+        Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
+        Func<TItem, TD0, TD1, TD2, TD3, TD4, Task> handle,
+        Action<TItem, Exception, IEventProcessingContext> onError)
+    {
+        Debug.Fail("This method should have been intercepted at compile time!");
+        throw new InvalidOperationException("This method is replaced at compile time.");
+    }
+
+    /// <summary>Registers an event-processor handler (N4, 6 additional parameters).</summary>
+    /// <remarks>No response. The synchronous error callback handles item errors; throwing fails the invocation.</remarks>
+    /// <typeparam name="TEvent">The deserialized Lambda event type.</typeparam>
+    /// <typeparam name="TItem">The source item type returned by <paramref name="split" />.</typeparam>
+    /// <typeparam name="TD0">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD1">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD2">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD3">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD4">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD5">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <param name="application">The builder to register the handler with.</param>
+    /// <param name="split">Splits the event into source items. Called once per invocation.</param>
+    /// <param name="handle">Processes one source item; the item is the first parameter.</param>
+    /// <param name="onError">Handles an item error without producing a value.</param>
+    /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
+    public static ILambdaInvocationBuilder
+        MapEventHandler<TEvent, TItem, TD0, TD1, TD2, TD3, TD4, TD5>(
+            this ILambdaInvocationBuilder application,
+            Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
+            Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, Task> handle,
+            Action<TItem, Exception, IEventProcessingContext> onError)
+    {
+        Debug.Fail("This method should have been intercepted at compile time!");
+        throw new InvalidOperationException("This method is replaced at compile time.");
+    }
+
+    /// <summary>Registers an event-processor handler (N4, 7 additional parameters).</summary>
+    /// <remarks>No response. The synchronous error callback handles item errors; throwing fails the invocation.</remarks>
+    /// <typeparam name="TEvent">The deserialized Lambda event type.</typeparam>
+    /// <typeparam name="TItem">The source item type returned by <paramref name="split" />.</typeparam>
+    /// <typeparam name="TD0">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD1">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD2">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD3">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD4">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD5">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD6">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <param name="application">The builder to register the handler with.</param>
+    /// <param name="split">Splits the event into source items. Called once per invocation.</param>
+    /// <param name="handle">Processes one source item; the item is the first parameter.</param>
+    /// <param name="onError">Handles an item error without producing a value.</param>
+    /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
+    public static ILambdaInvocationBuilder
+        MapEventHandler<TEvent, TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6>(
+            this ILambdaInvocationBuilder application,
+            Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
+            Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, Task> handle,
+            Action<TItem, Exception, IEventProcessingContext> onError)
+    {
+        Debug.Fail("This method should have been intercepted at compile time!");
+        throw new InvalidOperationException("This method is replaced at compile time.");
+    }
+
+    /// <summary>Registers an event-processor handler (N4, 8 additional parameters).</summary>
+    /// <remarks>No response. The synchronous error callback handles item errors; throwing fails the invocation.</remarks>
+    /// <typeparam name="TEvent">The deserialized Lambda event type.</typeparam>
+    /// <typeparam name="TItem">The source item type returned by <paramref name="split" />.</typeparam>
+    /// <typeparam name="TD0">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD1">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD2">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD3">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD4">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD5">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD6">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD7">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <param name="application">The builder to register the handler with.</param>
+    /// <param name="split">Splits the event into source items. Called once per invocation.</param>
+    /// <param name="handle">Processes one source item; the item is the first parameter.</param>
+    /// <param name="onError">Handles an item error without producing a value.</param>
+    /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
+    public static ILambdaInvocationBuilder
+        MapEventHandler<TEvent, TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, TD7>(
+            this ILambdaInvocationBuilder application,
+            Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
+            Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, TD7, Task> handle,
+            Action<TItem, Exception, IEventProcessingContext> onError)
+    {
+        Debug.Fail("This method should have been intercepted at compile time!");
+        throw new InvalidOperationException("This method is replaced at compile time.");
+    }
+
+    /// <summary>Registers an event-processor handler (N4, 9 additional parameters).</summary>
+    /// <remarks>No response. The synchronous error callback handles item errors; throwing fails the invocation.</remarks>
+    /// <typeparam name="TEvent">The deserialized Lambda event type.</typeparam>
+    /// <typeparam name="TItem">The source item type returned by <paramref name="split" />.</typeparam>
+    /// <typeparam name="TD0">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD1">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD2">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD3">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD4">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD5">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD6">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD7">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD8">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <param name="application">The builder to register the handler with.</param>
+    /// <param name="split">Splits the event into source items. Called once per invocation.</param>
+    /// <param name="handle">Processes one source item; the item is the first parameter.</param>
+    /// <param name="onError">Handles an item error without producing a value.</param>
+    /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
+    public static ILambdaInvocationBuilder
+        MapEventHandler<TEvent, TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, TD7, TD8>(
+            this ILambdaInvocationBuilder application,
+            Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
+            Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, TD7, TD8, Task> handle,
+            Action<TItem, Exception, IEventProcessingContext> onError)
+    {
+        Debug.Fail("This method should have been intercepted at compile time!");
+        throw new InvalidOperationException("This method is replaced at compile time.");
+    }
+
+    /// <summary>Registers an event-processor handler (N4, 10 additional parameters).</summary>
+    /// <remarks>No response. The synchronous error callback handles item errors; throwing fails the invocation.</remarks>
+    /// <typeparam name="TEvent">The deserialized Lambda event type.</typeparam>
+    /// <typeparam name="TItem">The source item type returned by <paramref name="split" />.</typeparam>
+    /// <typeparam name="TD0">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD1">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD2">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD3">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD4">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD5">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD6">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD7">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD8">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <typeparam name="TD9">An additional handler input type. Framework context and token types are recognized by type.</typeparam>
+    /// <param name="application">The builder to register the handler with.</param>
+    /// <param name="split">Splits the event into source items. Called once per invocation.</param>
+    /// <param name="handle">Processes one source item; the item is the first parameter.</param>
+    /// <param name="onError">Handles an item error without producing a value.</param>
+    /// <returns>The same <see cref="ILambdaInvocationBuilder" /> instance.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if interception does not occur.</exception>
+    public static ILambdaInvocationBuilder
+        MapEventHandler<TEvent, TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, TD7, TD8, TD9>(
+            this ILambdaInvocationBuilder application,
+            Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>> split,
+            Func<TItem, TD0, TD1, TD2, TD3, TD4, TD5, TD6, TD7, TD8, TD9, Task> handle,
+            Action<TItem, Exception, IEventProcessingContext> onError)
+    {
+        Debug.Fail("This method should have been intercepted at compile time!");
+        throw new InvalidOperationException("This method is replaced at compile time.");
+    }
+
     /// <summary>Registers an event-processor handler (N2, 0 additional parameters).</summary>
     /// <remarks>No result. createResponse receives successfully handled source items.</remarks>
     /// <typeparam name="TEvent">The deserialized Lambda event type.</typeparam>

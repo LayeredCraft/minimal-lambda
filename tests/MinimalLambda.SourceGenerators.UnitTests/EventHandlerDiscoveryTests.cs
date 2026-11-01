@@ -8,7 +8,7 @@ namespace MinimalLambda.SourceGenerators.UnitTests;
 public class EventHandlerDiscoveryTests
 {
     [Fact]
-    public void GeneratesInterceptorsForAllFiftyFiveOverloads()
+    public void GeneratesInterceptorsForAllSixtySixOverloads()
     {
         var source = BuildAllOverloadsSource();
 
@@ -32,7 +32,7 @@ public class EventHandlerDiscoveryTests
                 "MinimalLambda.EventHandlers.g.cs",
                 StringComparison.Ordinal))
             .Subject;
-        CountOccurrences(tree.ToString(), "MapEventHandlerInterceptor").Should().Be(55);
+        CountOccurrences(tree.ToString(), "MapEventHandlerInterceptor").Should().Be(66);
 
         var errors = CompileWithGenerated(compilation, result)
             .GetDiagnostics(TestContext.Current.CancellationToken)
@@ -555,6 +555,13 @@ public class EventHandlerDiscoveryTests
                           app.MapEventHandler(
                               split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
                               handle: (Item item{{parameters}}) => Task.CompletedTask);
+                  """);
+            builder.AppendLine(
+                $$"""
+                          app.MapEventHandler(
+                              split: (Batch batch, ILambdaInvocationContext _) => batch.Items,
+                              handle: (Item item{{parameters}}) => Task.CompletedTask,
+                              onError: (item, exception, processing) => { });
                   """);
             builder.AppendLine(
                 $$"""

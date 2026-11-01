@@ -11,7 +11,9 @@ No AddEventProcessing call is required. Optional Configure<EventHandlerOptions> 
 concurrency. Effective options are validated at mapping time. The matching core dependency supplies
 the source generator; this package does not duplicate the analyzer.
 
-DI and handler failures reach the synchronous error mapper. Scope creation/disposal failures fail the
+DI and handler failures reach the synchronous error callback. Without a response, pass an
+`Action<TItem, Exception, IEventProcessingContext>` to `onError`; returning normally handles the error,
+and throwing fails the invocation. Async error callbacks are unsupported. Scope creation/disposal failures fail the
 invocation. Invocation cancellation remains effective through cleanup. Core handles normal
 serialization, middleware, and envelopes.
 
