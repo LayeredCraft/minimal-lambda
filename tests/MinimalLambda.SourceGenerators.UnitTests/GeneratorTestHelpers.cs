@@ -1,3 +1,4 @@
+using MinimalLambda.EventProcessing;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Amazon.Lambda.Core;
@@ -12,6 +13,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MinimalLambda.Builder;
 
@@ -153,6 +155,7 @@ internal static class GeneratorTestHelpers
             .. Net80.References.All.ToList(),
 #endif
             MetadataReference.CreateFromFile(typeof(LambdaApplication).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(EventHandlerOptions).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(FromKeyedServicesAttribute).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(ILambdaContext).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(IHost).Assembly.Location),
@@ -160,6 +163,7 @@ internal static class GeneratorTestHelpers
             MetadataReference.CreateFromFile(typeof(DefaultLambdaJsonSerializer).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(LambdaBootstrapBuilder).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(IOptions<>).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(ILogger<>).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(ILambdaInvocationContext).Assembly.Location),
         ];
 

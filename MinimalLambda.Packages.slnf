@@ -16,7 +16,8 @@
       "src/MinimalLambda.OpenTelemetry/MinimalLambda.OpenTelemetry.csproj",
       "src/MinimalLambda.Templates/MinimalLambda.Templates.csproj",
       "src/MinimalLambda.Testing/MinimalLambda.Testing.csproj",
-      "src/MinimalLambda/MinimalLambda.csproj"
+      "src/MinimalLambda/MinimalLambda.csproj",
+      "src/MinimalLambda.EventProcessing/MinimalLambda.EventProcessing.csproj"
     ]
   }
 }

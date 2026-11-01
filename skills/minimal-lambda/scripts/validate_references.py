@@ -20,6 +20,7 @@ REQUIRED_FILES = [
     SKILL / "references" / "best-practices.md",
     SKILL / "references" / "client-project-setup.md",
     SKILL / "references" / "envelopes.md",
+    SKILL / "references" / "event-processor.md",
     SKILL / "references" / "testing.md",
     SKILL / "references" / "opentelemetry.md",
     SKILL / "references" / "troubleshooting.md",
@@ -35,6 +36,10 @@ REQUIRED_FILES = [
 SYMBOL_CHECKS = {
     "LambdaApplication": "src/MinimalLambda/Builder/LambdaApplication.cs",
     "MapHandler": "src/MinimalLambda/Builder/InterceptionTargets/MapHandlerLambdaApplicationExtensions.cs",
+    "MapEventHandler": "src/MinimalLambda.EventProcessing/MapEventHandlerLambdaApplicationExtensions.cs",
+    "IEventProcessingContext": "src/MinimalLambda.EventProcessing/IEventProcessingContext.cs",
+    "EventHandlerOptions": "src/MinimalLambda.EventProcessing/EventHandlerOptions.cs",
+    "EventItemOutcome": "src/MinimalLambda.EventProcessing/EventItemOutcome.cs",
     "FromEventAttribute": "src/MinimalLambda.Abstractions/Attributes/FromEventAttribute.cs",
     "AddLambdaSerializerWithContext": "src/MinimalLambda/Builder/Extensions/SerializerServiceCollectionExtensions.cs",
     "ConfigureEnvelopeOptions": "src/MinimalLambda/Builder/Extensions/ConfigurationServiceCollectionExtensions.cs",

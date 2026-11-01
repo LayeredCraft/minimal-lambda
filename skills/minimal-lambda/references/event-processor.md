@@ -1,0 +1,87 @@
+# Event processing
+
+Use for MapEventHandler, per-item DI, batch responses, processing controls, and EventHandlerOptions.
+
+Install `MinimalLambda.EventProcessing`. Import `MinimalLambda.EventProcessing` for context, options,
+factory, and outcomes; mapping extensions remain in `MinimalLambda.Builder`. Core alone has no event
+processing APIs or registration. No AddEventProcessing call or processor DI registration is required.
+The matching core package supplies the generator. Do not add a second analyzer.
+
+## Mapping
+
+The splitter is `Func<TEvent, ILambdaInvocationContext, IEnumerable<TItem>>`, called once. Its output
+is materialized before handling. The splitter selects the full event type. Null output fails invocation.
+The handler is item-first, returning Task or Task<TResult>, with up to ten further parameters.
+
+Framework bindings are ILambdaInvocationContext/ILambdaContext, IEventProcessingContext, and the
+processing CancellationToken. Other arguments resolve from the item scope, including keyed/nullable
+services. Declared optional defaults apply only when a service is missing. Do not use FromEvent to
+select the incoming batch. Use a typed lambda/delegate or explicit generics for method groups.
+
+Six families: no response; Task plus synchronous error action without a response; Task plus source-item
+response; Task plus mapped-failure response; Task<TResult> plus response; Task<TResult> plus synchronous
+error mapper and response.
+The error mapper is `(item, exception, processing) => TValue`.
+Without a response, use `Action<TItem, Exception, IEventProcessingContext>` instead. Returning normally
+handles the error; throwing fails the invocation. The action can stop or cancel processing and covers
+DI resolution and handler failures within the item scope. Async actions, including async void, are rejected.
+Async mapper contributions, nested awaitable handler results, and awaitable responses are diagnostic errors.
+
+Typed delegates supply binding types. Attributes on the underlying handler method still apply
+when its parameters accept broader types.
+
+## Complete outcomes
+
+Response callback: `(IReadOnlyList<EventItemOutcome<TItem, TValue>>, ILambdaInvocationContext) => TResponse`.
+Every source position appears once in order, including duplicates and nullable items. Outcomes expose
+Index, Item, Status, HasValue, Value, Exception. HasValue distinguishes a null value from no contribution.
+Statuses are Succeeded, MappedError, Skipped, Cancelled. Handler domain results are not interpreted.
+A mapped error retains the original exception. Empty batches build one response with an empty list.
+
+Applications own acknowledgement/retry decisions. For SQS, include mapped/domain failures and
+skipped/cancelled items as appropriate, using original Item.MessageId. Configure partial batch failure
+reporting. For FIFO use sequential handling and StopProcessing when later records must wait; include
+unstarted records in the retry response. For stream checkpoints inspect complete outcomes and choose
+the checkpoint in application code. Never compact outcomes into values before deciding retries.
+
+## Runtime policies
+
+Fresh async scope per admitted item, alive through DI, handling, mapper, and awaited cleanup. DI
+resolution/constructor failures and sync/async handler failures reach onError. Null handler tasks are
+item errors. Missing/throwing mapper fails invocation; never recursively map mapper failures.
+Scope creation/disposal failures fail invocation. Drain admitted work and cleanup before returning.
+Return DTOs that survive scope disposal. First fatal error wins; additional failures are logged.
+Invocation cancellation takes precedence.
+
+Item scopes are separate from the invocation scope. Scoped services resolved by middleware are
+not shared with item handlers. Use injected handler services for per-item state.
+
+Options default to concurrency enabled, maximum 10. Optional Configure<EventHandlerOptions> before
+Build changes them. Mapping after Build captures and validates effective options, including defaults;
+positive maximum required even in sequential mode. Never hide configuration exceptions.
+
+StopProcessing stops admission; CancelProcessing also cancels admitted work through the processing
+token. Both can yield partial responses with complete outcomes. Invocation cancellation fails the
+invocation through cleanup and suppresses response construction/storage. Cleanup counts toward the
+concurrency cap. Repeated controls and reentrant cancellation callbacks must drain safely.
+
+## Generated boundary
+
+One HandleItem(item, itemServices, processing) wrapper, called and awaited inside item error handling.
+Public EventHandlerFactory.Create accepts built IServiceProvider and typed callbacks, constructs the
+internal processor once, returns LambdaInvocationDelegate. Interceptor calls application.Handle before
+normal conditional event/final-response provider setup. Duplicate mappings preserve prior providers.
+Keep scheduling, batching, state and response construction in package code. No new core feature APIs,
+processing feature, Bind/Invoke stages, BoundArguments, runtime reflection, or generated algorithms.
+
+## Serialization
+
+For Native AOT, register a source-generated JSON context for the full event and final response with
+AddLambdaSerializerWithContext. Envelope body types also need metadata and ConfigureEnvelopeOptions
+with the context's resolver. Intermediate item results need metadata only if the final response
+contains them. See `patterns/aot-and-envelopes.md` for setup.
+
+For repo validation, cover serialization/envelopes/middleware, keyed/optional/framework bindings,
+ordered outcomes, DI mapping, fatal cleanup, cancellation races, packed consumers and Native AOT.
+The [event-processing guide](https://layeredcraft.github.io/minimal-lambda/features/event-processor/)
+contains usage examples. Read `repo-workflow.md` for repository commands and source locations.

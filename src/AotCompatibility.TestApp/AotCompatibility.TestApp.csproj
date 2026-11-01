@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
@@ -10,13 +10,20 @@
     <SelfContained>true</SelfContained>
     <WarningsAsErrors>IL2026;IL2087;IL2091;IL3050;IL3051</WarningsAsErrors>
     <IsPackable>false</IsPackable>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);MinimalLambda.Generated</InterceptorsNamespaces>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference
+      Include="..\MinimalLambda.SourceGenerators\MinimalLambda.SourceGenerators.csproj"
+      ReferenceOutputAssembly="false"
+      OutputItemType="Analyzer" />
+  </ItemGroup>
   <ItemGroup>
     <AotRootProject
       Include="MinimalLambda.Envelopes.Alb;MinimalLambda.Envelopes.ApiGateway;MinimalLambda.Envelopes.CloudWatchLogs;MinimalLambda.Envelopes.Kafka;MinimalLambda.Envelopes.KinesisFirehose;MinimalLambda.Envelopes.Kinesis;MinimalLambda.Envelopes.Sns;MinimalLambda.Envelopes.Sqs;MinimalLambda.Envelopes"
       ProjectPath="$(MSBuildThisFileDirectory)..\..\src\Envelopes\%(Identity)\%(Identity).csproj" />
     <AotRootProject
-      Include="MinimalLambda.Abstractions;MinimalLambda.OpenTelemetry;MinimalLambda;MinimalLambda.DurableExecution"
+      Include="MinimalLambda.Abstractions;MinimalLambda.OpenTelemetry;MinimalLambda;MinimalLambda.DurableExecution;MinimalLambda.EventProcessing"
       ProjectPath="$(MSBuildThisFileDirectory)..\..\src\%(Identity)\%(Identity).csproj" />
 
     <ProjectReference Include="@(AotRootProject->'%(ProjectPath)')" />

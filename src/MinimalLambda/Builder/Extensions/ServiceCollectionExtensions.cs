@@ -39,6 +39,7 @@ public static class ServiceCollectionExtensions
             services.AddHostedService<LambdaHostedService>();
 
             // Register options related services
+            services.AddOptions();
             services.AddSingleton<IPostConfigureOptions<HostOptions>,
                 HostOptionsPostConfiguration>();
             services.AddSingleton<IPostConfigureOptions<EnvelopeOptions>,

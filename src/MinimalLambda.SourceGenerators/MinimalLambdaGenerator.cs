@@ -54,6 +54,12 @@ public class MinimalLambdaGenerator : IIncrementalGenerator
             .Where(static c => c is DurableMethodInfo)
             .Select(static (c, _) => (DurableMethodInfo)c);
 
+        var eventHandlerCalls = registrationCalls
+            .WhereNoErrors()
+            .Where(static c => c is EventHandlerMethodInfo)
+            .Select(static (c, _) => (EventHandlerMethodInfo)c)
+            .Collect();
+
         var validDurableHandlerCalls = durableHandlerModels.WhereNoErrors().Collect();
 
         var onInitHandlerCalls = registrationCalls
@@ -84,6 +90,7 @@ public class MinimalLambdaGenerator : IIncrementalGenerator
             (ctx, call) => call.DiagnosticInfos.ForEach(d => d.ReportDiagnostic(ctx)));
 
         context.RegisterSourceOutput(invocationHandlerCalls, InvocationHandlerEmitter.Emit);
+        context.RegisterSourceOutput(eventHandlerCalls, EventHandlerEmitter.Emit);
         context.RegisterSourceOutput(validDurableHandlerCalls, DurableHandlerEmitter.Emit);
         context.RegisterSourceOutput(onInitHandlerCalls, LifecycleHandlerEmitter.Emit);
         context.RegisterSourceOutput(onShutdownHandlerCalls, LifecycleHandlerEmitter.Emit);

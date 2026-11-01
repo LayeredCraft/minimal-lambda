@@ -45,18 +45,20 @@ public class ServiceCollectionExtensionsTests
         act.Should().NotThrow();
     }
 
-    [Theory]
-    [InlineData(14)]
-    public void AddLambdaHostCoreServices_RegistersExactlyNServices(int servicesCount)
+    [Fact]
+    public void AddLambdaHostCoreServices_RegistersExactlyNineteenCoreServices()
     {
-        // Arrange
         var serviceCollection = new ServiceCollection();
-
-        // Act
         serviceCollection.AddLambdaHostCoreServices();
+        serviceCollection.Should().HaveCount(19);
+    }
 
-        // Assert
-        serviceCollection.Should().HaveCount(servicesCount);
+    [Fact]
+    public void AddLambdaHostCoreServices_PreservesCoreOptionsWithoutEventProcessing()
+    {
+        using var services =
+            new ServiceCollection().AddLambdaHostCoreServices().BuildServiceProvider();
+        services.GetRequiredService<IOptions<EnvelopeOptions>>().Value.Should().NotBeNull();
     }
 
     [Fact]

@@ -67,6 +67,9 @@ When exact type/member names matter, inspect target package README/source if ava
 projects/global installs where source is unavailable, rely on bundled references plus installed
 package docs/IntelliSense. Names vary by trigger.
 
+For batch processing of envelope records (per-item DI, partial batch responses, graceful stop), use
+`MapEventHandler` with the envelope as `TEvent`; see `event-processor.md`.
+
 ## AOT / serialization guidance
 
 - Prefer explicit records/classes with predictable JSON contracts.

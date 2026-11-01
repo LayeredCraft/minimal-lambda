@@ -14,5 +14,6 @@
     <PackageReference Include="MinimalLambda.DurableExecution" Version="$(DurablePackageVersion)"
                       Condition="'$(DurablePackageVersion)' != ''" />
     <PackageReference Include="Amazon.Lambda.DurableExecution" Version="1.0.0" />
+      <PackageReference Include="MinimalLambda.EventProcessing" Version="$(CorePackageVersion)" />
   </ItemGroup>
 </Project>

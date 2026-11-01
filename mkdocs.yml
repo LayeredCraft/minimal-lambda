@@ -119,6 +119,7 @@ nav:
       - examples/index.md
   - Features:
       - features/index.md
+      - Event Processor: features/event-processor.md
       - Envelopes: features/envelopes.md
       - Durable Execution: features/durable-execution.md
       - OpenTelemetry: features/open_telemetry.md

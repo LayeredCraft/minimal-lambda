@@ -56,4 +56,5 @@
     <PackageReference Include="System.Security.Cryptography.Pkcs" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+<ItemGroup><ProjectReference Include="../../src/MinimalLambda.EventProcessing/MinimalLambda.EventProcessing.csproj" /></ItemGroup>
 </Project>

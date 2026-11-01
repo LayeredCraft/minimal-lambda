@@ -49,10 +49,11 @@ assert_warning_free() {
 assert_generated_once() {
   local project_dir=$1
   local target=$2
+  local generated=${3:-MinimalLambda.DurableHandlers.g.cs}
   local count
   [ -d "$project_dir/obj/generated/$target" ] || fail "generated output missing for $(basename "$project_dir")/$target"
-  count=$(find "$project_dir/obj/generated/$target" -type f -name 'MinimalLambda.DurableHandlers.g.cs' | wc -l | tr -d ' ')
-  [ "$count" = "1" ] || fail "expected one durable generated file for $(basename "$project_dir")/$target, found $count"
+  count=$(find "$project_dir/obj/generated/$target" -type f -name "$generated" | wc -l | tr -d ' ')
+  [ "$count" = "1" ] || fail "expected one $generated for $(basename "$project_dir")/$target, found $count"
 }
 
 pack() {
@@ -95,6 +96,7 @@ restore_consumer() {
 build_consumer() {
   local name=$1
   local project=$2
+  local generated=${3:-MinimalLambda.DurableHandlers.g.cs}
   local project_dir
   project_dir=$(dirname "$project")
   run_logged "build-$name-net10.0" dotnet build "$project" \
@@ -107,7 +109,7 @@ build_consumer() {
     "/p:EmitCompilerGeneratedFiles=true" \
     "/p:CompilerGeneratedFilesOutputPath=$project_dir/obj/generated/net10.0"
   assert_warning_free "$LOGS/build-$name-net10.0.log"
-  assert_generated_once "$project_dir" net10.0
+  assert_generated_once "$project_dir" net10.0 "$generated"
 }
 
 case "${PACKAGE_COMPAT_RID:-}" in
@@ -139,6 +141,7 @@ pack core-old "$ROOT/src/MinimalLambda/MinimalLambda.csproj" "$OLD_CORE_VERSION"
 pack abstractions-compatible "$ROOT/src/MinimalLambda.Abstractions/MinimalLambda.Abstractions.csproj" "$CORE_VERSION"
 pack core-compatible "$ROOT/src/MinimalLambda/MinimalLambda.csproj" "$CORE_VERSION"
 pack durable "$ROOT/src/MinimalLambda.DurableExecution/MinimalLambda.DurableExecution.csproj" "$DURABLE_VERSION"
+pack event "$ROOT/src/MinimalLambda.EventProcessing/MinimalLambda.EventProcessing.csproj" "$CORE_VERSION"
 
 python3 - "$FEED" "$OLD_CORE_VERSION" "$CORE_VERSION" "$DURABLE_VERSION" <<'PY'
 import sys
@@ -153,6 +156,7 @@ expected = {
     f"MinimalLambda.{old}.nupkg": ("MinimalLambda", old, "core"),
     f"MinimalLambda.Abstractions.{core}.nupkg": ("MinimalLambda.Abstractions", core, "abstractions"),
     f"MinimalLambda.{core}.nupkg": ("MinimalLambda", core, "core"),
+    f"MinimalLambda.EventProcessing.{core}.nupkg": ("MinimalLambda.EventProcessing", core, "event"),
     f"MinimalLambda.DurableExecution.{durable}.nupkg": ("MinimalLambda.DurableExecution", durable, "durable"),
 }
 actual = {path.name for path in feed.glob("*.nupkg") if not path.name.endswith(".snupkg")}
@@ -211,7 +215,7 @@ for filename, (package_id, version, kind) in expected.items():
                 f"{generator_assets}/{build_assets}"
             )
 
-        if kind in {"core", "abstractions"}:
+        if kind in {"core", "abstractions", "event"}:
             assert_libs(names, package_id, ("net8.0", "net9.0", "net10.0", "net11.0"))
         else:
             assert_libs(names, package_id, ("net10.0",))
@@ -245,6 +249,15 @@ for filename, (package_id, version, kind) in expected.items():
                     raise AssertionError(f"durable AWS dependency version mismatch: {aws.attrib}")
                 if aws.attrib.get("exclude") != "Build,Analyzers":
                     raise AssertionError(f"durable AWS dependency exclusion mismatch: {aws.attrib}")
+        elif kind == "event":
+            if {group.attrib.get("targetFramework") for group in dependency_groups} != {"net8.0", "net9.0", "net10.0", "net11.0"}:
+                raise AssertionError("event dependency TFMs mismatch")
+            for group in dependency_groups:
+                dependencies = children(group, "dependency")
+                if len(dependencies) != 1 or dependencies[0].attrib.get("id") != "MinimalLambda" or dependencies[0].attrib.get("version") != core:
+                    raise AssertionError("event minimum core dependency mismatch")
+                if dependencies[0].attrib.get("exclude"):
+                    raise AssertionError("event must propagate core analyzer assets to optional-only consumers")
         elif kind == "core":
             if {group.attrib.get("targetFramework") for group in dependency_groups} != {
                 "net8.0", "net9.0", "net10.0", "net11.0"
@@ -278,8 +291,8 @@ from xml.etree import ElementTree as ET
 
 root = Path(sys.argv[1])
 projects = sorted(root.glob("*/*.csproj"))
-if len(projects) != 5:
-    raise SystemExit(f"expected five copied consumer projects, found {len(projects)}")
+if len(projects) != 7:
+    raise SystemExit(f"expected seven copied consumer projects, found {len(projects)}")
 for project in projects:
     tree = ET.parse(project)
     references = [
@@ -287,9 +300,16 @@ for project in projects:
         for element in tree.iter()
         if element.tag.rsplit("}", 1)[-1] == "PackageReference"
     ]
-    expected = ["MinimalLambda", "MinimalLambda.DurableExecution"]
-    if project.parent.name != "TaskConsumer":
-        expected.append("Amazon.Lambda.DurableExecution")
+    if project.parent.name == "CoreOnlyConsumer":
+        expected = ["MinimalLambda"]
+    elif project.parent.name == "EventProcessorConsumer":
+        expected = ["MinimalLambda", "MinimalLambda.EventProcessing", "Amazon.Lambda.SQSEvents"]
+    else:
+        expected = ["MinimalLambda", "MinimalLambda.DurableExecution"]
+        if project.parent.name != "TaskConsumer":
+            expected.append("Amazon.Lambda.DurableExecution")
+        if project.parent.name == "TypedConsumer":
+            expected.append("MinimalLambda.EventProcessing")
     if references != expected:
         raise SystemExit(f"{project}: unexpected package references {references}")
 print("Copied consumers contain package references only.")
@@ -322,17 +342,22 @@ PY
 
 TYPED="$CONSUMERS/TypedConsumer/TypedConsumer.csproj"
 TASK="$CONSUMERS/TaskConsumer/TaskConsumer.csproj"
+EVENT="$CONSUMERS/EventProcessorConsumer/EventProcessorConsumer.csproj"
+CORE_ONLY="$CONSUMERS/CoreOnlyConsumer/CoreOnlyConsumer.csproj"
 OLD="$CONSUMERS/OldCoreConsumer/OldCoreConsumer.csproj"
 AOT="$CONSUMERS/AotConsumer/AotConsumer.csproj"
 INVALID="$CONSUMERS/InvalidSignatureConsumer/InvalidSignatureConsumer.csproj"
 
 restore_consumer typed "$TYPED" "$CORE_VERSION"
 restore_consumer task "$TASK" "$CORE_VERSION"
+restore_consumer event-processor "$EVENT" "$CORE_VERSION"
+restore_consumer core-only "$CORE_ONLY" "$CORE_VERSION"
 restore_consumer invalid-signature "$INVALID" "$CORE_VERSION"
 
 python3 - "$NUGET_PACKAGES" "$CORE_VERSION" "$DURABLE_VERSION" \
   "$CONSUMERS/TypedConsumer/obj/project.assets.json" \
-  "$CONSUMERS/TaskConsumer/obj/project.assets.json" <<'PY'
+  "$CONSUMERS/TaskConsumer/obj/project.assets.json" \
+  "$CONSUMERS/EventProcessorConsumer/obj/project.assets.json" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -345,16 +370,65 @@ for filename in sys.argv[4:]:
     package_folders = {str(Path(folder.rstrip("/\\")).resolve()) for folder in data["packageFolders"]}
     if package_folders != {str(packages)}:
         raise SystemExit(f"{path}: package cache is not isolated: {package_folders}")
-    expected = {f"MinimalLambda/{core}", f"MinimalLambda.DurableExecution/{durable}"}
+    expected = {f"MinimalLambda/{core}", f"MinimalLambda.EventProcessing/{core}"} if path.parts[-3] == "EventProcessorConsumer" else {f"MinimalLambda/{core}", f"MinimalLambda.DurableExecution/{durable}"}
     targets = [value for name, value in data["targets"].items() if name == "net10.0"]
     if not targets or not any(expected <= set(target) for target in targets):
         raise SystemExit(f"{path}: wrong MinimalLambda versions for net10.0")
 print("Positive consumers resolved exact synthetic versions from isolated cache.")
 PY
 
-rm -rf "$CONSUMERS/TypedConsumer/obj/generated" "$CONSUMERS/TaskConsumer/obj/generated"
+rm -rf "$CONSUMERS/TypedConsumer/obj/generated" "$CONSUMERS/TaskConsumer/obj/generated" "$CONSUMERS/EventProcessorConsumer/obj/generated"
 build_consumer typed "$TYPED"
 build_consumer task "$TASK"
+build_consumer event-processor "$EVENT" MinimalLambda.EventHandlers.g.cs
+assert_generated_once "$CONSUMERS/TypedConsumer" net10.0 MinimalLambda.EventHandlers.g.cs
+build_consumer core-only "$CORE_ONLY" MinimalLambda.InvocationHandlers.g.cs
+python3 - "$CONSUMERS/CoreOnlyConsumer/obj/project.assets.json" <<'PYCORE'
+import json, sys
+assets = json.load(open(sys.argv[1]))
+assert not any(name.startswith("MinimalLambda.EventProcessing/") for name in assets["libraries"])
+PYCORE
+set +e
+dotnet build "$CORE_ONLY" -c Release --no-restore /p:CorePackageVersion="$CORE_VERSION" /p:DefineConstants=EXPECT_EVENT_API >"$LOGS/core-only-negative.log" 2>&1
+core_only_status=$?
+set -e
+[ "$core_only_status" -ne 0 ] || fail "core-only exposed event APIs"
+grep -q 'CS0234' "$LOGS/core-only-negative.log" || fail "core-only negative failed unexpectedly"
+for tfm in net8.0 net9.0 net11.0; do
+  run_logged "build-event-$tfm" dotnet build "$EVENT" -c Release -f "$tfm" --no-restore /p:CorePackageVersion="$CORE_VERSION"
+  assert_warning_free "$LOGS/build-event-$tfm.log"
+done
+run_logged run-event dotnet "$CONSUMERS/EventProcessorConsumer/bin/Release/net10.0/EventProcessorConsumer.dll"
+# A package-only opt-in must also receive the core-delivered analyzer transitively.
+cp -R "$CONSUMERS/EventProcessorConsumer" "$CONSUMERS/OptionalOnlyConsumer"
+rm -rf "$CONSUMERS/OptionalOnlyConsumer/bin" "$CONSUMERS/OptionalOnlyConsumer/obj"
+python3 - "$CONSUMERS/OptionalOnlyConsumer/EventProcessorConsumer.csproj" <<'PYOPTIONAL'
+import sys
+from pathlib import Path
+from xml.etree import ElementTree as ET
+project = Path(sys.argv[1])
+tree = ET.parse(project)
+for group in tree.getroot():
+    for item in list(group):
+        if item.tag == "PackageReference" and item.attrib.get("Include") == "MinimalLambda":
+            group.remove(item)
+tree.write(project, encoding="unicode")
+PYOPTIONAL
+restore_consumer optional-only "$CONSUMERS/OptionalOnlyConsumer/EventProcessorConsumer.csproj" "$CORE_VERSION"
+build_consumer optional-only "$CONSUMERS/OptionalOnlyConsumer/EventProcessorConsumer.csproj" MinimalLambda.EventHandlers.g.cs
+run_logged run-optional-only dotnet "$CONSUMERS/OptionalOnlyConsumer/bin/Release/net10.0/EventProcessorConsumer.dll"
+
+set +e
+dotnet restore "$EVENT" --configfile "$CONFIG" --force --no-cache /p:CorePackageVersion="$OLD_CORE_VERSION" /p:EventPackageVersion="$CORE_VERSION" >"$LOGS/restore-old-event-core.log" 2>&1
+old_event_status=$?
+set -e
+[ "$old_event_status" -ne 0 ] || fail "event accepted an old core"
+grep -q NU1605 "$LOGS/restore-old-event-core.log" || fail "event minimum-version check failed unexpectedly"
+restore_consumer event-aot "$EVENT" "$CORE_VERSION" --runtime "$RID" /p:PublishAot=true
+run_logged publish-event-aot dotnet publish "$EVENT" -c Release -f net10.0 -r "$RID" --self-contained true --no-restore /p:CorePackageVersion="$CORE_VERSION" /p:PublishAot=true /p:TrimmerSingleWarn=false /p:UseLdClassicXCodeLinker=false
+assert_warning_free "$LOGS/publish-event-aot.log"
+run_logged run-event-aot "$CONSUMERS/EventProcessorConsumer/bin/Release/net10.0/$RID/publish/EventProcessorConsumer"
+
 
 rm -f "$LOGS/build-invalid-signature-net10.0.log"
 set +e

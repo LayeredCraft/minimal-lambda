@@ -6,6 +6,7 @@ internal enum ParameterSource
     Context,
     DurableContext,
     CancellationToken,
+    ProcessingContext,
     KeyedServices,
     Services,
 }
