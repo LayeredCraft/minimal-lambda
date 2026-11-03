@@ -19,6 +19,7 @@
       OutputItemType="Analyzer" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.ILCompiler" />
     <AotRootProject
       Include="MinimalLambda.Envelopes.Alb;MinimalLambda.Envelopes.ApiGateway;MinimalLambda.Envelopes.CloudWatchLogs;MinimalLambda.Envelopes.Kafka;MinimalLambda.Envelopes.KinesisFirehose;MinimalLambda.Envelopes.Kinesis;MinimalLambda.Envelopes.Sns;MinimalLambda.Envelopes.Sqs;MinimalLambda.Envelopes"
       ProjectPath="$(MSBuildThisFileDirectory)..\..\src\Envelopes\%(Identity)\%(Identity).csproj" />
