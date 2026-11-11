@@ -21,17 +21,17 @@
     <PackageVersion Include="AutoFixture.Xunit3" Version="4.19.0" />
     <PackageVersion Include="AWSSDK.Core" Version="4.0.3.20" />
     <PackageVersion Include="AWSSDK.Lambda" Version="4.0.13.1" />
-    <PackageVersion Include="Basic.Reference.Assemblies.Net100" Version="1.8.12" />
-    <PackageVersion Include="Basic.Reference.Assemblies.Net110" Version="1.8.12" />
-    <PackageVersion Include="Basic.Reference.Assemblies.Net80" Version="1.8.12" />
+    <PackageVersion Include="Basic.Reference.Assemblies.Net100" Version="1.8.14" />
+    <PackageVersion Include="Basic.Reference.Assemblies.Net110" Version="1.8.14" />
+    <PackageVersion Include="Basic.Reference.Assemblies.Net80" Version="1.8.14" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
     <PackageVersion Include="LayeredCraft.SourceGeneratorTools.Generator" Version="0.1.0-beta.10" />
     <PackageVersion Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.3.13" />
     <PackageVersion Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.13" />
     <PackageVersion Include="Microsoft.AspNetCore.Routing" Version="2.3.13" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyModel" Version="10.0.13" />
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.402" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyModel" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.403" />
     <!-- Source Gen Libraries -->
     <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis" Version="5.9.0" />
@@ -40,7 +40,7 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.4" />
     <PackageVersion Include="NSubstitute.Analyzers.CSharp" Version="1.0.17" />
     <PackageVersion Include="PolySharp" Version="1.16.0" />
-    <PackageVersion Include="Scriban" Version="7.5.1" />
+    <PackageVersion Include="Scriban" Version="7.5.3" />
     <!-- OTEL Libraries -->
     <PackageVersion Include="NSubstitute" Version="6.2.0" />
     <PackageVersion Include="OpenTelemetry.Exporter.InMemory" Version="1.20.1" />
@@ -49,13 +49,13 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.AWSLambda" Version="1.20.1" />
     <!-- Testing Libraries -->
     <PackageVersion Include="AwesomeAssertions" Version="9.6.0" />
-    <PackageVersion Include="Basic.Reference.Assemblies.Net90" Version="1.8.12" />
+    <PackageVersion Include="Basic.Reference.Assemblies.Net90" Version="1.8.14" />
     <PackageVersion Include="JetBrains.Annotations" Version="2026.2.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0" />
     <PackageVersion Include="System.Formats.Asn1" Version="6.0.1" />
     <PackageVersion Include="System.Net.Http" Version="4.3.4" />
-    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
     <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
     <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
     <PackageVersion Include="Verify.SourceGenerators" Version="2.5.0" />
