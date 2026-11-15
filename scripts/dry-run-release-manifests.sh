@@ -22,33 +22,35 @@ rsync -a \
   "$repo_root/" "$work_root/"
 
 artifacts="$temporary/artifacts"
-version=91.2.3-preview.456
 
 cd "$work_root"
 
 dotnet restore MinimalLambda.Packages.slnf --tl:off
-dotnet build MinimalLambda.Packages.slnf \
-  --tl:off \
-  --configuration Release \
-  --no-restore \
-  -p:Version="$version"
-dotnet pack MinimalLambda.Packages.slnf \
-  --tl:off \
-  --configuration Release \
-  --no-build \
-  --output "$artifacts/packages" \
-  -p:Version="$version"
+for version in 91.2.3 91.2.3-preview.456; do
+  dotnet build MinimalLambda.Packages.slnf \
+    --tl:off \
+    --configuration Release \
+    --no-restore \
+    -p:Version="$version"
+  dotnet pack MinimalLambda.Packages.slnf \
+    --tl:off \
+    --configuration Release \
+    --no-build \
+    --output "$artifacts/packages/$version" \
+    -p:Version="$version"
 
-python3 scripts/validate-release-artifacts.py \
-  --lane core \
-  --tag "v$version" \
-  --artifacts "$artifacts/packages"
+  python3 scripts/validate-release-artifacts.py \
+    --lane core \
+    --tag "v$version" \
+    --artifacts "$artifacts/packages/$version"
+
+done
 
 python3 scripts/validate-release-artifacts.py \
   --lane core-preview \
   --expected-version "$version" \
   --preview-run-number 456 \
-  --artifacts "$artifacts/packages"
+  --artifacts "$artifacts/packages/$version"
 
 python3 scripts/test-release-artifact-validator.py
 

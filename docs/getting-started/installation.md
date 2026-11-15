@@ -17,6 +17,10 @@ Before you begin, ensure your development environment meets these requirements:
 
     C# 11 or later is required for source generators and interceptors that power the framework's compile-time optimizations.
 
+The core packages include assets for `net8.0`, `net9.0`, `net10.0`, and `net11.0`.
+Use the stable .NET 11 SDK and Microsoft.Extensions 11.0.0 or later when targeting `net11.0`.
+Durable Execution currently targets `net10.0`.
+
 ## Starting from a template
 
 For new functions, install the templates and generate a ready-to-build project with tests and AWS Lambda deployment defaults:

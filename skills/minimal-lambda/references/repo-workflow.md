@@ -14,6 +14,9 @@ Follow root `AGENTS.md`:
 
 ## Commands
 
+The repository requires the stable .NET 11 SDK, version 11.0.100 or later.
+Libraries target .NET 8, 9, 10, and 11; Durable Execution targets .NET 10.
+
 Restore:
 
 ```bash
@@ -32,7 +35,7 @@ Tests:
 ```bash
 task test:all
 # or pick the target framework relevant to the change
-DOTNET_NOLOGO=1 dotnet test --configuration Release -f net10.0
+DOTNET_NOLOGO=1 dotnet test --project tests/MinimalLambda.UnitTests/MinimalLambda.UnitTests.csproj --configuration Release -f net11.0
 ```
 
 Use `task test:all` when practical; focused `dotnet test -f ...` commands are shortcuts, not the
@@ -41,7 +44,7 @@ canonical full suite.
 AOT check:
 
 ```bash
-DOTNET_NOLOGO=1 dotnet publish src/AotCompatibility.TestApp/AotCompatibility.TestApp.csproj /p:TreatWarningsAsErrors=true
+task build:aot-check
 ```
 
 Format:

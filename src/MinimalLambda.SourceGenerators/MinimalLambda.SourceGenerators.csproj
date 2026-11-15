@@ -31,7 +31,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Templates\*.scriban"/>
-    <EmbeddedResource Include="Templates\*.scriban"/>
+    <EmbeddedResource
+      Include="Templates\*.scriban"
+      LogicalName="$(RootNamespace).Templates.%(Filename)%(Extension)"/>
   </ItemGroup>
   <ItemGroup>
     <AdditionalFiles Include="AnalyzerReleases.Shipped.md"/>
