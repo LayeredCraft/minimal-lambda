@@ -50,6 +50,9 @@ respectful and constructive in all interactions.
 
 ### Setup with mise
 
+Use mise to set up a local developer workstation or an AI agent's remote development environment.
+It installs the project tools and restores development dependencies from one configuration.
+
 Install [mise](https://mise.jdx.dev/getting-started.html), version 2026.11.8 or later, and Git.
 Configure Git's `user.name` and `user.email`, then run from the repository root:
 
@@ -70,8 +73,9 @@ packages and local .NET tools, and restores documentation dependencies from `uv.
 mise-selected Python. `UV_PYTHON` keeps uv on that interpreter even if an existing environment
 uses another Python version. Run setup again after dependency changes.
 
-Mise is for local development setup. CI continues to use the existing GitHub Actions and
-LayeredCraft DevOps workflows.
+For remote agents and other non-interactive shells, use `mise exec --` for development commands
+without shell activation. CI continues to use the existing GitHub Actions and LayeredCraft DevOps
+workflows.
 
 Existing Taskfiles remain the build, test, and formatting commands:
 

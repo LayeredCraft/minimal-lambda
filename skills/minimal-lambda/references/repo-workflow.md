@@ -17,7 +17,8 @@ Follow root `AGENTS.md`:
 The repository requires the stable .NET 11 SDK, version 11.0.100 or later.
 Libraries target .NET 8, 9, 10, and 11; Durable Execution targets .NET 10.
 
-For a new checkout, use mise 2026.11.8 or later:
+For a new checkout on a developer workstation or in an AI agent's remote development environment,
+use mise 2026.11.8 or later:
 
 ```bash
 mise trust
@@ -31,8 +32,9 @@ mise exec -- task test:all
 for the test matrix. Install sequentially with the configured `jobs = 1` to avoid SDK installer races.
 `mise.lock` pins resolved tool versions. The setup task restores npm, NuGet,
 local .NET tools, and the uv documentation environment. Keep existing Taskfiles as the command
-source; use `mise exec --` when mise is not activated in the shell. Mise is for local development
-setup; CI uses the existing GitHub Actions and LayeredCraft DevOps workflows.
+source; use `mise exec --` when mise is not activated in the shell, including non-interactive agent
+sessions. Mise sets up development environments; CI uses the existing GitHub Actions and
+LayeredCraft DevOps workflows.
 
 Restore:
 
