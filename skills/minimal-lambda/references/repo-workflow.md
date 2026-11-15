@@ -17,6 +17,21 @@ Follow root `AGENTS.md`:
 The repository requires the stable .NET 11 SDK, version 11.0.100 or later.
 Libraries target .NET 8, 9, 10, and 11; Durable Execution targets .NET 10.
 
+For a new checkout, use mise 2026.11.8 or later:
+
+```bash
+mise trust
+mise install
+mise run setup
+mise exec -- dotnet build --configuration Release
+mise exec -- task test:all
+```
+
+`mise.toml` reads the SDK version from `global.json` and installs older SDKs in the same .NET root
+for the test matrix. `mise.lock` pins resolved tool versions. The setup task restores npm, NuGet,
+local .NET tools, and the uv documentation environment. Keep existing Taskfiles as the command
+source; use `mise exec --` when mise is not activated in the shell.
+
 Restore:
 
 ```bash

@@ -48,34 +48,65 @@ respectful and constructive in all interactions.
 
 ## Development Setup
 
-### Prerequisites
+### Setup with mise
 
-- **.NET SDK 10.0+**
-- **Node.js** (for commitlint & husky - local commit validation)
-- **Task** (optional, for running automated tasks) - see [Taskfile.yml](/Taskfile.yml)
-- **Git** with configured `user.name` and `user.email`
-
-### Building the Project
+Install [mise](https://mise.jdx.dev/getting-started.html), version 2026.11.8 or later, and Git.
+Configure Git's `user.name` and `user.email`, then run from the repository root:
 
 ```bash
-# Install Node dependencies (commitlint & husky for commit validation)
-npm install
-
-# Set up git commit hooks (commit-msg validation)
-task local:setup-git-hooks
-
-# Restore dependencies
-dotnet restore
-
-# Build the solution
-dotnet build
-
-# Run tests
-dotnet test
-
-# Clean packages (if needed)
-dotnet clean
+mise trust
+mise install
+mise run setup
 ```
+
+Review `mise.toml` before trusting it. The configuration installs the build SDK from `global.json`,
+.NET 8/9/10 SDKs for the test runtimes, Node.js, Python, uv, and Task. SDKs share one .NET root so
+all test frameworks are available to the .NET 11 host. Resolved tool versions are recorded in
+`mise.lock` for Linux and macOS on x64/arm64, and Windows on x64.
+
+The setup task installs Node dependencies and Husky commit hooks with `npm ci`, restores NuGet
+packages and local .NET tools, and restores documentation dependencies from `uv.lock` using the
+mise-selected Python. `UV_PYTHON` keeps uv on that interpreter even if an existing environment
+uses another Python version. Run setup again after dependency changes.
+
+Existing Taskfiles remain the build, test, and formatting commands:
+
+```bash
+mise exec -- dotnet build --configuration Release
+mise exec -- task test:all
+mise exec -- task format
+mise exec -- task local:docs:build
+```
+
+[Activate mise in your shell](https://mise.jdx.dev/shell-setup.html) to use these commands
+without the `mise exec --` prefix. Native AOT publishing still requires the platform's C/C++ build
+tools, such as Xcode Command Line Tools on macOS or the compiler/linker prerequisites on Linux.
+
+To refresh locked tool versions after reviewing available updates:
+
+```bash
+mise lock --bump --platform linux-x64,linux-arm64,macos-x64,macos-arm64,windows-x64
+```
+
+Keep the build SDK version in `global.json`; `mise.toml` reads it directly. Commit `mise.lock`
+with tool changes. Put machine-specific overrides in the ignored `mise.local.toml`.
+
+### Manual setup
+
+Without mise, install the stable .NET 11 SDK, .NET 8/9/10 SDKs or their required runtimes, Node.js 24,
+Python 3.13, uv, Task, and Git. Then run:
+
+```bash
+npm ci
+dotnet restore MinimalLambda.sln
+dotnet tool restore
+uv sync --frozen --python python
+dotnet build --configuration Release
+task test:all
+```
+
+The SDK includes both .NET and ASP.NET Core runtimes. When installing only runtimes, install both
+families for the older target frameworks. Exact SDK and tool versions are listed in `mise.lock`.
 
 ## Code Formatting
 

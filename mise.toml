@@ -1,0 +1,25 @@
+min_version = "2026.11.8"
+
+[settings]
+lockfile = true
+dotnet.isolated = false
+
+[tools]
+# Keep the build SDK in global.json; older SDKs supply runtimes for the test matrix.
+dotnet = ["{{ read_json(path='global.json')['sdk']['version'] }}", "10", "9", "8"]
+node = "24"
+python = "3.13"
+uv = "latest"
+task = "3"
+
+[env]
+UV_PYTHON = { value = "{{ tools.python.path }}", tools = true }
+
+[tasks.setup]
+description = "Restore development dependencies and configure commit hooks"
+run = [
+  "npm ci",
+  "dotnet restore MinimalLambda.sln",
+  "dotnet tool restore",
+  "uv sync --frozen",
+]

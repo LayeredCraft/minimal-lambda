@@ -90,3 +90,7 @@ nunit-*.xml
 *.db
 .beads-credential-key
 __pycache__/
+
+# Machine-specific mise overrides
+mise.local.toml
+mise.local.lock
