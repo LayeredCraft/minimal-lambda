@@ -61,7 +61,8 @@ mise run setup
 
 Review `mise.toml` before trusting it. The configuration installs the build SDK from `global.json`,
 .NET 8/9/10 SDKs for the test runtimes, Node.js, Python, uv, and Task. SDKs share one .NET root so
-all test frameworks are available to the .NET 11 host. Resolved tool versions are recorded in
+all test frameworks are available to the .NET 11 host. Tool installation runs sequentially to
+avoid concurrent SDK installers writing the same files. Resolved tool versions are recorded in
 `mise.lock` for Linux and macOS on x64/arm64, and Windows on x64.
 
 The setup task installs Node dependencies and Husky commit hooks with `npm ci`, restores NuGet

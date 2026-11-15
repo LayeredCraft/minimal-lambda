@@ -28,7 +28,8 @@ mise exec -- task test:all
 ```
 
 `mise.toml` reads the SDK version from `global.json` and installs older SDKs in the same .NET root
-for the test matrix. `mise.lock` pins resolved tool versions. The setup task restores npm, NuGet,
+for the test matrix. Install sequentially with the configured `jobs = 1` to avoid SDK installer races.
+`mise.lock` pins resolved tool versions. The setup task restores npm, NuGet,
 local .NET tools, and the uv documentation environment. Keep existing Taskfiles as the command
 source; use `mise exec --` when mise is not activated in the shell. The Mise Setup workflow
 checks fresh setup, build, tests, and documentation on Linux, macOS, and Windows.
