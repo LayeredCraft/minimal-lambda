@@ -1,13 +1,13 @@
 # Durable Execution dependency and support matrix
 
-**Verified:** 2026-08-01
+**Verified:** 2026-11-15
 
 ## Selected dependencies
 
 | Package                                  | Selected version | Supported asset | Purpose                                       |
 | ---------------------------------------- | ---------------- | --------------- | --------------------------------------------- |
-| `Amazon.Lambda.DurableExecution`         | `1.0.0`          | `net10.0`       | Runtime and DE001-DE004 analyzers             |
-| `Amazon.Lambda.DurableExecution.Testing` | `1.0.0`          | `net10.0`       | In-memory workflow testing                    |
+| `Amazon.Lambda.DurableExecution`         | `2.2.0`          | `net10.0`       | Runtime and DE001-DE004 analyzers             |
+| `Amazon.Lambda.DurableExecution.Testing` | `1.1.0`          | `net10.0`       | In-memory workflow testing                    |
 | `Amazon.Lambda.Tools`                    | `7.0.0` minimum  | `net10.0`       | Durable deployment and invocation CLI support |
 
 Consumers must reference `MinimalLambda`, `MinimalLambda.DurableExecution`, and
@@ -48,7 +48,7 @@ run.
 
 ## Sources
 
-- [Amazon.Lambda.DurableExecution 1.0.0](https://www.nuget.org/packages/Amazon.Lambda.DurableExecution/1.0.0)
-- [Amazon.Lambda.DurableExecution.Testing 1.0.0](https://www.nuget.org/packages/Amazon.Lambda.DurableExecution.Testing/1.0.0)
+- [Amazon.Lambda.DurableExecution 2.2.0](https://www.nuget.org/packages/Amazon.Lambda.DurableExecution/2.2.0)
+- [Amazon.Lambda.DurableExecution.Testing 1.1.0](https://www.nuget.org/packages/Amazon.Lambda.DurableExecution.Testing/1.1.0)
 - [AWS durable supported runtimes](https://docs.aws.amazon.com/lambda/latest/dg/durable-supported-runtimes.html)
 - [AWS durable infrastructure configuration](https://docs.aws.amazon.com/lambda/latest/dg/durable-getting-started-iac.html)

@@ -11,7 +11,13 @@ internal sealed class InvocationDataFeature
         init => _eventStream = value;
     }
 
-    public Stream ResponseStream { get; set; } = new MemoryStream();
+    private Stream? _responseStream;
+
+    public Stream ResponseStream
+    {
+        get => _responseStream ??= new MemoryStream();
+        set => _responseStream = value;
+    }
 
     public void EnableBuffering()
     {

@@ -10,7 +10,7 @@ Reference all three packages directly:
 ```bash
 dotnet add package MinimalLambda
 dotnet add package MinimalLambda.DurableExecution
-dotnet add package Amazon.Lambda.DurableExecution --version 1.0.0
+dotnet add package Amazon.Lambda.DurableExecution --version 2.2.0
 ```
 
 Direct `MinimalLambda` reference activates MinimalLambda source generator. Direct AWS package

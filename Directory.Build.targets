@@ -1,4 +1,9 @@
 <Project>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
+    <!-- Feature switches must invalidate incremental compilation when Runtime Async changes. -->
+    <CoreCompileCache Include="$(Features)" />
+  </ItemGroup>
+
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
     <!-- Shared build workflows run plain dotnet build; package creation happens in publish workflows with dotnet pack. -->
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>

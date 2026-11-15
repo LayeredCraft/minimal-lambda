@@ -352,7 +352,7 @@ This project supports multiple .NET versions:
 - **.NET 10.0** (supported)
 - **.NET 11.0** (primary target)
 
-Build the repository with the stable .NET 11 SDK, version 11.0.100 or later.
+Build the repository with the stable .NET 11 SDK, version 11.0.100 or later, and C# 15.
 `task build:aot-check` validates Native AOT publishing on .NET 10 and .NET 11.
 
 Test your changes against all supported frameworks:

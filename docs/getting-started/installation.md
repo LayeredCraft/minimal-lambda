@@ -6,16 +6,16 @@ This guide walks you through installing `MinimalLambda` and configuring your pro
 
 Before you begin, ensure your development environment meets these requirements:
 
-| Requirement         | Minimum Version                                       | Recommended |
-| ------------------- | ----------------------------------------------------- | ----------- |
-| .NET SDK            | 8.0                                                   | Latest LTS  |
-| C# Language Version | 11                                                    | latest      |
-| IDE                 | Visual Studio 2022 (17.8+), Rider 2023.3+, or VS Code | Latest      |
-| AWS CLI             | 2.0+ (optional)                                       | Latest      |
+| Requirement | Minimum | Recommended |
+| --- | --- | --- |
+| .NET SDK | 11.0.100 | Latest .NET 11 patch |
+| C# language version | 14 | 15.0 |
+| IDE | .NET 11 SDK support | Latest |
+| AWS CLI | 2.0+, optional | Latest |
 
-!!! note "C# 11 Requirement"
+!!! note "Compiler requirement"
 
-    C# 11 or later is required for source generators and interceptors that power the framework's compile-time optimizations.
+    Use the .NET 11 SDK with C# 14 or later for the source generator and interceptors. The repository builds with stable C# 15; the libraries still include assets for older target frameworks.
 
 The core packages include assets for `net8.0`, `net9.0`, `net10.0`, and `net11.0`.
 Use the stable .NET 11 SDK and Microsoft.Extensions 11.0.0 or later when targeting `net11.0`.

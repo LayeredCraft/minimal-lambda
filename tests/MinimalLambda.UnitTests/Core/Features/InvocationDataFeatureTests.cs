@@ -6,6 +6,32 @@ namespace MinimalLambda.UnitTests.Core.Features;
 public class InvocationDataFeatureTests
 {
     [Fact]
+    public void ResponseStream_WhenReadRepeatedly_ReturnsSameWritableStream()
+    {
+        using var feature = new InvocationDataFeature { EventStream = Stream.Null };
+        using var stream = feature.ResponseStream;
+
+        stream.WriteByte(42);
+
+        feature.ResponseStream.Should().BeSameAs(stream);
+        stream.Position = 0;
+        stream.ReadByte().Should().Be(42);
+    }
+
+    [Fact]
+    public void ResponseStream_WhenReplacedBeforeFirstRead_PreservesReplacementAfterDisposal()
+    {
+        using var response = new MemoryStream();
+        var feature =
+            new InvocationDataFeature { EventStream = Stream.Null, ResponseStream = response };
+
+        feature.Dispose();
+
+        feature.ResponseStream.Should().BeSameAs(response);
+        response.CanWrite.Should().BeTrue();
+    }
+
+    [Fact]
     public void EnableBuffering_WhenEventStreamAlreadySeekable_DoesNotReplaceStream()
     {
         // Arrange

@@ -3,7 +3,7 @@
     <EventPackageVersion Condition="'$(EventPackageVersion)' == ''">$(CorePackageVersion)</EventPackageVersion>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>net8.0;net9.0;net10.0;net11.0</TargetFrameworks>
-    <LangVersion>preview</LangVersion>
+    <LangVersion>15.0</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>

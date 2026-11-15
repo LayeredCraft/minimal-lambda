@@ -12,6 +12,6 @@
                       Condition="'$(CorePackageVersion)' != ''" />
     <PackageReference Include="MinimalLambda.DurableExecution" Version="$(DurablePackageVersion)"
                       Condition="'$(DurablePackageVersion)' != ''" />
-    <PackageReference Include="Amazon.Lambda.DurableExecution" Version="1.0.0" />
+    <PackageReference Include="Amazon.Lambda.DurableExecution" Version="2.2.0" />
   </ItemGroup>
 </Project>

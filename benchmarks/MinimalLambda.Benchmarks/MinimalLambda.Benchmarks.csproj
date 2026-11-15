@@ -1,10 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <OutputType>Exe</OutputType>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);MinimalLambda.Generated</InterceptorsNamespaces>
   </PropertyGroup>
   <PropertyGroup>
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -17,8 +18,12 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet"/>
+    <PackageReference Include="Amazon.Lambda.TestUtilities"/>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\MinimalLambda\MinimalLambda.csproj"/>
+    <ProjectReference Include="../../src/MinimalLambda.EventProcessing/MinimalLambda.EventProcessing.csproj"/>
+    <ProjectReference Include="../../src/MinimalLambda.SourceGenerators/MinimalLambda.SourceGenerators.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
   </ItemGroup>
 </Project>

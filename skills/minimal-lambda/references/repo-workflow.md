@@ -54,10 +54,25 @@ task format
 # or task format:csharpier for C# formatting only
 ```
 
+## Performance checks
+
+The benchmark project compares .NET 10, .NET 11, and an opt-in .NET 11 Runtime Async build.
+It covers full invocations, middleware, serialization, batch processing, and feature allocations.
+Run from the repository root:
+
+```bash
+dotnet run --project benchmarks/MinimalLambda.Benchmarks -c Release -f net11.0 -- --filter '*InvocationBenchmarks*' '*BatchBenchmarks*' '*FeatureBenchmarks*'
+```
+
+Runtime Async is disabled by default. Evaluate it with `-p:MinimalLambdaRuntimeAsync=true`;
+the repository applies the compiler feature only to `net11.0`. This property builds repository
+projects; it does not change precompiled NuGet assemblies or configure client projects.
+Validate tests and AOT publishing in both modes before changing the default.
+
 ## Code style
 
 - nullable enabled; treat nullability warnings as bugs
-- C# preview/C# 14 features present
+- stable C# 15; C# 14 extension blocks remain valid
 - extension blocks `extension(...) { ... }` are intentional; do not rewrite to old extension syntax
 - file-scoped namespaces
 - `sealed` for public classes unless inheritance intended

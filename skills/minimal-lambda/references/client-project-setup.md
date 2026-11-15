@@ -85,9 +85,8 @@ Keep `MinimalLambda.Testing` version aligned with `MinimalLambda`.
 
 ## Project file basics
 
-Use a current .NET SDK and modern C# language version. Interceptors/source-generation paths require
-compiler support; prefer `LangVersion` `latest`/`preview` when package docs or build diagnostics
-require it. Repo uses newer versions; client project can use current SDK/LangVersion.
+Use the .NET 11 SDK and stable `LangVersion` `15.0` for the current source generator and
+interceptors. Older target frameworks remain supported; preview language mode is not required.
 
 ```xml
 <PropertyGroup>

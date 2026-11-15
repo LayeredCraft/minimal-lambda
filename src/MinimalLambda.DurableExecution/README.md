@@ -16,7 +16,7 @@ Reference all three packages directly:
 ```bash
 dotnet add package MinimalLambda --version 2.6.0-beta.2
 dotnet add package MinimalLambda.DurableExecution --version 2.6.0-beta.2
-dotnet add package Amazon.Lambda.DurableExecution --version 1.0.0
+dotnet add package Amazon.Lambda.DurableExecution --version 2.2.0
 ```
 
 Direct `MinimalLambda` reference supplies one source generator for both `MapHandler` and

@@ -13,7 +13,7 @@ Target `net10.0`. Reference all three packages directly:
 ```bash
 dotnet add package MinimalLambda --version 2.6.0-beta.2
 dotnet add package MinimalLambda.DurableExecution --version 2.6.0-beta.2
-dotnet add package Amazon.Lambda.DurableExecution --version 1.0.0
+dotnet add package Amazon.Lambda.DurableExecution --version 2.2.0
 ```
 
 `MinimalLambda.DurableExecution` releases with `MinimalLambda`; use matching versions. Direct `MinimalLambda` reference supplies source generator for `MapHandler` and `MapDurableHandler`. Direct AWS package reference supplies DE001-DE004 analyzers, which do not flow through transitive dependencies.
