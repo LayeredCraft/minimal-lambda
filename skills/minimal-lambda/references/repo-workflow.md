@@ -31,8 +31,8 @@ mise exec -- task test:all
 for the test matrix. Install sequentially with the configured `jobs = 1` to avoid SDK installer races.
 `mise.lock` pins resolved tool versions. The setup task restores npm, NuGet,
 local .NET tools, and the uv documentation environment. Keep existing Taskfiles as the command
-source; use `mise exec --` when mise is not activated in the shell. The Mise Setup workflow
-checks fresh setup, build, tests, and documentation on Linux, macOS, and Windows.
+source; use `mise exec --` when mise is not activated in the shell. Mise is for local development
+setup; CI uses the existing GitHub Actions and LayeredCraft DevOps workflows.
 
 Restore:
 
