@@ -69,6 +69,9 @@ packages and local .NET tools, and restores documentation dependencies from `uv.
 mise-selected Python. `UV_PYTHON` keeps uv on that interpreter even if an existing environment
 uses another Python version. Run setup again after dependency changes.
 
+The Mise Setup workflow checks a fresh install, build, tests, and documentation build on Linux,
+macOS, and Windows when the development configuration changes.
+
 Existing Taskfiles remain the build, test, and formatting commands:
 
 ```bash

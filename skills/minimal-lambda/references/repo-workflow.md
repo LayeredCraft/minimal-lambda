@@ -30,7 +30,8 @@ mise exec -- task test:all
 `mise.toml` reads the SDK version from `global.json` and installs older SDKs in the same .NET root
 for the test matrix. `mise.lock` pins resolved tool versions. The setup task restores npm, NuGet,
 local .NET tools, and the uv documentation environment. Keep existing Taskfiles as the command
-source; use `mise exec --` when mise is not activated in the shell.
+source; use `mise exec --` when mise is not activated in the shell. The Mise Setup workflow
+checks fresh setup, build, tests, and documentation on Linux, macOS, and Windows.
 
 Restore:
 
@@ -164,6 +165,12 @@ dotnet test
 - Snapshot tests for generated code changes; update snapshots only when intended.
 - Integration tests via `MinimalLambda.Testing` for pipeline behavior.
 - AOT test app for trimming/native publish compatibility.
+
+## Release artifact validation
+
+Release and preview publishing download and validate the complete package manifest before trusted
+publishing. Keep all 16 `.nupkg` and 15 `.snupkg` files in the uploaded artifact. The shared workflows
+are pinned to the symbol-upload fix from `LayeredCraft/devops-templates#53`.
 
 ## Before final handoff
 

@@ -65,6 +65,15 @@ def main() -> None:
                         f"<package><metadata><id>{package_id}</id><version>{VERSION}</version></metadata></package>",
                     )
         validator.validate_artifacts("core", artifacts, VERSION, None)
+        symbol = artifacts / f"MinimalLambda.EventProcessing.{VERSION}.snupkg"
+        symbol_payload = symbol.read_bytes()
+        symbol.unlink()
+        expect_failure(
+            "missing downloaded symbol package",
+            lambda: validator.validate_artifacts("core", artifacts, VERSION, None),
+            "symbol package ID collision/omission",
+        )
+        symbol.write_bytes(symbol_payload)
         (artifacts / f"MinimalLambda.EventProcessing.{VERSION}.nupkg").unlink()
         expect_failure(
             "missing event processing package",
