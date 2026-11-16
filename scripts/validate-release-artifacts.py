@@ -18,6 +18,7 @@ CORE_PACKAGE_IDS = frozenset(
         "MinimalLambda",
         "MinimalLambda.Abstractions",
         "MinimalLambda.DurableExecution",
+        "MinimalLambda.EventProcessing",
         "MinimalLambda.Envelopes",
         "MinimalLambda.Envelopes.Alb",
         "MinimalLambda.Envelopes.ApiGateway",

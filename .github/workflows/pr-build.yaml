@@ -21,7 +21,7 @@ jobs:
     name: build / build
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
 
     steps:
       - uses: actions/checkout@v7
@@ -45,8 +45,8 @@ jobs:
       - name: Build
         run: dotnet build MinimalLambda.sln --no-restore --configuration Release /p:TreatWarningsAsErrors=true
 
-      - name: Validate AOT compatibility
-        run: task build:aot-check
+      - name: Validate stable and preview packages
+        run: bash scripts/dry-run-release-manifests.sh
 
       - name: Run coverage
         timeout-minutes: 10
@@ -55,6 +55,18 @@ jobs:
           --results-directory ./coverage --coverage
           --coverage-output-format cobertura --no-progress --no-ansi
           --max-parallel-test-modules 1 -p:TestTfmsInParallel=false
+
+      - name: Validate packed consumers
+        run: task build:package-compat
+
+      - name: Test Runtime Async on .NET 11
+        run: >-
+          dotnet test MinimalLambda.sln --configuration Release
+          -p:MinimalLambdaRuntimeAsync=true --no-progress --no-ansi
+          --max-parallel-test-modules 1 -p:TestTfmsInParallel=false
+
+      - name: Validate AOT compatibility
+        run: task build:aot-check
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v7

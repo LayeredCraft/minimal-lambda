@@ -349,6 +349,25 @@ public class DefaultFeatureCollectionTest
 
     #endregion
 
+    [Fact]
+    public void Get_WhenProviderSetsFeature_PreservesAlreadyStoredFeature()
+    {
+        var provider = Substitute.For<IFeatureProvider>();
+        var collection = new DefaultFeatureCollection([provider]);
+        provider
+            .TryCreate(typeof(string), out _)
+            .Returns(call =>
+            {
+                collection.Set("stored");
+                call[1] = "created";
+                return true;
+            });
+
+        collection.Get<string>().Should().Be("stored");
+        collection.Get<string>().Should().Be("stored");
+        provider.Received(1).TryCreate(typeof(string), out _);
+    }
+
     #region Enumeration Tests
 
     [Fact]

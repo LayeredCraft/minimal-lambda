@@ -1,1 +1,4 @@
 tests/MinimalLambda.SourceGenerators.UnitTests/Snapshots/*.verified.cs whitespace=-trailing-space
+
+# Verify snapshots must keep LF line endings on Windows checkouts.
+*.verified.* text eol=lf working-tree-encoding=UTF-8

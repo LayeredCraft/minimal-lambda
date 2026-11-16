@@ -232,7 +232,7 @@ public class EventHandlerEmitterTests
         result.Diagnostics.Should().BeEmpty();
         result
             .GeneratedTrees
-            .Select(tree => tree.FilePath.Split('/').Last())
+            .Select(tree => Path.GetFileName(tree.FilePath))
             .Should()
             .Contain(
             [

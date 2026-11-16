@@ -11,15 +11,29 @@ jobs:
   build:
     permissions:
       contents: write
-    uses: LayeredCraft/devops-templates/.github/workflows/publish-release.yml@v11.2
+    uses: LayeredCraft/devops-templates/.github/workflows/publish-release.yml@7aeca949aec9dd3c7cf4802b8b8497dc1832e16f # retain symbol artifacts
     with:
       solution: MinimalLambda.sln
       dotnetVersion: 11.0.x
       hasTests: false
       buildConfiguration: Release
 
-  push:
+  validate-artifacts:
     needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
+          path: release-artifacts
+      - name: Validate downloaded packages and symbols
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: python3 scripts/validate-release-artifacts.py --lane core --tag "$RELEASE_TAG" --artifacts release-artifacts
+
+  push:
+    needs: validate-artifacts
     runs-on: ubuntu-latest
     permissions:
       id-token: write

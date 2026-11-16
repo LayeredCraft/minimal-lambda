@@ -245,7 +245,7 @@ for filename, (package_id, version, kind) in expected.items():
                 if minimal.attrib.get("exclude") != "Build,Analyzers":
                     raise AssertionError(f"durable core dependency exclusion mismatch: {minimal.attrib}")
                 aws = by_id["Amazon.Lambda.DurableExecution"]
-                if aws.attrib.get("version") != "1.0.0":
+                if aws.attrib.get("version") != "2.2.0":
                     raise AssertionError(f"durable AWS dependency version mismatch: {aws.attrib}")
                 if aws.attrib.get("exclude") != "Build,Analyzers":
                     raise AssertionError(f"durable AWS dependency exclusion mismatch: {aws.attrib}")

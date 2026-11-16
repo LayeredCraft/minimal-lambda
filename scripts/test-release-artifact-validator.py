@@ -52,6 +52,35 @@ def main() -> None:
             "must not ship deferred mlambda-durable template",
         )
 
+    with tempfile.TemporaryDirectory(prefix="minimal-lambda-manifest-") as temporary:
+        artifacts = Path(temporary)
+        package_ids = validator.CORE_PACKAGE_IDS | {"MinimalLambda.EventProcessing"}
+        for package_id in package_ids:
+            extensions = ("nupkg",) if package_id == "MinimalLambda.Templates" else ("nupkg", "snupkg")
+            for extension in extensions:
+                path = artifacts / f"{package_id}.{VERSION}.{extension}"
+                with zipfile.ZipFile(path, "w") as archive:
+                    archive.writestr(
+                        f"{package_id}.nuspec",
+                        f"<package><metadata><id>{package_id}</id><version>{VERSION}</version></metadata></package>",
+                    )
+        validator.validate_artifacts("core", artifacts, VERSION, None)
+        symbol = artifacts / f"MinimalLambda.EventProcessing.{VERSION}.snupkg"
+        symbol_payload = symbol.read_bytes()
+        symbol.unlink()
+        expect_failure(
+            "missing downloaded symbol package",
+            lambda: validator.validate_artifacts("core", artifacts, VERSION, None),
+            "symbol package ID collision/omission",
+        )
+        symbol.write_bytes(symbol_payload)
+        (artifacts / f"MinimalLambda.EventProcessing.{VERSION}.nupkg").unlink()
+        expect_failure(
+            "missing event processing package",
+            lambda: validator.validate_artifacts("core", artifacts, VERSION, None),
+            "missing=['MinimalLambda.EventProcessing']",
+        )
+
     original_lookup = validator.nuget_version_exists
     validator.nuget_version_exists = lambda package_id, version: package_id == PACKAGE_ID
     try:

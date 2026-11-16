@@ -60,10 +60,12 @@ tasks:
       - echo "   dotnet nuget add source {{.LOCAL_NUGET_SOURCE}} --name local"
 
   aot-check:
-    desc: Validates the AOT compatibility of the libraries
+    desc: Validates AOT on .NET 10 and .NET 11 with classic and Runtime Async builds
     silent: true
     cmds:
-      - dotnet publish src/AotCompatibility.TestApp/AotCompatibility.TestApp.csproj /p:TreatWarningsAsErrors=true
+      - dotnet publish src/AotCompatibility.TestApp/AotCompatibility.TestApp.csproj --configuration Release --framework net10.0 /p:TreatWarningsAsErrors=true
+      - dotnet publish src/AotCompatibility.TestApp/AotCompatibility.TestApp.csproj --configuration Release --framework net11.0 /p:TreatWarningsAsErrors=true
+      - dotnet publish src/AotCompatibility.TestApp/AotCompatibility.TestApp.csproj --configuration Release --framework net11.0 /p:MinimalLambdaRuntimeAsync=true /p:TreatWarningsAsErrors=true
 
   package-compat:
     desc: Validates packed durable package consumers on net10.0

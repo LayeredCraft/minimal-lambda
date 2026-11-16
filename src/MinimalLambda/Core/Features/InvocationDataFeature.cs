@@ -11,7 +11,25 @@ internal sealed class InvocationDataFeature
         init => _eventStream = value;
     }
 
-    public Stream ResponseStream { get; set; } = new MemoryStream();
+    private Stream? _responseStream;
+
+    public Stream ResponseStream
+    {
+        get
+        {
+            if (Volatile.Read(ref _responseStream) is { } response)
+                return response;
+
+            var created = new MemoryStream();
+            response = Interlocked.CompareExchange(ref _responseStream, created, null);
+            if (response is null)
+                return created;
+
+            created.Dispose();
+            return response;
+        }
+        set => Volatile.Write(ref _responseStream, value);
+    }
 
     public void EnableBuffering()
     {

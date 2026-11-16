@@ -6,6 +6,71 @@ namespace MinimalLambda.UnitTests.Core.Features;
 public class InvocationDataFeatureTests
 {
     [Fact]
+    public void ResponseStream_WhenReadRepeatedly_ReturnsSameWritableStream()
+    {
+        using var feature = new InvocationDataFeature { EventStream = Stream.Null };
+        using var stream = feature.ResponseStream;
+
+        stream.WriteByte(42);
+
+        feature.ResponseStream.Should().BeSameAs(stream);
+        stream.Position = 0;
+        stream.ReadByte().Should().Be(42);
+    }
+
+    [Fact]
+    public async Task ResponseStream_WhenFirstReadConcurrently_ReturnsSameStreamToAllReaders()
+    {
+        const int readerCount = 8;
+        const int roundCount = 128;
+        var features =
+            Enumerable
+                .Range(0, roundCount)
+                .Select(_ => new InvocationDataFeature { EventStream = Stream.Null })
+                .ToArray();
+        var streams = new Stream[roundCount, readerCount];
+        using var barrier = new Barrier(readerCount);
+
+        var readers = Enumerable
+            .Range(0, readerCount)
+            .Select(reader => Task.Factory.StartNew(
+                () =>
+                {
+                    for (var round = 0; round < roundCount; round++)
+                    {
+                        barrier.SignalAndWait();
+                        streams[round, reader] = features[round].ResponseStream;
+                    }
+                },
+                CancellationToken.None,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default));
+
+        await Task.WhenAll(readers);
+
+        for (var round = 0; round < roundCount; round++)
+        {
+            using var feature = features[round];
+            using var stream = feature.ResponseStream;
+            for (var reader = 0; reader < readerCount; reader++)
+                streams[round, reader].Should().BeSameAs(stream);
+        }
+    }
+
+    [Fact]
+    public void ResponseStream_WhenReplacedBeforeFirstRead_PreservesReplacementAfterDisposal()
+    {
+        using var response = new MemoryStream();
+        var feature =
+            new InvocationDataFeature { EventStream = Stream.Null, ResponseStream = response };
+
+        feature.Dispose();
+
+        feature.ResponseStream.Should().BeSameAs(response);
+        response.CanWrite.Should().BeTrue();
+    }
+
+    [Fact]
     public void EnableBuffering_WhenEventStreamAlreadySeekable_DoesNotReplaceStream()
     {
         // Arrange

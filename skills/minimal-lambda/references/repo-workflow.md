@@ -14,6 +14,28 @@ Follow root `AGENTS.md`:
 
 ## Commands
 
+The repository requires the stable .NET 11 SDK, version 11.0.100 or later.
+Libraries target .NET 8, 9, 10, and 11; Durable Execution targets .NET 10.
+
+For a new checkout on a developer workstation or in an AI agent's remote development environment,
+use mise 2026.11.8 or later:
+
+```bash
+mise trust
+mise install
+mise run setup
+mise exec -- dotnet build --configuration Release
+mise exec -- task test:all
+```
+
+`mise.toml` reads the SDK version from `global.json` and installs older SDKs in the same .NET root
+for the test matrix. Install sequentially with the configured `jobs = 1` to avoid SDK installer races.
+`mise.lock` pins resolved tool versions. The setup task restores npm, NuGet,
+local .NET tools, and the uv documentation environment. Keep existing Taskfiles as the command
+source; use `mise exec --` when mise is not activated in the shell, including non-interactive agent
+sessions. Mise sets up development environments; CI uses the existing GitHub Actions and
+LayeredCraft DevOps workflows.
+
 Restore:
 
 ```bash
@@ -32,7 +54,7 @@ Tests:
 ```bash
 task test:all
 # or pick the target framework relevant to the change
-DOTNET_NOLOGO=1 dotnet test --configuration Release -f net10.0
+DOTNET_NOLOGO=1 dotnet test --project tests/MinimalLambda.UnitTests/MinimalLambda.UnitTests.csproj --configuration Release -f net11.0
 ```
 
 Use `task test:all` when practical; focused `dotnet test -f ...` commands are shortcuts, not the
@@ -41,7 +63,7 @@ canonical full suite.
 AOT check:
 
 ```bash
-DOTNET_NOLOGO=1 dotnet publish src/AotCompatibility.TestApp/AotCompatibility.TestApp.csproj /p:TreatWarningsAsErrors=true
+task build:aot-check
 ```
 
 Format:
@@ -51,10 +73,25 @@ task format
 # or task format:csharpier for C# formatting only
 ```
 
+## Performance checks
+
+The benchmark project compares .NET 10, .NET 11, and an opt-in .NET 11 Runtime Async build.
+It covers full invocations, middleware, serialization, batch processing, and feature allocations.
+Run from the repository root:
+
+```bash
+dotnet run --project benchmarks/MinimalLambda.Benchmarks -c Release -f net11.0 -- --filter '*InvocationBenchmarks*' '*BatchBenchmarks*' '*FeatureBenchmarks*'
+```
+
+Runtime Async is disabled by default. Evaluate it with `-p:MinimalLambdaRuntimeAsync=true`;
+the repository applies the compiler feature only to `net11.0`. This property builds repository
+projects; it does not change precompiled NuGet assemblies or configure client projects.
+Validate tests and AOT publishing in both modes before changing the default.
+
 ## Code style
 
 - nullable enabled; treat nullability warnings as bugs
-- C# preview/C# 14 features present
+- stable C# 15; C# 14 extension blocks remain valid
 - extension blocks `extension(...) { ... }` are intentional; do not rewrite to old extension syntax
 - file-scoped namespaces
 - `sealed` for public classes unless inheritance intended
@@ -131,6 +168,12 @@ dotnet test
 - Snapshot tests for generated code changes; update snapshots only when intended.
 - Integration tests via `MinimalLambda.Testing` for pipeline behavior.
 - AOT test app for trimming/native publish compatibility.
+
+## Release artifact validation
+
+Release and preview publishing download and validate the complete package manifest before trusted
+publishing. Keep all 16 `.nupkg` and 15 `.snupkg` files in the uploaded artifact. The shared workflows
+are pinned to the symbol-upload fix from `LayeredCraft/devops-templates#53`.
 
 ## Before final handoff
 

@@ -21,7 +21,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    uses: LayeredCraft/devops-templates/.github/workflows/publish-preview.yml@v11.2
+    uses: LayeredCraft/devops-templates/.github/workflows/publish-preview.yml@7aeca949aec9dd3c7cf4802b8b8497dc1832e16f # retain symbol artifacts
     with:
       solution: MinimalLambda.sln
       dotnetVersion: 11.0.x
@@ -29,8 +29,22 @@ jobs:
       hasTests: false
       buildConfiguration: Release
 
-  push:
+  validate-artifacts:
     needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
+          path: release-artifacts
+      - name: Validate downloaded packages and symbols
+        env:
+          PREVIEW_RUN_NUMBER: ${{ github.run_number }}
+        run: python3 scripts/validate-release-artifacts.py --lane core-preview --preview-run-number "$PREVIEW_RUN_NUMBER" --artifacts release-artifacts
+
+  push:
+    needs: validate-artifacts
     runs-on: ubuntu-latest
     permissions:
       id-token: write
